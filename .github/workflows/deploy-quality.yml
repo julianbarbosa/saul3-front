@@ -1,5 +1,8 @@
+
 # Despliegue de gestion-front en QA (rama quality).
-# DEPLOY_ROOT: directorio del clon en el runner. build:qa usa --base-href=/qa/tramites-front/ (ajusta en package.json si cambia la URL pública).
+# DEPLOY_ROOT: directorio del clon del proyecto en el runner.
+# build:qa utiliza --base-href=/qa/saul3-front/
+
 name: Deploy gestion-front Quality
 
 on:
@@ -17,35 +20,75 @@ jobs:
     name: Deploy to gestion-front quality
     runs-on: self-hosted
     timeout-minutes: 30
+
     env:
-      DEPLOY_ROOT: /var/www/qa/tramites-front
+      DEPLOY_ROOT: /var/www/qa/saul3-front
+
+    defaults:
+      run:
+        shell: bash
 
     steps:
       - name: Verify server
         run: |
           echo "Servidor: $(hostname)"
           echo "Usuario: $(whoami)"
+          echo "Directorio: $DEPLOY_ROOT"
+
           test "$(whoami)" = "saul"
+          test -d "$DEPLOY_ROOT"
 
       - name: Update quality code
-        working-directory: ${{ env.DEPLOY_ROOT }}
+        working-directory: /var/www/qa/saul3-front
         run: |
-          git config --global --add safe.directory "${{ env.DEPLOY_ROOT }}"
+          git config --global --add safe.directory "$DEPLOY_ROOT"
+
           git fetch origin quality
+
+          git checkout quality
           git merge --ff-only origin/quality
 
+          echo "Código actualizado:"
+          git log -1 --oneline
+
+      - name: Setup Node.js
+        run: |
+          node --version
+          npm --version
+
       - name: Install dependencies
-        working-directory: ${{ env.DEPLOY_ROOT }}
+        working-directory: /var/www/qa/saul3-front
         run: |
           npm ci --include=dev
 
-      - name: Build quality
-        working-directory: ${{ env.DEPLOY_ROOT }}
+      - name: Clean previous build
+        working-directory: /var/www/qa/saul3-front
         run: |
-          npm run build:qa
+          rm -rf dist/gestion-front
+
+      - name: Build quality
+        working-directory: /var/www/qa/saul3-front
+        run: |
+          npm run build:qa -- --base-href=/qa/
 
       - name: Verify deployment
-        working-directory: ${{ env.DEPLOY_ROOT }}
+        working-directory: /var/www/qa/saul3-front
         run: |
-          test -f dist/gestion-front/browser/index.html
+          echo "Verificando compilación..."
+
+          if [ ! -f dist/gestion-front/browser/index.html ]; then
+            echo "ERROR: No se encontró index.html"
+            echo "Contenido de dist:"
+            find dist -maxdepth 5 -type f | head -100
+            exit 1
+          fi
+
+          echo "Compilación correcta:"
+          ls -lh dist/gestion-front/browser/index.html
+
+          echo "Estado Git:"
           git status -sb
+
+      - name: Deployment completed
+        run: |
+          echo "Despliegue QA finalizado correctamente."
