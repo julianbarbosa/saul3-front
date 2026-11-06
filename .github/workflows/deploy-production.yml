@@ -1,0 +1,52 @@
+# Despliegue del front de gestión (npm package: gestion-front, app Angular: gestion-front).
+# DEPLOY_ROOT debe ser el directorio del clon en el runner; cámbialo si en el servidor usas otra ruta (p. ej. /var/www/prd/gestion-front).
+name: Deploy gestion-front Production
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+concurrency:
+  group: gestion-front-production
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: Deploy to gestion-front production
+    runs-on: self-hosted
+    timeout-minutes: 30
+    env:
+      DEPLOY_ROOT: /var/www/prd/tramites-front
+
+    steps:
+      - name: Verify server
+        run: |
+          echo "Servidor: $(hostname)"
+          echo "Usuario: $(whoami)"
+          test "$(whoami)" = "saul"
+
+      - name: Update production code
+        working-directory: ${{ env.DEPLOY_ROOT }}
+        run: |
+          git config --global --add safe.directory "${{ env.DEPLOY_ROOT }}"
+          git fetch origin main
+          git merge --ff-only origin/main
+
+      - name: Install dependencies
+        working-directory: ${{ env.DEPLOY_ROOT }}
+        run: |
+          npm ci --include=dev
+
+      # package.json: build:prod ya incluye --base-href=/gestion/ (no duplicar aquí)
+      - name: Build production
+        working-directory: ${{ env.DEPLOY_ROOT }}
+        run: |
+          npm run build:prod
+
+      - name: Verify deployment
+        working-directory: ${{ env.DEPLOY_ROOT }}
+        run: |
+          test -f dist/gestion-front/browser/index.html
+          git status -sb

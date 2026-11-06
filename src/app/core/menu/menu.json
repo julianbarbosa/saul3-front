@@ -21,6 +21,11 @@
               "label": "Consultar",
               "path": "consultar",
               "loadComponent": "@modules/comparendo/pages/consultar/consultar-comparendo.component#ConsultarComparendoComponent"
+            },
+            {
+              "id": "gestion-ciudadano",
+              "label": "Gestión ciudadano",
+              "path": "gestion-ciudadano"
             }            
           ]
         },

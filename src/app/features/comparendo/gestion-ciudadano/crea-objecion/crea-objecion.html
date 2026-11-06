@@ -1,0 +1,327 @@
+<div class="container py-4">
+
+    <!-- ───── PANTALLA 2: ÉXITO ───── -->
+    <ng-container *ngIf="objecionExitosa">
+        <div class="d-flex justify-content-center">
+            <div class="card border-0 shadow-sm" style="border-radius: 20px; overflow: hidden; max-width: 640px; width: 100%;">
+                <div class="card-header bg-white border-0 py-4 px-4 text-center" style="border-bottom: 1px solid #e8edf5; background: linear-gradient(145deg, #f0f7ff, #ffffff) !important;">
+                    <div class="d-inline-flex align-items-center justify-content-center rounded-circle mb-3"
+                        style="width: 80px; height: 80px; background: linear-gradient(135deg, #28a745, #20c997);">
+                        <i class="bi bi-check-lg text-white" style="font-size: 2.5rem;" aria-hidden="true"></i>
+                    </div>
+                    <h2 class="fw-bold mb-1" style="color: #1a2b4a;">¡Objeción Registrada!</h2>
+                    <p class="text-muted mb-0">Su solicitud de objeción ha sido radicada exitosamente.</p>
+                </div>
+                <div class="card-body p-4">
+                    <div class="rounded-3 p-4" style="background-color: #f8faff;">
+                        <div class="d-flex justify-content-between align-items-center border-bottom pb-2 mb-2" style="border-color: #e0e7f0;">
+                            <span class="text-secondary">N° de Objeción:</span>
+                            <strong class="text-primary">{{ idObjecionCreada }}</strong>
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center border-bottom pb-2 mb-2" style="border-color: #e0e7f0;">
+                            <span class="text-secondary">Comparendo:</span>
+                            <strong>{{ idComparendo }}</strong>
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center">
+                            <span class="text-secondary">Fecha de radicación:</span>
+                            <strong>{{ fechaHoy }}</strong>
+                        </div>
+                    </div>
+                    <div *ngIf="maxDias" class="d-flex align-items-start gap-2 p-3 mt-3 rounded-3"
+                        style="background-color: #fff8e1; border-left: 4px solid #ffc107;">
+                        <i class="bi bi-clock mt-1" style="color: #b95f00;" aria-hidden="true"></i>
+                        <p class="mb-0 small">La autoridad tiene <strong>{{ maxDias }} días hábiles</strong> para responder.</p>
+                    </div>
+                </div>
+                <div class="card-footer bg-white border-0 py-3 px-4 d-flex justify-content-between gap-3">
+                    <button type="button" (click)="descargarCertificado()" *ngIf="idObjecionCreada"
+                        class="btn btn-outline-primary d-flex align-items-center gap-2 fw-semibold px-4">
+                        <i class="bi bi-file-earmark-arrow-down" aria-hidden="true"></i>
+                        Descargar certificado Objecion
+                    </button>
+                    <button type="button" (click)="finalizarYVolver()"
+                        class="btn btn-primary d-flex align-items-center gap-2 fw-semibold px-4 ms-auto">
+                        <i class="bi bi-check-circle" aria-hidden="true"></i>
+                        FINALIZAR
+                    </button>
+                </div>
+            </div>
+        </div>
+    </ng-container>
+
+    <!-- ───── PANTALLA 1: FORMULARIO ───── -->
+    <ng-container *ngIf="!objecionExitosa">
+
+        <!-- Breadcrumb -->
+        <nav aria-label="breadcrumb" class="mb-3">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a class="text-decoration-none fw-semibold"
+                        style="color: #0a58ca; cursor: pointer;" (click)="volver()">Comparendo</a></li>
+                <li class="breadcrumb-item active" aria-current="page">Solicitud de objeción</li>
+            </ol>
+        </nav>
+
+        <!-- No puede objetar -->
+        <div *ngIf="!cargando && !puedeObjetar && !errorAlCargar"
+            class="alert alert-warning d-flex align-items-start gap-3" role="alert">
+            <i class="bi bi-exclamation-triangle-fill fs-5 mt-1" aria-hidden="true"></i>
+            <div>
+                <strong>No es posible objetar</strong>
+                <p class="mb-0 small mt-1">{{ mensajeNoPuedeObjetar }}</p>
+            </div>
+        </div>
+
+        <!-- Error al cargar -->
+        <div *ngIf="errorAlCargar" class="alert alert-danger d-flex align-items-center gap-2" role="alert">
+            <i class="bi bi-exclamation-circle-fill" aria-hidden="true"></i>
+            <span>No se pudo verificar el comparendo. Vuelva e intente de nuevo.</span>
+        </div>
+
+        <!-- Encabezado -->
+        <div *ngIf="!cargando && puedeObjetar" class="mb-4">
+            <div class="d-inline-flex align-items-center justify-content-center rounded-circle mb-3"
+                style="width: 52px; height: 52px; background: linear-gradient(135deg, #e8f0fe, #c2d4fb);">
+                <i class="bi bi-journal-bookmark-fill text-primary" style="font-size: 1.2rem;" aria-hidden="true"></i>
+            </div>
+            <h1 class="fw-bold" style="font-size: 1.8rem; color: #1a2b4a;">Solicitud de Objeción</h1>
+            <p class="lead text-muted" style="font-size: 1rem;">
+                Ejercicio del derecho de defensa ante el comparendo <strong>{{ idComparendo }}</strong>.
+            </p>
+            <div class="d-flex flex-wrap gap-2 mt-3">
+                <span class="badge bg-primary bg-opacity-10 text-primary d-inline-flex align-items-center gap-1 py-2 px-3">
+                    <i class="bi bi-hammer me-1" aria-hidden="true"></i> Base legal: Ley 1801/2016
+                </span>
+                <span class="badge bg-warning bg-opacity-10 text-warning d-inline-flex align-items-center gap-1 py-2 px-3">
+                    <i class="bi bi-exclamation-triangle-fill me-1" aria-hidden="true"></i> Renuncia a descuentos
+                </span>
+            </div>
+            <div *ngIf="maxDias" class="d-flex align-items-center gap-2 mt-3 p-3 rounded-3"
+                style="background-color: #f8faff; border-left: 4px solid #0a58ca; max-width: 480px;">
+                <i class="bi bi-clock text-primary" aria-hidden="true"></i>
+                <p class="mb-0 small" style="color: #2d3a50;">
+                    Plazo de respuesta: <strong>{{ maxDias }} días hábiles</strong>
+                </p>
+            </div>
+        </div>
+
+        <!-- Formulario centrado -->
+        <div *ngIf="!cargando && puedeObjetar" class="row justify-content-center mb-5">
+            <div class="col-lg-8">
+                <div class="card border-0 shadow-sm" style="border-radius: 20px; overflow: hidden;">
+                    <div class="card-header bg-white border-0 py-4 px-4" style="border-bottom: 1px solid #e8edf5;">
+                        <div class="d-flex align-items-center justify-content-between">
+                            <div class="d-flex align-items-center gap-3">
+                                <div class="d-inline-flex align-items-center justify-content-center rounded-circle"
+                                    style="width: 44px; height: 44px; background: linear-gradient(135deg, #e8f0fe, #c2d4fb);">
+                                    <i class="bi bi-journal-bookmark-fill text-primary" style="font-size: 1.1rem;" aria-hidden="true"></i>
+                                </div>
+                                <div>
+                                    <h5 class="fw-bold mb-0" style="font-size: 1.25rem; color: #1a2b4a;">Formulario de objeción</h5>
+                                    <p class="text-muted mb-0 small">Diligencie todos los campos obligatorios (*)</p>
+                                </div>
+                            </div>
+                            <button type="button" (click)="volver()"
+                                class="btn btn-link text-secondary text-decoration-none p-1 border-0"
+                                style="font-size: 1.5rem; line-height: 1;">
+                                <i class="bi bi-x-lg" aria-hidden="true"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="card-body p-4">
+
+                        <!-- Advertencia legal -->
+                        <div class="d-flex align-items-start gap-3 p-3 mb-4 rounded-3"
+                            style="background-color: #fffbe6; border-left: 4px solid #ffc107;">
+                            <i class="bi bi-hammer mt-1" style="font-size: 1.1rem; color: #b95f00;" aria-hidden="true"></i>
+                            <div>
+                                <strong class="d-block mb-1 small" style="color: #7d4e00;">Advertencia de Trámite Legal</strong>
+                                <p class="mb-0 small" style="color: #7d4e00;">Al radicar la objeción,
+                                    <strong>renuncia al descuento de pronto pago (50%)</strong>.
+                                    Si el fallo es desfavorable, pagará el 100% más intereses.</p>
+                            </div>
+                        </div>
+
+                        <!-- Error de envío -->
+                        <div *ngIf="errorEnvio" class="alert alert-danger d-flex align-items-center gap-2 mb-3" role="alert">
+                            <i class="bi bi-exclamation-circle-fill flex-shrink-0" aria-hidden="true"></i>
+                            <span>{{ mensajeErrorEnvio || 'No se pudo registrar la objeción.' }}</span>
+                        </div>
+
+                        <form [formGroup]="form" (ngSubmit)="submitObjection()">
+
+                            <!-- Fecha readonly -->
+                            <div class="mb-4">
+                                <label class="form-label fw-bold small text-secondary">Fecha de objeción</label>
+                                <input type="text" class="form-control bg-light" [value]="fechaHoy" readonly
+                                    style="padding: 0.75rem 1rem; border-radius: 0.75rem;">
+                            </div>
+
+                            <!-- Teléfono y correo -->
+                            <div class="row g-3 mb-4">
+                                <div class="col-md-6">
+                                    <label class="form-label fw-bold small text-secondary" for="phoneGov">
+                                        Teléfono <span class="text-danger">*</span>
+                                    </label>
+                                    <input type="tel" id="phoneGov" class="form-control"
+                                        placeholder="Ej: 3001234567" maxlength="10" inputmode="numeric"
+                                        formControlName="phoneGov"
+                                        [class.is-invalid]="form.get('phoneGov')?.invalid && form.get('phoneGov')?.touched"
+                                        style="padding: 0.75rem 1rem; border-radius: 0.75rem;">
+                                    <div class="invalid-feedback"
+                                        *ngIf="form.get('phoneGov')?.invalid && form.get('phoneGov')?.touched">
+                                        Ingresa 10 dígitos comenzando con 3.
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label fw-bold small text-secondary" for="emailGov">
+                                        Correo electrónico <span class="text-danger">*</span>
+                                    </label>
+                                    <input type="email" id="emailGov" class="form-control"
+                                        placeholder="usuario@ejemplo.com" formControlName="emailGov"
+                                        [class.is-invalid]="form.get('emailGov')?.invalid && form.get('emailGov')?.touched"
+                                        style="padding: 0.75rem 1rem; border-radius: 0.75rem;">
+                                    <div class="invalid-feedback"
+                                        *ngIf="form.get('emailGov')?.invalid && form.get('emailGov')?.touched">
+                                        Ingrese un correo válido.
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Dirección -->
+                            <div class="mb-4">
+                                <label class="form-label fw-bold small text-secondary" for="addressGov">
+                                    Dirección de notificación <span class="text-danger">*</span>
+                                </label>
+                                <input type="text" id="addressGov" class="form-control"
+                                    placeholder="Dirección completa donde recibirá respuesta"
+                                    formControlName="addressGov"
+                                    [class.is-invalid]="form.get('addressGov')?.invalid && form.get('addressGov')?.touched"
+                                    style="padding: 0.75rem 1rem; border-radius: 0.75rem;">
+                                <div class="invalid-feedback"
+                                    *ngIf="form.get('addressGov')?.invalid && form.get('addressGov')?.touched">
+                                    La dirección de notificación es obligatoria.
+                                </div>
+                            </div>
+
+                            <!-- Argumentos -->
+                            <div class="mb-4">
+                                <label class="form-label fw-bold small text-secondary" for="argumentsGov">
+                                    Argumentos de la objeción <span class="text-danger">*</span>
+                                </label>
+                                <textarea id="argumentsGov" rows="5" class="form-control"
+                                    placeholder="Describa detalladamente los hechos y fundamentos de su objeción..."
+                                    formControlName="argumentsGov"
+                                    [class.is-invalid]="form.get('argumentsGov')?.invalid && form.get('argumentsGov')?.touched"
+                                    style="padding: 0.75rem 1rem; border-radius: 0.75rem; resize: vertical;"></textarea>
+                                <div class="invalid-feedback"
+                                    *ngIf="form.get('argumentsGov')?.invalid && form.get('argumentsGov')?.touched">
+                                    Los argumentos son obligatorios (mínimo 10 caracteres).
+                                </div>
+                            </div>
+
+                            <!-- Adjuntar archivos -->
+                            <div class="mb-4">
+                                <label class="form-label fw-bold small text-secondary">
+                                    Adjuntar pruebas <span class="text-muted fw-normal">(máx. 5 archivos, 5 MB c/u)</span>
+                                </label>
+                                <div class="border rounded-3 p-4 text-center"
+                                    style="border-color: #cbd5e1 !important; border-style: dashed !important; cursor: pointer;"
+                                    (click)="openFileDialog()">
+                                    <i class="bi bi-cloud-arrow-up display-4 text-primary mb-2" aria-hidden="true"></i>
+                                    <p class="mb-1 fw-semibold small">Arrastre aquí sus documentos o haga clic</p>
+                                    <p class="small text-muted mb-2">PDF, JPG, PNG</p>
+                                    <button type="button" class="btn btn-sm btn-outline-primary"
+                                        (click)="$event.stopPropagation(); openFileDialog()">
+                                        Seleccionar archivos
+                                    </button>
+                                    <input type="file" id="fileInputGov" multiple accept=".pdf,.jpg,.jpeg,.png"
+                                        style="display: none;" (change)="onFilesChanged($event)">
+                                </div>
+                                <div class="mt-2 small text-secondary">
+                                    <div *ngFor="let file of archivosSeleccionados"
+                                        class="d-flex justify-content-between align-items-center border-bottom py-1">
+                                        <span>
+                                            <i class="bi bi-file-earmark me-2 text-primary" aria-hidden="true"></i>
+                                            {{ file.name }} ({{ (file.size / 1024).toFixed(1) }} KB)
+                                        </span>
+                                        <button type="button" class="btn btn-sm btn-link text-danger p-0"
+                                            (click)="eliminarArchivo(file)">
+                                            <i class="bi bi-trash3" aria-hidden="true"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Términos -->
+                            <div class="form-check mb-4">
+                                <input class="form-check-input" type="checkbox" id="termsGov" formControlName="termsGov"
+                                    [class.is-invalid]="form.get('termsGov')?.invalid && form.get('termsGov')?.touched">
+                                <label class="form-check-label small" for="termsGov">
+                                    Acepto los <a href="#" class="text-decoration-none fw-semibold"
+                                        style="color: #0a58ca;">términos y condiciones</a> y certifico que la información
+                                    es verídica bajo juramento.
+                                </label>
+                                <div class="invalid-feedback"
+                                    *ngIf="form.get('termsGov')?.invalid && form.get('termsGov')?.touched">
+                                    Debe aceptar los términos.
+                                </div>
+                            </div>
+
+                            <!-- Botones -->
+                            <div class="d-flex flex-column flex-md-row gap-3 pt-3 border-top">
+                                <button type="submit"
+                                    class="btn btn-primary flex-fill d-flex align-items-center justify-content-center gap-2 fw-semibold"
+                                    style="padding: 0.75rem; border-radius: 0.75rem;">
+                                    <i class="bi bi-send-fill" aria-hidden="true"></i> Guardar solicitud
+                                </button>
+                                <button type="button" (click)="volver()"
+                                    class="btn btn-outline-secondary flex-fill d-flex align-items-center justify-content-center gap-2 fw-semibold"
+                                    style="padding: 0.75rem; border-radius: 0.75rem;">
+                                    <i class="bi bi-x-lg" aria-hidden="true"></i> Cancelar
+                                </button>
+                            </div>
+
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tarjetas informativas -->
+        <div *ngIf="!cargando && puedeObjetar" class="row g-4 mt-2">
+            <div class="col-md-4">
+                <div class="card border-0 shadow-sm h-100">
+                    <div class="card-body">
+                        <div class="d-flex align-items-center mb-3">
+                            <div class="d-inline-flex align-items-center justify-content-center rounded-2 me-3"
+                                style="width: 36px; height: 36px; background-color: #eef2ff;">
+                                <i class="bi bi-info-circle-fill text-primary" aria-hidden="true"></i>
+                            </div>
+                            <h6 class="fw-bold mb-0">Ayuda al ciudadano</h6>
+                        </div>
+                        <p class="small text-secondary">Adjunte pruebas documentales, fotos o videos que respalden sus
+                            argumentos. El tiempo estimado de respuesta es de {{ maxDias ?? 15 }} días hábiles.</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card border-0 shadow-sm h-100">
+                    <div class="card-body">
+                        <div class="d-flex align-items-center mb-3">
+                            <div class="d-inline-flex align-items-center justify-content-center rounded-2 me-3"
+                                style="width: 36px; height: 36px; background-color: #eef2ff;">
+                                <i class="bi bi-hammer text-success" aria-hidden="true"></i>
+                            </div>
+                            <h6 class="fw-bold mb-0">Base normativa</h6>
+                        </div>
+                        <p class="small text-secondary">Ley 1801 de 2016 (Código Nacional de Seguridad), Ley 2197 de
+                            2022 y jurisprudencia aplicable.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </ng-container>
+
+</div>

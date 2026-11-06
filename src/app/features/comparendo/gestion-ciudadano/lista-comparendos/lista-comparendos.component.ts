@@ -1,0 +1,428 @@
+import { Component, OnInit, inject, Input } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
+import { Router, ActivatedRoute } from '@angular/router';
+import { NgbPaginationModule } from '@ng-bootstrap/ng-bootstrap';
+import { PedagogiaService } from 'src/app/core/services/pedagogia.service';
+import { CrearReciboPagoService } from 'src/app/core/services/crear-recibo.service';
+import { CrearObjecionService } from 'src/app/core/services/crear-objecion.service';
+import { ComparendoService } from 'src/app/core/services/comparendo.service';
+import { BusquedaStateService } from 'src/app/core/services/busqueda-state.service';
+interface Comparendo {
+  comparendoId: string | number;
+  expediente: string;
+  numeroFormato?: string;
+  fecha_comparendo: string;
+  estado: string;
+  conmutar: string;
+  tienePedagogia: string;
+  pedagogiaId: number | null;
+  pedagogiaEstado: number | null;
+  objecionId: number | null;
+  fechaObjecion: string | null;
+  descripcion?: string;
+  comportamientocontrario?: string;
+  valor?: number;
+}
+
+@Component({
+  selector: 'app-lista-comparendos',
+  imports: [CommonModule, FormsModule, NgbPaginationModule],
+  templateUrl: './lista-comparendos.component.html',
+  styleUrls: ['./lista-comparendos.component.sass']
+})
+export class ListaComparendosComponent implements OnInit {
+
+  private router = inject(Router);
+  private route = inject(ActivatedRoute);
+  private comparendoService = inject(ComparendoService);
+  private busquedaState = inject(BusquedaStateService);
+  private pedagogiaService = inject(PedagogiaService);
+  private crearReciboService = inject(CrearReciboPagoService);
+  private crearObjecionService = inject(CrearObjecionService);
+  /** Cuando true (p. ej. embebido en main), oculta cabecera duplicada. */
+  @Input() embebido = false;
+
+  @Input()
+  set comparendos(value: Comparendo[] | null | undefined) {
+    this.asignarComparendos(Array.isArray(value) ? value : []);
+  }
+  get comparendos(): Comparendo[] {
+    return this._comparendos;
+  }
+  private _comparendos: Comparendo[] = [];
+
+  @Input() identificacion: string | null = null;
+  identificacionParam: string | null = null;
+  cargando: boolean = false;
+  errorAlCargar: boolean = false;
+
+  mostrarModalObjecion: boolean = false;
+  pasoModalObjecion: 1 | 2 = 1;
+  aceptaAdvertencia: boolean = false;
+  comparendoParaObjetar: Comparendo | null = null;
+  comparendosPuedenObjetar = new Set<string | number>();
+
+  page = 1;
+  readonly pageSize = 5;
+  filtro = '';
+  expandidos = new Set<string | number>();
+  readonly LIMITE_TEXTO = 90;
+
+  toggleExpandido(id: string | number): void {
+    this.expandidos.has(id) ? this.expandidos.delete(id) : this.expandidos.add(id);
+  }
+
+  textoCorto(texto: string | undefined): string {
+    if (!texto) return '';
+    return texto.length > this.LIMITE_TEXTO ? texto.slice(0, this.LIMITE_TEXTO).trimEnd() : texto;
+  }
+
+  necesitaExpansion(texto: string | undefined): boolean {
+    return (texto?.length ?? 0) > this.LIMITE_TEXTO;
+  }
+
+  get tieneComparendos(): boolean {
+    return this._comparendos.length > 0;
+  }
+
+  get comparendosFiltrados(): Comparendo[] {
+    const term = this.filtro.trim().toLowerCase();
+    if (!term) return this._comparendos;
+    return this._comparendos.filter((c) => {
+      const campos = [
+        c.comparendoId,
+        c.numeroFormato,
+        c.expediente,
+        c.fecha_comparendo,
+        c.estado,
+        c.descripcion,
+        c.comportamientocontrario,
+      ];
+      return campos.some((campo) =>
+        String(campo ?? '')
+          .toLowerCase()
+          .includes(term),
+      );
+    });
+  }
+
+  get comparendosPaginados(): Comparendo[] {
+    const inicio = (this.page - 1) * this.pageSize;
+    return this.comparendosFiltrados.slice(inicio, inicio + this.pageSize);
+  }
+
+  onFiltroChange(): void {
+    this.page = 1;
+  }
+
+  private asignarComparendos(list: Comparendo[]): void {
+    this._comparendos = list;
+    this.filtro = '';
+    this.page = 1;
+    this.expandidos.clear();
+  }
+
+  private extraerListaComparendos(response: unknown): unknown[] {
+    if (!response) return [];
+    if (Array.isArray(response)) return response;
+    const body = response as Record<string, unknown>;
+    const data = body['data'] ?? body['comparendos'] ?? body['result'];
+    if (Array.isArray(data)) return data;
+    if (data && typeof data === 'object') return [data];
+    return [];
+  }
+
+  private leerCampo(item: Record<string, unknown>, ...keys: string[]): unknown {
+    for (const key of keys) {
+      const value = item[key];
+      if (value !== undefined && value !== null && value !== '') {
+        return value;
+      }
+    }
+    return undefined;
+  }
+
+  private mapearComparendo(item: Record<string, unknown>): Comparendo {
+    return {
+      comparendoId: String(
+        this.leerCampo(
+          item,
+          'comparendo',
+          'comparendoId',
+          'id',
+          'comparendo_id',
+        ) ?? '',
+      ),
+      numeroFormato: String(
+        this.leerCampo(item, 'numero_formato', 'numeroFormato', 'id') ?? 'N/A',
+      ),
+      expediente: String(
+        this.leerCampo(item, 'numero_formato', 'numeroFormato', 'id') ?? 'N/A',
+      ),
+      fecha_comparendo: String(
+        this.leerCampo(item, 'fecha_comparendo', 'fechaComparendo', 'fecha') ??
+          'N/A',
+      ),
+      estado: String(item['estado'] ?? 'Registrado'),
+      valor: Number(item['valor'] ?? item['valor_multa'] ?? 0),
+      conmutar: String(item['conmutar'] ?? '0'),
+      tienePedagogia: String(
+        item['tienePedagogia'] ?? item['tiene_pedagogia'] ?? '0',
+      ),
+      pedagogiaId:
+        (item['pedagogiaId'] as number | null) ??
+        (item['pedagogia_id'] as number | null) ??
+        null,
+      pedagogiaEstado:
+        (item['pedagogia'] as { idestado?: number } | undefined)?.idestado ??
+        (item['pedagogiaEstado'] as number | null) ??
+        (item['pedagogia_estado'] as number | null) ??
+        (item['pedagogia_estado_id'] as number | null) ??
+        (item['pedagogia_idestado'] as number | null) ??
+        null,
+      objecionId:
+        (item['objecionId'] as number | null) ??
+        (item['objecion_id'] as number | null) ??
+        ((item['objecion'] as { id?: number } | undefined)?.id ?? null),
+      fechaObjecion:
+        (item['fechaObjecion'] as string | null) ??
+        (item['fecha_objecion'] as string | null) ??
+        ((item['objecion'] as { fechaobjecion?: string; fecha_objecion?: string } | undefined)
+          ?.fechaobjecion ??
+          (item['objecion'] as { fecha_objecion?: string } | undefined)?.fecha_objecion ??
+          null),
+      descripcion:
+        String(item['descripcion'] ?? item['infraccion'] ?? 'Sin descripción'),
+      comportamientocontrario: String(
+        item['comportamientocontrario'] ??
+          item['descripcion'] ??
+          item['infraccion'] ??
+          'Sin descripción',
+      ),
+    };
+  }
+
+  ngOnInit(): void {
+    this.route.queryParamMap.subscribe(params => {
+      // En vista embebida el padre (main) ya cargó los comparendos y los pasa por @Input.
+      // Si volvemos a consultar aquí, una respuesta fallida o distinta sobrescribe la lista.
+      if (this.embebido) {
+        this.identificacionParam =
+          this.identificacion
+          ?? this.busquedaState.identificacion
+          ?? params.get('identificacion');
+        return;
+      }
+
+      this.identificacionParam =
+        this.identificacion
+        ?? this.busquedaState.identificacion
+        ?? params.get('identificacion');
+      const tipo =
+        this.busquedaState.tipo
+        ?? params.get('tipo')
+        ?? undefined;
+      if (this.identificacionParam && this._comparendos.length === 0) {
+        this.buscarComparendos(this.identificacionParam, tipo);
+      }
+    });
+  }
+
+  buscarComparendos(identificacion: string, tipo?: string): void {
+    this.cargando = true;
+    this.errorAlCargar = false;
+    this.comparendosPuedenObjetar.clear();
+    this.comparendoService.getComparendosPorIdentificacion(identificacion, tipo).subscribe({
+      next: (response) => {
+        const data = this.extraerListaComparendos(response);
+        this.asignarComparendos(
+          data.map((item) =>
+            this.mapearComparendo(item as Record<string, unknown>),
+          ),
+        );
+
+        this._comparendos.forEach((c) => {
+          this.crearObjecionService.validarObjecion(+c.comparendoId).subscribe({
+            next: (res: any) => { if (res.data || res.success) this.comparendosPuedenObjetar.add(c.comparendoId); },
+            error: () => {}
+          });
+        });
+
+        this.page = 1;
+        this.cargando = false;
+      },
+      error: (err: unknown) => {
+        console.error('Error al consultar la API:', err);
+        this.asignarComparendos([]);
+        this.cargando = false;
+        this.errorAlCargar = true;
+      }
+    });
+  }
+
+  verMas(comparendo: Comparendo): void {
+    this.busquedaState.comparendoId = +comparendo.comparendoId;
+    this.busquedaState.objecionId = comparendo.objecionId;
+    this.busquedaState.fechaObjecion = comparendo.fechaObjecion;
+    this.router.navigate(['/gestion-acceso-justicia/comparendo/gestion-ciudadano/detalle-comparendo']);
+  }
+
+  abrirModalObjecion(comparendo: Comparendo): void {
+    this.comparendoParaObjetar = comparendo;
+    this.aceptaAdvertencia = false;
+    this.pasoModalObjecion = 1;
+    this.mostrarModalObjecion = true;
+  }
+
+  cerrarModalObjecion(): void {
+    this.mostrarModalObjecion = false;
+    this.comparendoParaObjetar = null;
+    this.aceptaAdvertencia = false;
+  }
+
+  avanzarConfirmacion(): void {
+    if (this.aceptaAdvertencia) this.pasoModalObjecion = 2;
+  }
+
+  confirmarObjecion(): void {
+    if (this.comparendoParaObjetar) this.irAObjecion(this.comparendoParaObjetar);
+    this.cerrarModalObjecion();
+  }
+
+  irAObjecion(comparendo: Comparendo): void {
+    this.busquedaState.comparendoId = +comparendo.comparendoId;
+    this.router.navigate(['/gestion-acceso-justicia/comparendo/gestion-ciudadano/crea-objecion']);
+  }
+
+  verPedagogia(comparendo: Comparendo): void {
+    this.busquedaState.comparendoId = +comparendo.comparendoId;
+    this.busquedaState.expediente = comparendo.numeroFormato || comparendo.expediente;
+    this.router.navigate(['/gestion-acceso-justicia/comparendo/gestion-ciudadano/lista-pedagogia']);
+  }
+
+  irAlInicio(): void {
+    this.router.navigate(['/gestion-acceso-justicia/comparendo/gestion-ciudadano']);
+  }
+
+  getEstadoBadgeClase(estado: string): string {
+    switch ((estado || '').toLowerCase()) {
+      case 'vencido': return 'gov-badge-danger bg-danger text-white';
+      case 'pagado': return 'gov-badge-success bg-success text-white';
+      case 'activo': return 'gov-badge-primary bg-primary text-white';
+      case 'pendiente': return 'gov-badge-warning bg-warning text-dark';
+      default: return 'gov-badge-secondary bg-secondary text-white';
+    }
+  }
+  // Metodo para descargar el recibo de pago
+  descargarReciboPago(idComparendo: number): void {
+    const numeroIdentificacion = this.identificacionParam ?? this.identificacion;
+    if (!numeroIdentificacion) {
+      alert('No se encontró el número de identificación para generar el recibo.');
+      return;
+    }
+    this.crearReciboService.crearReciboPago(idComparendo, numeroIdentificacion).subscribe({
+      next: (blob) => {
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `recibo-pago-${idComparendo}.pdf`;
+        a.click();
+        URL.revokeObjectURL(url);
+      },
+      error: (err: unknown) => {
+        const httpErr = err as { status?: number; error?: Blob };
+        if (httpErr?.error instanceof Blob) {
+          httpErr.error.text().then(msg => {
+            alert(`No se pudo generar el recibo de pago (${httpErr.status}): ${msg}`);
+          });
+        } else {
+          const status = httpErr?.status;
+          const mensaje = status === 404
+            ? 'El recibo de pago no fue encontrado.'
+            : `Ocurrió un error al generar el recibo de pago (código ${status ?? 'desconocido'}).`;
+          alert(mensaje);
+        }
+      }
+    });
+  }
+   // Metodo para descargar el certificado de asistencia pedagogia
+  descargarCertificadoAsistencia(pedagogiaId: number): void {
+    this.pedagogiaService.certificadoAsistenciaPedagogia(pedagogiaId).subscribe({
+      next: (blob) => {
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `certificado-asistencia-${pedagogiaId}.pdf`;
+        a.click();
+        URL.revokeObjectURL(url);
+      },
+      error: (err: unknown) => {
+        const httpErr = err as { status?: number; error?: Blob };
+        if (httpErr?.error instanceof Blob) {
+          httpErr.error.text().then(msg => {
+            alert(`No se pudo generar el certificado (${httpErr.status}): ${msg}`);
+          });
+        } else {
+          const status = httpErr?.status;
+          const mensaje = status === 404
+            ? 'El certificado no fue encontrado.'
+            : `Ocurrió un error al generar el certificado (código ${status ?? 'desconocido'}).`;
+          alert(mensaje);
+        }
+      }
+    });
+  }
+
+  descargarCertificadoObjecion(objecionId: number): void {
+    this.crearObjecionService.descargarCertificado(objecionId).subscribe({
+      next: (blob) => {
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `certificado-objecion-${objecionId}.pdf`;
+        a.click();
+        URL.revokeObjectURL(url);
+      },
+      error: (err: unknown) => {
+        const httpErr = err as { status?: number; error?: Blob };
+        if (httpErr?.error instanceof Blob) {
+          httpErr.error.text().then(msg => alert(`No se pudo generar el certificado (${httpErr.status}): ${msg}`));
+        } else {
+          const status = httpErr?.status;
+          alert(status === 404 ? 'El certificado no fue encontrado.' : `Error al generar el certificado (código ${status ?? 'desconocido'}).`);
+        }
+      }
+    });
+  }
+
+  // Metodo para descargar el certificado de inscripción a pedagogia
+  descargarCertificado(pedagogiaId: number): void {
+    this.pedagogiaService.certificadoInscripcionPedagogia(pedagogiaId).subscribe({
+      next: (blob) => {
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `certificado-pedagogia-${pedagogiaId}.pdf`;
+        a.click();
+        URL.revokeObjectURL(url);
+      },
+      error: (err: unknown) => {
+        const httpErr = err as { status?: number; error?: Blob };
+        if (httpErr?.error instanceof Blob) {
+          httpErr.error.text().then(msg => {
+            console.error(`Error ${httpErr.status} al generar certificado (id ${pedagogiaId}):`, msg);
+            alert(`No se pudo generar el certificado (${httpErr.status}): ${msg}`);
+          });
+        } else {
+          const status = httpErr?.status;
+          const mensaje = status === 404
+            ? 'El certificado no fue encontrado. Es posible que aún no esté disponible.'
+            : `Ocurrió un error al generar el certificado (código ${status ?? 'desconocido'}).`;
+          console.error(`Error al generar certificado (id ${pedagogiaId}):`, err);
+          alert(mensaje);
+        }
+      }
+    });
+  }
+}

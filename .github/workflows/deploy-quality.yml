@@ -1,0 +1,51 @@
+# Despliegue de gestion-front en QA (rama quality).
+# DEPLOY_ROOT: directorio del clon en el runner. build:qa usa --base-href=/qa/tramites-front/ (ajusta en package.json si cambia la URL pública).
+name: Deploy gestion-front Quality
+
+on:
+  push:
+    branches:
+      - quality
+  workflow_dispatch:
+
+concurrency:
+  group: gestion-front-quality
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: Deploy to gestion-front quality
+    runs-on: self-hosted
+    timeout-minutes: 30
+    env:
+      DEPLOY_ROOT: /var/www/qa/tramites-front
+
+    steps:
+      - name: Verify server
+        run: |
+          echo "Servidor: $(hostname)"
+          echo "Usuario: $(whoami)"
+          test "$(whoami)" = "saul"
+
+      - name: Update quality code
+        working-directory: ${{ env.DEPLOY_ROOT }}
+        run: |
+          git config --global --add safe.directory "${{ env.DEPLOY_ROOT }}"
+          git fetch origin quality
+          git merge --ff-only origin/quality
+
+      - name: Install dependencies
+        working-directory: ${{ env.DEPLOY_ROOT }}
+        run: |
+          npm ci --include=dev
+
+      - name: Build quality
+        working-directory: ${{ env.DEPLOY_ROOT }}
+        run: |
+          npm run build:qa
+
+      - name: Verify deployment
+        working-directory: ${{ env.DEPLOY_ROOT }}
+        run: |
+          test -f dist/gestion-front/browser/index.html
+          git status -sb

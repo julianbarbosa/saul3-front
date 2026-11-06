@@ -1,0 +1,259 @@
+// Paleta visual — alineada con lista-comparendos
+$lc-blue:    #1a56db
+$lc-dark:    #1a2b4a
+$lc-body:    #2d3a50
+$lc-muted:   #7a8aab
+$lc-bg:      #f8faff
+$lc-tint1:   #e8f0fe
+$lc-tint2:   #c2d4fb
+$lc-border:  #e8edf5
+
+// ── Encabezado ──────────────────────────────────────────────────
+.dc-titulo
+  font-size: 1.4rem
+  color: $lc-dark
+
+.dc-subtitle
+  color: $lc-muted
+  font-size: 0.875rem
+
+// ── Círculo de ícono (igual que lista-comparendos) ───────────────
+.dc-icon-circle
+  width: 44px
+  height: 44px
+  background: linear-gradient(135deg, $lc-tint1, $lc-tint2)
+  border-radius: 50%
+  display: inline-flex
+  align-items: center
+  justify-content: center
+  flex-shrink: 0
+  font-size: 1.1rem
+
+// ── Cards ───────────────────────────────────────────────────────
+.dc-card
+  border-radius: 14px
+
+.dc-card-section-head
+  border-bottom: 1px solid $lc-border
+
+.dc-medidas-accordion
+  .accordion-item
+    border-bottom: 1px solid $lc-border
+    &:last-child
+      border-bottom: 0
+  .accordion-button
+    background-color: transparent
+    color: $lc-dark
+    transition: background-color 0.2s ease, color 0.2s ease
+    &::after
+      filter: brightness(0.4)
+    &:hover
+      background-color: $lc-tint1
+      color: $lc-blue
+    &:not(.collapsed)
+      background-color: $lc-bg
+      box-shadow: none
+      &:hover
+        background-color: mix($lc-bg, $lc-tint2, 55%)
+    &:focus
+      box-shadow: none
+      border-color: transparent
+
+// ── Labels uppercase (igual que lista-comparendos) ───────────────
+.dc-label
+  font-size: 0.65rem
+  letter-spacing: 0.07em
+  color: $lc-muted
+  text-transform: uppercase
+  font-weight: 700
+  margin-bottom: 0.25rem
+  display: block
+
+.dc-label-section
+  font-size: 0.68rem
+  letter-spacing: 0.07em
+  color: $lc-muted
+  text-transform: uppercase
+  font-weight: 700
+
+// ── Texto del cuerpo ─────────────────────────────────────────────
+.dc-text
+  font-size: 0.88rem
+  color: $lc-body
+  line-height: 1.5
+
+.dc-value
+  color: $lc-dark
+
+// ── Botones — misma forma que lista-comparendos ──────────────────
+.dc-btn
+  border-radius: 10px !important
+  padding: 10px 16px !important
+  font-size: 0.875rem !important
+
+// ── Monto total ──────────────────────────────────────────────────
+.dc-total-bg
+  background-color: $lc-bg
+  border-radius: 10px
+
+.dc-total-amount
+  font-size: 2.5rem
+  font-weight: 800
+  color: $lc-dark
+
+// ── Alertas de descuento ─────────────────────────────────────────
+.dc-alert-discount
+  background-color: #fff8e1
+  border-left: 4px solid #ffc107
+  border-radius: 0 8px 8px 0
+  color: #5d3a00
+  font-size: 0.875rem
+
+.dc-alert-expired
+  background-color: #fdf3f4
+  border-left: 4px solid #dc3545
+  border-radius: 0 8px 8px 0
+  color: #6b1d1d
+  font-size: 0.875rem
+
+// ── Mini-cards informativas (Objeción / Conmutar / Pedagogía) ────
+.dc-info-card
+  background-color: $lc-bg
+  border: 1px solid $lc-border
+  border-radius: 10px
+
+.dc-info-card-title
+  font-size: 0.75rem
+  font-weight: 700
+  color: $lc-blue
+  text-transform: uppercase
+  letter-spacing: 0.05em
+
+// ── Breadcrumb ───────────────────────────────────────────────────
+.dc-link
+  color: $lc-blue
+  font-weight: 600
+  cursor: pointer
+  text-decoration: none
+  &:hover
+    text-decoration: underline
+
+// ── Estado badge ─────────────────────────────────────────────────
+.gov-badge
+  display: inline-flex
+  align-items: center
+  padding: 0.3em 0.85em
+  font-size: 0.8rem
+  font-weight: 700
+  border-radius: 20px
+
+// ── Valor de expediente / comparendo ────────────────────────────
+.dc-id-value
+  font-size: 1.05rem
+
+// ── Ícono de pedagogía ───────────────────────────────────────────
+.dc-pedagogia-icon
+  width: 32px
+  height: 32px
+  background-color: $lc-tint1
+  border-radius: 0.25rem
+
+// ── Error icon ───────────────────────────────────────────────────
+.dc-error-icon
+  font-size: 2rem
+  color: #856404
+
+// ── Modal advertencia objeción ──
+.modal-objecion-backdrop
+  position: fixed
+  inset: 0
+  background: rgba(10, 25, 50, 0.55)
+  z-index: 1040
+  backdrop-filter: blur(2px)
+
+.modal-objecion-wrapper
+  position: fixed
+  inset: 0
+  z-index: 1050
+  display: flex
+  align-items: center
+  justify-content: center
+  padding: 1rem
+
+.modal-objecion-card
+  max-width: 540px
+  border-radius: 20px
+  overflow: hidden
+
+.modal-header-warning
+  background: linear-gradient(135deg, #fff8e1, #fffde7)
+  border-bottom: 1px solid #ffe082 !important
+
+.modal-header-warning-icon
+  width: 44px
+  height: 44px
+  background-color: #ffc107
+
+.modal-header-warning-title
+  font-size: 1.1rem
+  color: #5d3a00
+
+.modal-header-warning-subtitle
+  color: #7d4e00
+
+.modal-close-warning
+  color: #7d4e00
+  font-size: 1.4rem
+  line-height: 1
+
+.modal-banner-warning
+  background-color: #fff8e1
+  border-left: 4px solid #ffc107
+
+.modal-banner-warning-title
+  color: #5d3a00
+
+.modal-banner-warning-body
+  color: #7d4e00
+  line-height: 1.6
+
+.modal-banner-info
+  background-color: #f8faff
+  border-left: 4px solid #0a58ca
+
+.modal-banner-info-body
+  color: #2d3a50
+  line-height: 1.6
+
+.modal-checkbox-area
+  background-color: #f0f4ff
+  border: 1.5px solid #c2d4fb
+
+.modal-checkbox-label
+  color: #1a2b4a
+  cursor: pointer
+  line-height: 1.5
+
+.modal-footer-line
+  border-top: 1px solid #e8edf5 !important
+
+.modal-header-confirm
+  background: #fff
+  border-bottom: 1px solid #e8edf5 !important
+
+.modal-header-confirm-icon
+  width: 44px
+  height: 44px
+  background: linear-gradient(135deg, #e8f0fe, #c2d4fb)
+
+.modal-header-confirm-title
+  font-size: 1.1rem
+  color: #1a2b4a
+
+.modal-confirm-body
+  font-size: 0.95rem
+  color: #2d3a50
+  line-height: 1.7
+
+.modal-btn
+  border-radius: 10px

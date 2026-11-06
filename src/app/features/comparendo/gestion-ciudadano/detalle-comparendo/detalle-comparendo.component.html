@@ -1,0 +1,357 @@
+<div class="container py-4">
+
+  <!-- Breadcrumb -->
+  <nav aria-label="breadcrumb" class="mb-4">
+    <ol class="breadcrumb">
+      <li class="breadcrumb-item">
+        <a class="dc-link" (click)="volver()">Inicio</a>
+      </li>
+      <li class="breadcrumb-item active" aria-current="page">Detalle de comparendo</li>
+    </ol>
+  </nav>
+
+  <!-- Cargando -->
+  <ng-container *ngIf="cargando()">
+    <div class="text-center py-5">
+      <div class="spinner-border text-primary" role="status">
+        <span class="visually-hidden">Cargando...</span>
+      </div>
+      <p class="mt-3 dc-subtitle">Consultando información del comparendo...</p>
+    </div>
+  </ng-container>
+
+  <!-- Error -->
+  <ng-container *ngIf="errorAlCargar() && !cargando()">
+    <div class="text-center my-5 py-4 px-3 dc-info-card">
+      <i class="bi bi-exclamation-triangle-fill mb-3 dc-error-icon" aria-hidden="true"></i>
+      <h5 class="fw-bold dc-value">No se encontró el comparendo</h5>
+      <p class="dc-text mb-0">Lo sentimos, no pudimos cargar los detalles. Intenta nuevamente o verifica la referencia.
+      </p>
+    </div>
+  </ng-container>
+
+  <!-- Contenido principal -->
+  <ng-container *ngIf="comparendo() && infoPago() && !cargando() && !errorAlCargar()">
+
+    <!-- Encabezado -->
+    <div class="d-flex align-items-center gap-3 mb-4">
+      <div class="dc-icon-circle">
+        <i class="bi bi-file-earmark-text text-primary" aria-hidden="true"></i>
+      </div>
+      <div>
+        <h1 class="fw-bold mb-0 dc-titulo">Información de comparendo</h1>
+        <p class="mb-0 dc-subtitle">Comparendo: {{ comparendo()!.expediente }}</p>
+        <p class="mb-0 dc-subtitle">Número de identificación: {{ identificacionParam ?? comparendo()!.identificacion }}</p>
+      </div>
+    </div>
+    <!-- Card: Información del comparendo -->
+    <div class="card border-0 shadow-sm dc-card mb-4">
+      
+      <div class="card-body p-4">
+        <div class="row g-4">
+          <div class="col-sm-6 col-md-4">
+            <span class="dc-label">Descripción</span>
+            <p class="fw-semibold dc-value mb-0">{{ comparendo()!.descripcion }}</p>
+          </div>
+          <div class="col-sm-6 col-md-4">
+            <span class="dc-label">Fecha del comparendo</span>
+            <p class="fw-semibold dc-value mb-0">{{ toDate(comparendo()!.fechaComparendo) | date:'dd/MM/yyyy' }}</p>
+          </div>
+          <div class="col-sm-6 col-md-4">
+            <span class="dc-label">Inspección</span>
+            <p class="fw-semibold dc-value mb-0">{{ comparendo()!.inspeccion }}</p>
+          </div>
+
+          <div class="col-12">
+            <span class="dc-label">Comportamiento contrario</span>
+            <p class="dc-text mb-0">{{ comparendo()!.comportamientocontrario }}</p>
+          </div>
+          <div class="col-sm-6 col-md-4" *ngIf="comparendo()!.descuentoLey2197">
+            <span class="dc-label">Descuento Ley 2197</span>
+            <p class="fw-semibold dc-value mb-0">{{ comparendo()!.descuentoLey2197 | number }}</p>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- <div class="card border-0 shadow-sm dc-card mb-4">
+      <div class="card-body p-4">
+        <p class="dc-label-section mb-2">
+          <i class="bi bi-lightbulb-fill me-2 text-primary" aria-hidden="true"></i>Recomendación para su caso
+        </p>
+        <p class="dc-text mb-0">
+          Basado en el estado de su multa
+          (<span class="fw-bold {{ recomendacion.color }}">{{ recomendacion.destacado }}</span>),
+          {{ recomendacion.texto }}
+        </p>
+      </div>
+    </div> -->
+    <!-- Card: Estado del pago -->
+ 
+
+
+    <!-- Card: Medidas Correctivas -->
+    <div class="d-flex align-items-center gap-3 mb-4">
+      <div class="dc-icon-circle">
+        <i class="bi bi-exclamation-triangle-fill text-primary" aria-hidden="true"></i>
+      </div>
+      <div>
+        <h1 class="fw-bold mb-0 dc-titulo">Medidas Correctivas</h1>
+      </div>
+    </div>
+    <div class="card border-0 shadow-sm dc-card mb-4" *ngIf="comparendo()!.medidasCorrectivas.length">
+      <div class="p-4 dc-card-section-head">
+        
+        <p class="dc-text mb-5">
+          Las medidas correctivas, son acciones que imponen las autoridades de Policía a las personas 
+          que incurren en comportamientos contrarios a la convivencia. 
+          <strong>El comparendo solo puede darse por cerrado cuando la totalidad de las medidas correctivas asociadas a él hayan sido cumplidas o cerradas.</strong>
+        </p>
+     
+        <div
+          class="accordion accordion-flush dc-medidas-accordion"
+          id="accordionMedidasCorrectivas">
+          <div
+            class="accordion-item"
+            *ngFor="let medida of medidasCorrectivasOrdenadas; let i = index">
+            <h2 class="accordion-header" [id]="'headingMedida' + i">
+              <button
+                class="accordion-button collapsed px-0 shadow-none dc-value fw-semibold"
+                type="button"
+                data-bs-toggle="collapse"
+                [attr.data-bs-target]="'#collapseMedida' + i"
+                aria-expanded="false"
+                [attr.aria-controls]="'collapseMedida' + i">
+                <span class="text-start">&nbsp;&nbsp;{{ i + 1 }}. {{ medida.nombre }}</span>
+              </button>
+            </h2>
+            <div
+              [id]="'collapseMedida' + i"
+              class="accordion-collapse collapse"
+              [attr.aria-labelledby]="'headingMedida' + i"
+              data-bs-parent="#accordionMedidasCorrectivas"
+              style="padding-left: 10px;padding-right: 10px;">
+              <div class="accordion-body px-0 pt-0 pb-3">
+                <p *ngIf="descripcionMedida(medida) as descMedida" class="dc-text small mb-0">
+                  {{ descMedida }}
+                </p>
+                <span *ngIf="medida.entidadRemitido" class="dc-text small mb-0 d-block mt-2">
+                  Entidad remitida: <strong>{{ medida.entidadRemitido }}</strong>
+                </span>
+                <div *ngIf="medida.nombre === 'Amonestación'">
+                  <p class="dc-text small mb-0 d-block mt-2">Consistente en un llamado de atención formal, verbal o escrito, que la autoridad de Policía hace al infractor para que reflexione sobre su comportamiento contrario a la convivencia y no lo repita, con enfoque preventivo y pedagógico.</p>
+                </div>
+                <div *ngIf="medida.nombre === 'Destrucción de bien'">
+                  <p class="dc-text small mb-0 d-block mt-2">Medida correctiva mediante la cual la autoridad de Policía destruye, total o parcialmente, un bien que representa riesgo para la salud,
+                  la seguridad o la convivencia, o cuya tenencia, uso o comercialización es contraria a la ley.
+                  Generalmente se aplica después del decomiso.
+                  Se resuelve cuando la estación de policía realiza acto de cierre de la medida en el RNMC.</p>
+                </div>
+                <div *ngIf="medida.nombre === 'Prohibición de ingreso a actividad que involucra aglomeraciones de público complejas o no complejas'">
+                  <p class="dc-text small mb-0 d-block mt-2">
+                    La prohibición de ingreso a actividad que involucra aglomeraciones de público, complejas o no complejas, la cual impide al ciudadano asistir a eventos masivos por un término fijado por la autoridad.
+                    La medida se cierra al vencer el plazo sin incumplimientos.
+                  </p>
+                </div>
+                <app-gestion-pedagogia
+                  *ngIf="medidaAplicaPedagogia(medida)"
+                  class="mt-3"
+                  [conmutablePorPedagogia]="true"
+                  [mostrarPedagogia]="esPrimeraMedidaConPedagogia(medida)"
+                  [expediente]="comparendo()!.expediente"
+                  [pedagogiaId]="comparendo()!.pedagogiaId"
+                  [pedagogiaEstado]="comparendo()!.pedagogiaEstado"
+                  [puedeInscribirsePedagogia]="puedeInscribirsePedagogia"
+                  [nombrePedagogia]="programacion?.nombrePedagogia ?? ''"
+                  [descripcionPedagogia]="programacion?.descripcionPedagogia ?? ''"
+                  [pedagogia]="comparendo()!.pedagogia">
+                </app-gestion-pedagogia>
+                <app-gestion-multa
+                  *ngIf="medida.esEconomica"
+                  class="mt-3"
+                  [mostrarPago]="true"
+                  [comparendoId]="comparendo()!.comparendoId"
+                  [numeroIdentificacion]="identificacionParam ?? comparendo()!.identificacion"
+                  [estadoComparendo]="comparendo()!.estado"
+                  [fechaPago]="comparendo()!.fechaPago"
+                  [fechaProntoPago]="infoPago()!.fechaLimiteDescuento"
+                  [valorBase]="medida.valorMedida ?? infoPago()!.valorBase"
+                  [porcentajeDescuentoProntoPago]="infoPago()!.porcentajeDescuentoProntoPago"
+                  [mostrarObjecion]="esPrimeraMedidaEconomica(medida)"
+                  [expediente]="comparendo()!.expediente"
+                  [objecionId]="comparendo()!.objecionId"
+                  [fechaObjecion]="comparendo()!.fechaObjecion"
+                  [puedeObjetar]="puedeObjetar()"
+                  [objecionValidacionMsg]="objecionValidacion()?.msg ?? ''"
+                  (solicitarObjecion)="abrirModalObjecion()">
+                </app-gestion-multa>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+   
+
+    <app-gestion-multa
+      *ngIf="!tieneMedidaEconomica && (comparendo()!.objecionId || puedeObjetar() || objecionValidacion()?.msg)"
+      class="mb-4"
+      [mostrarPago]="false"
+      [mostrarObjecion]="true"
+      [comparendoId]="comparendo()!.comparendoId"
+      [numeroIdentificacion]="identificacionParam ?? comparendo()!.identificacion"
+      [expediente]="comparendo()!.expediente"
+      [objecionId]="comparendo()!.objecionId"
+      [fechaObjecion]="comparendo()!.fechaObjecion"
+      [puedeObjetar]="puedeObjetar()"
+      [objecionValidacionMsg]="objecionValidacion()?.msg ?? ''"
+      (solicitarObjecion)="abrirModalObjecion()">
+    </app-gestion-multa>
+
+  </ng-container>
+
+
+  <div class="mt-2 d-flex flex-wrap justify-content-end gap-2">
+    <button type="button" class="btn btn-primary d-flex align-items-center gap-2 fw-semibold dc-btn"
+      (click)="volver()">
+      <i class="bi bi-arrow-left" aria-hidden="true"></i> Volver al listado de comparendos
+    </button>
+    <button type="button" class="btn btn-warning d-flex align-items-center gap-2 fw-semibold dc-btn"
+      (click)="irAlInicio()">
+      <i class="bi bi-house-fill" aria-hidden="true"></i> Ir al inicio
+    </button>
+  </div>
+
+</div>
+
+<!-- ══════════════════════════════════════════════
+     MODAL ADVERTENCIA OBJECIÓN — Kit UI Gov.co 9.2
+     ══════════════════════════════════════════════ -->
+<ng-container *ngIf="mostrarModalObjecion">
+
+  <!-- Backdrop -->
+  <div class="modal-objecion-backdrop" (click)="cerrarModalObjecion()"></div>
+
+  <!-- Modal -->
+  <div class="modal-objecion-wrapper" role="dialog" aria-modal="true" aria-labelledby="modalObjecionTitulo">
+
+    <div class="card border-0 shadow-lg w-100 modal-objecion-card">
+
+      <!-- ── PASO 1: Advertencia + checkbox ── -->
+      <ng-container *ngIf="pasoModalObjecion === 1">
+
+        <div class="card-header modal-header-warning border-0 py-4 px-4 d-flex align-items-center justify-content-between">
+          <div class="d-flex align-items-center gap-3">
+            <div class="d-inline-flex align-items-center justify-content-center rounded-circle flex-shrink-0 modal-header-warning-icon">
+              <i class="bi bi-exclamation-triangle-fill text-white" aria-hidden="true"></i>
+            </div>
+            <div>
+              <h5 class="fw-bold mb-0 modal-header-warning-title" id="modalObjecionTitulo">
+                Importante — Antes de continuar
+              </h5>
+              <p class="mb-0 small modal-header-warning-subtitle">Lea detenidamente antes de radicar</p>
+            </div>
+          </div>
+          <button type="button" (click)="cerrarModalObjecion()"
+            class="btn btn-link p-1 border-0 text-decoration-none modal-close-warning" aria-label="Cerrar">
+            <i class="bi bi-x-lg" aria-hidden="true"></i>
+          </button>
+        </div>
+
+        <div class="card-body p-4">
+
+          <div class="d-flex align-items-start gap-3 p-3 rounded-3 mb-4 modal-banner-warning">
+            <i class="bi bi-hammer mt-1 flex-shrink-0 text-warning" aria-hidden="true"></i>
+            <div>
+              <p class="fw-semibold mb-1 small modal-banner-warning-title">Pérdida de beneficio de pronto pago</p>
+              <p class="mb-0 small modal-banner-warning-body">
+                Al presentar una objeción contra el comparendo
+                <strong>{{ comparendo()?.expediente }}</strong>,
+                perderá los beneficios de descuento por pronto pago establecidos en la
+                <strong>Ley 1801 de 2016</strong> para multas tipo 1 a 4.
+              </p>
+            </div>
+          </div>
+
+          <div class="d-flex align-items-start gap-3 p-3 rounded-3 mb-4 modal-banner-info">
+            <i class="bi bi-info-circle-fill mt-1 flex-shrink-0 text-primary" aria-hidden="true"></i>
+            <p class="mb-0 small modal-banner-info-body">
+              Si el fallo es desfavorable, deberá pagar el <strong>100% del valor de la multa</strong>
+              más los intereses correspondientes. La autoridad tiene hasta
+              <strong>15 días hábiles</strong> para responder.
+            </p>
+          </div>
+
+          <div class="p-3 rounded-3 modal-checkbox-area">
+            <div class="form-check d-flex align-items-start gap-2 m-0">
+              <input class="form-check-input mt-1 flex-shrink-0" type="checkbox" id="chkAceptaAdvertenciaDC"
+                [(ngModel)]="aceptaAdvertencia">
+              <label class="form-check-label small fw-semibold modal-checkbox-label" for="chkAceptaAdvertenciaDC">
+                Entiendo que al presentar esta objeción perderé los beneficios de
+                descuento por pronto pago asociados a este comparendo.
+              </label>
+            </div>
+          </div>
+
+        </div>
+
+        <div class="card-footer bg-white border-0 py-3 px-4 d-flex justify-content-end gap-3 modal-footer-line">
+          <button type="button" (click)="cerrarModalObjecion()"
+            class="btn btn-outline-secondary fw-semibold px-4 modal-btn">
+            Cancelar
+          </button>
+          <button type="button" (click)="avanzarConfirmacion()"
+            class="btn fw-semibold px-4 d-flex align-items-center gap-2 modal-btn"
+            [class.btn-primary]="aceptaAdvertencia"
+            [class.btn-secondary]="!aceptaAdvertencia"
+            [disabled]="!aceptaAdvertencia">
+            <i class="bi bi-arrow-right" aria-hidden="true"></i>
+            Radicar objeción
+          </button>
+        </div>
+
+      </ng-container>
+
+      <!-- ── PASO 2: Confirmación final ── -->
+      <ng-container *ngIf="pasoModalObjecion === 2">
+
+        <div class="card-header modal-header-confirm border-0 py-4 px-4 d-flex align-items-center justify-content-between">
+          <div class="d-flex align-items-center gap-3">
+            <div class="d-inline-flex align-items-center justify-content-center rounded-circle flex-shrink-0 modal-header-confirm-icon">
+              <i class="bi bi-journal-bookmark-fill text-primary" aria-hidden="true"></i>
+            </div>
+            <div>
+              <h5 class="fw-bold mb-0 modal-header-confirm-title">¿Desea continuar?</h5>
+              <p class="mb-0 small text-muted">Confirme para radicar la objeción</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="card-body p-4">
+          <p class="mb-0 modal-confirm-body">
+            La presentación de esta objeción ocasionará la
+            <strong>pérdida de los beneficios de descuento por pronto pago</strong>
+            asociados al comparendo
+            <strong class="text-primary">{{ comparendo()?.expediente }}</strong>.
+            Esta acción no se puede deshacer.
+          </p>
+        </div>
+
+        <div class="card-footer bg-white border-0 py-3 px-4 d-flex justify-content-end gap-3 modal-footer-line">
+          <button type="button" (click)="pasoModalObjecion = 1"
+            class="btn btn-outline-secondary fw-semibold px-4 modal-btn">
+            <i class="bi bi-arrow-left me-1" aria-hidden="true"></i> Cancelar
+          </button>
+          <button type="button" (click)="confirmarObjecion()"
+            class="btn btn-primary fw-semibold px-4 d-flex align-items-center gap-2 modal-btn">
+            <i class="bi bi-journal-bookmark-fill" aria-hidden="true"></i>
+            Continuar con la objeción
+          </button>
+        </div>
+
+      </ng-container>
+
+    </div>
+  </div>
+
+</ng-container>

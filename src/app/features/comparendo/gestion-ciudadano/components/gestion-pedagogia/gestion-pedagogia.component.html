@@ -1,0 +1,62 @@
+<div class="dc-pedagogia mt-3"
+  *ngIf="conmutablePorPedagogia && mostrarPedagogia && mostrarSeccionPedagogia">
+  <div class="d-flex align-items-start justify-content-between gap-3 flex-wrap mb-3">
+    <p class="dc-text small mb-0">{{ descripcionMedidaPedagogica }}</p>
+    <span *ngIf="pedagogiaId" class="badge rounded-pill flex-shrink-0 {{ clasePedagogiaEstado }}">
+      {{ etiquetaPedagogiaEstado }}
+    </span>
+  </div>
+
+  <div class="d-flex align-items-start justify-content-between gap-3 flex-wrap">
+    <div class="d-flex align-items-start gap-2 flex-grow-1 min-w-0" *ngIf="pedagogiaId">
+      <div class="dc-pedagogia-icon d-inline-flex align-items-center justify-content-center flex-shrink-0">
+        <i class="bi bi-mortarboard text-primary" aria-hidden="true"></i>
+      </div>
+      <div class="min-w-0">
+        <span class="fw-semibold text-primary d-block" *ngIf="nombrePedagogia">
+          {{ nombrePedagogia }}
+        </span>
+        <p class="text-muted small mb-0 mt-1" *ngIf="descripcionPedagogia">{{ descripcionPedagogia }}</p>
+
+        <div class="gp-detalle" *ngIf="programacion as prog" [class.mt-2]="nombrePedagogia || descripcionPedagogia">
+          <p class="dc-text mb-0" *ngIf="prog.fecha">
+            <strong>Fecha:</strong> {{ fechaPrograma(prog.fecha) | date:'dd/MM/yyyy' }}
+          </p>
+          <p class="dc-text mb-0" *ngIf="prog.hora">
+            <strong>Hora:</strong> {{ horaPrograma(prog.hora) }}
+          </p>
+          <p class="dc-text mb-0" *ngIf="prog.duracion">
+            <strong>Duración:</strong> {{ prog.duracion }} minutos
+          </p>
+          <p class="dc-text mb-0" *ngIf="prog.modalidad">
+            <strong>Modalidad:</strong> {{ etiquetaModalidad(prog.modalidad) }}
+          </p>
+          <p class="dc-text mb-0 gp-detalle-full" *ngIf="prog.lugar">
+            <strong>Lugar:</strong> {{ prog.lugar }}
+          </p>
+          <p class="dc-text mb-0 gp-detalle-full" *ngIf="prog.observaciones">
+            <strong>Observaciones:</strong> {{ prog.observaciones }}
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <div class="d-flex flex-column gap-2 flex-shrink-0 ms-auto">
+      <button *ngIf="puedeInscribirsePedagogia" type="button"
+        class="btn btn-primary d-flex align-items-center gap-2 fw-semibold dc-btn"
+        (click)="inscribirsePedagogia()">
+        <i class="bi bi-book" aria-hidden="true"></i> Inscribirse a pedagogía
+      </button>
+      <button *ngIf="pedagogiaEstado === 1" type="button"
+        class="btn btn-outline-primary d-flex align-items-center gap-2 fw-semibold dc-btn"
+        (click)="descargarCertificadoPedagogia()">
+        <i class="bi bi-file-earmark-arrow-down" aria-hidden="true"></i> Certificado de Inscripción
+      </button>
+      <button *ngIf="pedagogiaEstado === 3" type="button"
+        class="btn btn-primary d-flex align-items-center gap-2 fw-semibold dc-btn"
+        (click)="descargarCertificadoAsistencia()">
+        <i class="bi bi-file-earmark-arrow-down" aria-hidden="true"></i> Certificado de Asistencia
+      </button>
+    </div>
+  </div>
+</div>

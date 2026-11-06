@@ -1,0 +1,377 @@
+<div class="container py-4">
+
+  <!-- Header (oculto si la lista va embebida en main) -->
+  <div *ngIf="!embebido" class="d-flex align-items-center gap-3 mb-4">
+    <div class="d-inline-flex align-items-center justify-content-center rounded-circle"
+      style="width: 44px; height: 44px; background: linear-gradient(135deg, #e8f0fe, #c2d4fb);">
+      <i class="bi bi-file-earmark-text text-primary" style="font-size: 1.1rem;" aria-hidden="true"></i>
+    </div>
+    <div>
+      <h1 class="fw-bold mb-0" style="font-size: 1.4rem; color: #1a2b4a;">Comparendos Asociados</h1>
+      <p class="text-muted mb-0 small">Resultado de la consulta de comparendos</p>
+    </div>
+    <span class="badge rounded-pill ms-auto px-3 py-2"
+      style="background-color: #e8f0fe; color: #1a56db; font-size: 0.82rem; font-weight: 600;">
+      <ng-container *ngIf="filtro; else sinFiltro">
+        {{ comparendosFiltrados.length }} de {{ comparendos.length }}
+      </ng-container>
+      <ng-template #sinFiltro>
+        {{ comparendos.length }} comparendo{{ comparendos.length !== 1 ? 's' : '' }}
+      </ng-template>
+    </span>
+  </div>
+
+  <!-- Filtro -->
+  <div *ngIf="tieneComparendos" class="d-flex flex-column align-items-stretch align-items-md-end w-100 mb-3">
+
+    <div class="input-group filtro-wrapper ms-md-auto">
+      <span class="input-group-text filtro-addon">
+        <i class="bi bi-search text-primary" aria-hidden="true"></i>
+      </span>
+      <input type="text" class="form-control filtro-input"
+        placeholder="N° comparendo o fecha..."
+        [(ngModel)]="filtro"
+        (ngModelChange)="onFiltroChange()">
+      <button *ngIf="filtro" type="button" class="btn filtro-clear"
+        aria-label="Limpiar búsqueda"
+        (click)="filtro = ''; onFiltroChange()">
+        <i class="bi bi-x-circle" aria-hidden="true"></i>
+      </button>
+    </div>
+
+    <!-- Feedback de resultados -->
+    <span *ngIf="filtro && comparendosFiltrados.length > 0" class="small mt-1 pe-1 filtro-feedback">
+      <i class="bi bi-funnel me-1" aria-hidden="true"></i>
+      {{ comparendosFiltrados.length }} resultado{{ comparendosFiltrados.length !== 1 ? 's' : '' }} para
+      <strong>"{{ filtro }}"</strong>
+    </span>
+
+  </div>
+
+  <!-- Empty state del filtro -->
+  <div *ngIf="filtro && comparendosFiltrados.length === 0"
+    class="d-flex flex-column align-items-center justify-content-center text-center py-5 mb-3 filtro-empty-state">
+    <div class="d-inline-flex align-items-center justify-content-center rounded-circle mb-3 filtro-empty-icon">
+      <i class="bi bi-search text-primary" style="font-size: 1.3rem;" aria-hidden="true"></i>
+    </div>
+    <h6 class="fw-bold mb-1" style="color: #1a2b4a;">Sin resultados</h6>
+    <p class="text-muted small mb-3">No se encontraron comparendos para <strong>"{{ filtro }}"</strong></p>
+    <button type="button" class="btn btn-outline-primary btn-sm"
+      style="border-radius: 8px;"
+      (click)="filtro = ''; onFiltroChange()">
+      <i class="bi bi-arrow-counterclockwise me-1" aria-hidden="true"></i>
+      Limpiar búsqueda
+    </button>
+  </div>
+
+  <!-- Lista de cards -->
+  <div *ngIf="comparendosFiltrados.length > 0" class="d-flex flex-column gap-3">
+
+    <div *ngFor="let comparendo of comparendosPaginados; let i = index" class="card border-0 shadow-sm overflow-hidden"
+      style="border-radius: 14px; transition: box-shadow 0.2s ease;">
+
+      <div class="row g-0">
+
+        <!-- Columna izquierda: Número / Fecha -->
+        <div class="col-md-3 d-flex flex-column justify-content-center p-4"
+          style="background-color: #f8faff; border-right: 1px solid #e8edf5;">
+
+          <div class="mb-3">
+            <p class="text-uppercase fw-bold mb-1" style="font-size: 0.68rem; letter-spacing: 0.07em; color: #7a8aab;">
+              Número de Comparendo
+            </p>
+            <p class="fw-bold mb-0 text-primary" style="font-size: 1rem;">
+              <ng-container *ngIf="comparendo.numeroFormato !== '002' && comparendo.numeroFormato !== '0'; else usarId">
+                {{ comparendo.numeroFormato }}
+              </ng-container>
+              <ng-template #usarId>{{ comparendo.comparendoId }}</ng-template>
+            </p>
+          </div>
+
+          <div>
+            <p class="text-uppercase fw-bold mb-1" style="font-size: 0.68rem; letter-spacing: 0.07em; color: #7a8aab;">
+              Fecha de Comparendo
+            </p>
+            <div class="d-flex align-items-center gap-2">
+              <i class="bi bi-calendar-event text-secondary" style="font-size: 0.85rem;" aria-hidden="true"></i>
+              <span style="font-size: 0.9rem; color: #2d3a50;">{{ comparendo.fecha_comparendo | date:'dd/MM/yyyy' }}</span>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Columna central: Descripción / Info -->
+        <div class="col-md-6 p-4 d-flex flex-column justify-content-center">
+
+          <div class="d-flex align-items-start gap-3 mb-3">
+            <div class="d-inline-flex align-items-center justify-content-center rounded-2 flex-shrink-0"
+              style="width: 38px; height: 38px; background-color: #fff8e1;">
+              <i class="bi bi-hammer" style="color: #b45309; font-size: 0.95rem;" aria-hidden="true"></i>
+            </div>
+            <div>
+              <p class="text-uppercase fw-bold mb-1"
+                style="font-size: 0.65rem; letter-spacing: 0.07em; color: #7a8aab;">
+                Descripción
+              </p>
+              <p class="mb-0" style="font-size: 0.88rem; color: #2d3a50; line-height: 1.5;">
+                {{ comparendo.descripcion }}
+              </p>
+            </div>
+          </div>
+
+          <div class="d-flex align-items-start gap-3 pt-3" style="border-top: 1px solid #f0f3fa;">
+            <div class="d-flex flex-column ps-3" style="border-left: 1px solid #e2e8f0; flex: 1; min-width: 0;">
+              <span class="text-uppercase fw-bold mb-1"
+                style="font-size: 0.65rem; letter-spacing: 0.07em; color: #7a8aab;">
+                Comportamiento contrario
+              </span>
+              <span class="texto-justificado" style="font-size: 0.85rem; color: #2d3a50; line-height: 1.5;">
+                <ng-container *ngIf="!expandidos.has(comparendo.comparendoId)">
+                  {{ textoCorto(comparendo.comportamientocontrario) }}<ng-container *ngIf="necesitaExpansion(comparendo.comportamientocontrario)">… <a class="ver-mas-btn" role="button" (click)="toggleExpandido(comparendo.comparendoId)">Leer más</a></ng-container>
+                </ng-container>
+                <ng-container *ngIf="expandidos.has(comparendo.comparendoId)">
+                  {{ comparendo.comportamientocontrario }} <a class="ver-mas-btn" role="button" (click)="toggleExpandido(comparendo.comparendoId)">Leer menos</a>
+                </ng-container>
+              </span>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Columna derecha: Acciones -->
+        <div class="col-md-3 d-flex flex-column justify-content-center gap-2 p-4" style="background-color: #fafbff;">
+
+          <button type="button"
+            class="btn btn-outline-primary d-flex align-items-center justify-content-center gap-2 fw-semibold"
+            style="border-radius: 10px; padding: 10px 16px; font-size: 0.875rem;"
+            (click)="verMas(comparendo)">
+            <i class="bi bi-folder2-open" aria-hidden="true"></i>
+            Ver Detalle
+          </button>
+
+          <button type="button"
+            class="btn btn-primary d-flex align-items-center justify-content-center gap-2 fw-semibold"
+            style="border-radius: 10px; padding: 10px 16px; font-size: 0.875rem;"
+            (click)="descargarReciboPago(+comparendo.comparendoId)">
+            <i class="bi bi-receipt" aria-hidden="true"></i>
+            Generar Recibo
+          </button>
+
+
+          <button type="button"
+            *ngIf="comparendosPuedenObjetar.has(comparendo.comparendoId)"
+            class="btn btn-primary d-flex align-items-center justify-content-center gap-2 fw-semibold"
+            style="border-radius: 10px; padding: 10px 16px; font-size: 0.875rem;"
+            (click)="abrirModalObjecion(comparendo)">
+            <i class="bi bi-receipt" aria-hidden="true"></i>
+            Objetar
+          </button>
+          <button type="button"
+            *ngIf="comparendo.tienePedagogia === '1' && comparendo.pedagogiaId === null && comparendo.estado.toLowerCase() === 'activo'"
+            class="btn btn-primary d-flex align-items-center justify-content-center gap-2 fw-semibold"
+            style="border-radius: 10px; padding: 10px 16px; font-size: 0.875rem;" (click)="verPedagogia(comparendo)">
+            <i class="bi bi-mortarboard" aria-hidden="true"></i>
+            Inscribirse a Pedagogía
+          </button>
+           <button type="button"
+            *ngIf="comparendo.objecionId"
+            class="btn btn-outline-primary d-flex align-items-center justify-content-center gap-2 fw-semibold"
+            style="border-radius: 10px; padding: 10px 16px; font-size: 0.875rem;"
+            (click)="descargarCertificadoObjecion(comparendo.objecionId!)">
+            <i class="bi bi-download" aria-hidden="true"></i>
+            Descargar certificado Objecion
+          </button>
+          <button type="button" *ngIf="comparendo.pedagogiaId && comparendo.pedagogiaEstado === 1"
+            class="btn btn-primary d-flex align-items-center justify-content-center gap-2 fw-semibold"
+            style="border-radius: 10px; padding: 10px 16px; font-size: 0.875rem;"
+            (click)="descargarCertificado(comparendo.pedagogiaId!)">
+            <i class="bi bi-download" aria-hidden="true"></i>
+            Certificado Inscripción Pedagogía
+          </button>
+          <!-- Asistencia: pedagogiaId existe Y idestado = 3 -->
+          <button type="button" *ngIf="comparendo.pedagogiaId && comparendo.pedagogiaEstado === 3"
+            class="btn btn-primary d-flex align-items-center justify-content-center gap-2 fw-semibold"
+            style="border-radius: 10px; padding: 10px 16px; font-size: 0.875rem;"
+            (click)="descargarCertificadoAsistencia(comparendo.pedagogiaId!)">
+            <i class="bi bi-download" aria-hidden="true"></i>
+            Certificado Asistencia Pedagogía
+          </button>
+        </div>
+
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Paginación -->
+  <div *ngIf="comparendosFiltrados.length > pageSize" class="d-flex justify-content-center mt-4"
+    (click)="$event.preventDefault()">
+    <ngb-pagination
+      [(page)]="page"
+      [pageSize]="pageSize"
+      [collectionSize]="comparendosFiltrados.length"
+      [maxSize]="5"
+      [rotate]="true"
+      [boundaryLinks]="true"
+      class="d-flex justify-content-center">
+      <ng-template ngbPaginationFirst>««</ng-template>
+      <ng-template ngbPaginationPrevious>Anterior</ng-template>
+      <ng-template ngbPaginationNext>Siguiente</ng-template>
+      <ng-template ngbPaginationLast>»»</ng-template>
+    </ngb-pagination>
+  </div>
+
+  <div *ngIf="!embebido" class="mt-2 d-flex flex-wrap justify-content-end gap-2">
+    <button type="button" class="btn btn-warning d-flex align-items-center gap-2 fw-semibold dc-btn"
+      (click)="irAlInicio()">
+      <i class="bi bi-house-door" aria-hidden="true"></i> Ir al inicio
+    </button>
+  </div>
+
+  <!-- Estado vacío (solo en ruta dedicada; en main el padre ya muestra vacío) -->
+  <div *ngIf="!embebido && !cargando && comparendos.length === 0"
+    class="d-flex flex-column align-items-center justify-content-center text-center py-5"
+    style="background-color: #f8faff; border-radius: 16px; border: 2px dashed #d1dced;">
+    <div class="d-inline-flex align-items-center justify-content-center rounded-circle mb-3"
+      style="width: 60px; height: 60px; background-color: #fff3cd;">
+      <i class="bi bi-info-circle" style="font-size: 1.5rem; color: #856404;" aria-hidden="true"></i>
+    </div>
+    <h6 class="fw-bold mb-1" style="color: #1a2b4a;">Sin comparendos</h6>
+    <p class="text-muted small mb-0">No se encontraron comparendos asociados a la identificación ingresada.</p>
+  </div>
+
+</div>
+
+<!-- ══════════════════════════════════════════════
+     MODAL ADVERTENCIA OBJECIÓN — Kit UI Gov.co 9.2
+     ══════════════════════════════════════════════ -->
+<ng-container *ngIf="mostrarModalObjecion">
+
+  <!-- Backdrop -->
+  <div class="modal-objecion-backdrop" (click)="cerrarModalObjecion()"></div>
+
+  <!-- Modal -->
+  <div class="modal-objecion-wrapper" role="dialog" aria-modal="true" aria-labelledby="modalObjecionTitulo">
+
+    <div class="card border-0 shadow-lg w-100 modal-objecion-card">
+
+      <!-- ── PASO 1: Advertencia + checkbox ── -->
+      <ng-container *ngIf="pasoModalObjecion === 1">
+
+        <div class="card-header modal-header-warning border-0 py-4 px-4 d-flex align-items-center justify-content-between">
+          <div class="d-flex align-items-center gap-3">
+            <div class="d-inline-flex align-items-center justify-content-center rounded-circle flex-shrink-0 modal-header-warning-icon">
+              <i class="bi bi-exclamation-triangle-fill text-white" aria-hidden="true"></i>
+            </div>
+            <div>
+              <h5 class="fw-bold mb-0 modal-header-warning-title" id="modalObjecionTitulo">
+                Importante — Antes de continuar
+              </h5>
+              <p class="mb-0 small modal-header-warning-subtitle">Lea detenidamente antes de radicar</p>
+            </div>
+          </div>
+          <button type="button" (click)="cerrarModalObjecion()"
+            class="btn btn-link p-1 border-0 text-decoration-none modal-close-warning" aria-label="Cerrar">
+            <i class="bi bi-x-circle" aria-hidden="true"></i>
+          </button>
+        </div>
+
+        <div class="card-body p-4">
+
+          <div class="d-flex align-items-start gap-3 p-3 rounded-3 mb-4 modal-banner-warning">
+            <i class="bi bi-scales mt-1 flex-shrink-0 text-warning" aria-hidden="true"></i>
+            <div>
+              <p class="fw-semibold mb-1 small modal-banner-warning-title">Pérdida de beneficio de pronto pago</p>
+              <p class="mb-0 small modal-banner-warning-body">
+                Al presentar una objeción contra el comparendo
+                <strong>{{ comparendoParaObjetar?.comparendoId || comparendoParaObjetar?.comparendoId }}</strong>,
+                perderá los beneficios de descuento por pronto pago establecidos en la
+                <strong>Ley 1801 de 2016</strong> para multas tipo 1 a 4.
+              </p>
+            </div>
+          </div>
+
+          <div class="d-flex align-items-start gap-3 p-3 rounded-3 mb-4 modal-banner-info">
+            <i class="bi bi-info-circle mt-1 flex-shrink-0 text-primary" aria-hidden="true"></i>
+            <p class="mb-0 small modal-banner-info-body">
+              Si el fallo es desfavorable, deberá pagar el <strong>100% del valor de la multa</strong>
+              más los intereses correspondientes. La autoridad tiene hasta
+              <strong>15 días hábiles</strong> para responder.
+            </p>
+          </div>
+
+          <div class="p-3 rounded-3 modal-checkbox-area">
+            <div class="form-check d-flex align-items-start gap-2 m-0">
+              <input class="form-check-input mt-1 flex-shrink-0" type="checkbox" id="chkAceptaAdvertencia"
+                [(ngModel)]="aceptaAdvertencia">
+              <label class="form-check-label small fw-semibold modal-checkbox-label" for="chkAceptaAdvertencia">
+                Entiendo que al presentar esta objeción perderé los beneficios de
+                descuento por pronto pago asociados a este comparendo.
+              </label>
+            </div>
+          </div>
+
+        </div>
+
+        <div class="card-footer bg-white border-0 py-3 px-4 d-flex justify-content-end gap-3 modal-footer-line">
+          <button type="button" (click)="cerrarModalObjecion()"
+            class="btn btn-outline-secondary fw-semibold px-4 modal-btn">
+            Cancelar
+          </button>
+          <button type="button" (click)="avanzarConfirmacion()"
+            class="btn fw-semibold px-4 d-flex align-items-center gap-2 modal-btn"
+            [class.btn-primary]="aceptaAdvertencia"
+            [class.btn-secondary]="!aceptaAdvertencia"
+            [disabled]="!aceptaAdvertencia">
+            <i class="bi bi-arrow-right" aria-hidden="true"></i>
+            Radicar objeción
+          </button>
+        </div>
+
+      </ng-container>
+
+      <!-- ── PASO 2: Confirmación final ── -->
+      <ng-container *ngIf="pasoModalObjecion === 2">
+
+        <div class="card-header modal-header-confirm border-0 py-4 px-4 d-flex align-items-center justify-content-between">
+          <div class="d-flex align-items-center gap-3">
+            <div class="d-inline-flex align-items-center justify-content-center rounded-circle flex-shrink-0 modal-header-confirm-icon">
+              <i class="bi bi-pencil-square text-primary" aria-hidden="true"></i>
+            </div>
+            <div>
+              <h5 class="fw-bold mb-0 modal-header-confirm-title">¿Desea continuar?</h5>
+              <p class="mb-0 small text-muted">Confirme para radicar la objeción</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="card-body p-4">
+          <p class="mb-0 modal-confirm-body">
+            La presentación de esta objeción ocasionará la
+            <strong>pérdida de los beneficios de descuento por pronto pago</strong>
+            asociados al comparendo
+            <strong class="text-primary">
+              {{ comparendoParaObjetar?.comparendoId || comparendoParaObjetar?.comparendoId }}
+            </strong>.
+            Esta acción no se puede deshacer.
+          </p>
+        </div>
+
+        <div class="card-footer bg-white border-0 py-3 px-4 d-flex justify-content-end gap-3 modal-footer-line">
+          <button type="button" (click)="pasoModalObjecion = 1"
+            class="btn btn-outline-secondary fw-semibold px-4 modal-btn">
+            <i class="bi bi-arrow-left me-1" aria-hidden="true"></i> Cancelar
+          </button>
+          <button type="button" (click)="confirmarObjecion()"
+            class="btn btn-primary fw-semibold px-4 d-flex align-items-center gap-2 modal-btn">
+            <i class="bi bi-pencil-square" aria-hidden="true"></i>
+            Continuar con la objeción
+          </button>
+        </div>
+
+      </ng-container>
+
+    </div>
+  </div>
+
+</ng-container>

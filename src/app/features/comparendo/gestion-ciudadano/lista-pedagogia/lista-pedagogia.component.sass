@@ -1,0 +1,135 @@
+// Estilos para el componente ListaPedagogia
+
+.confirm-card
+  max-width: 700px
+  border-radius: 20px
+  overflow: hidden
+
+.confirm-header
+  border-bottom: 1px solid #e8edf5
+
+.confirm-icon
+  width: 44px
+  height: 44px
+  background: linear-gradient(135deg, #e8f0fe, #c2d4fb)
+
+.confirm-icon-bi
+  font-size: 1.1rem
+
+.confirm-title
+  font-size: 1.3rem
+  color: #1a2b4a
+
+.confirm-resumen
+  background-color: #f8faff
+  border-left: 4px solid #0a58ca
+
+.confirm-resumen-title
+  color: #1a2b4a
+
+.confirm-label
+  font-size: 0.68rem
+  color: #7a8aab
+
+.confirm-label-dark
+  color: #1a2b4a
+
+.contacto-input
+  border-radius: 10px
+  border-color: #c2d4fb
+
+.confirm-footer
+  border-top: 1px solid #e8edf5
+
+.confirm-btn
+  border-radius: 10px
+
+// Pantalla 3 — comprobante
+.exito-card
+  max-width: 700px
+  border-radius: 20px
+
+.exito-header
+  background: linear-gradient(145deg, #f0f7ff, #ffffff)
+
+.exito-check-circle
+  width: 80px
+  height: 80px
+  background: linear-gradient(135deg, #28a745, #20c997)
+
+.exito-check-icon
+  font-size: 2.5rem
+
+.exito-title
+  color: #1a2b4a
+
+.exito-resumen
+  background-color: #f8faff
+
+.exito-row-border
+  border-color: #e0e7f0
+
+.exito-lugar
+  max-width: 60%
+
+.curso-descripcion
+  font-size: 0.85rem
+  color: #2d3a50
+  line-height: 1.5
+
+.ver-mas-btn
+  color: #0a58ca
+  cursor: pointer
+  font-size: 0.82rem
+  font-weight: 600
+  text-decoration: none
+  &:hover
+    text-decoration: underline
+
+.curso-observaciones
+  background-color: #fffbe6
+  border-left: 3px solid #f0a500
+
+.curso-observaciones-icon
+  color: #f0a500
+  font-size: 0.8rem
+  flex-shrink: 0
+
+.curso-observaciones-texto
+  font-size: 0.78rem
+  color: #7d4e00
+  line-height: 1.4
+
+.curso-meta
+  border-top: 1px solid #f0f3fa
+
+.badge-nombre-pedagogia
+  white-space: normal
+  font-size: 0.72rem
+  line-height: 1.4
+  text-align: left
+
+// Cupos disponibles
+%cupos-badge-base
+  display: inline-flex
+  align-items: center
+  gap: 0.3rem
+  font-size: 0.75rem
+  font-weight: 600
+  padding: 4px 10px
+  border-radius: 20px
+
+.cupos-badge--verde
+  @extend %cupos-badge-base
+  background-color: #d4edda
+  color: #155724
+
+.cupos-badge--naranja
+  @extend %cupos-badge-base
+  background-color: #fff3cd
+  color: #7d4e00
+
+.cupos-badge--rojo
+  @extend %cupos-badge-base
+  background-color: #f8d7da
+  color: #721c24

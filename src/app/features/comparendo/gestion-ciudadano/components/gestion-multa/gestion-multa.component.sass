@@ -1,0 +1,59 @@
+$lc-dark:  #1a2b4a
+$lc-body:  #2d3a50
+$lc-muted: #7a8aab
+
+:host
+  display: block
+
+.gm-row
+  display: flex
+  align-items: flex-start
+  justify-content: space-between
+  gap: 0.75rem 1.25rem
+  flex-wrap: wrap
+
+  & + &
+    margin-top: 1rem
+
+.gm-copy
+  min-width: 0
+  flex: 1 1 16rem
+
+.gm-kicker
+  display: block
+  margin-bottom: 0.35rem
+  font-size: 1rem
+  line-height: 1.3
+  color: $lc-dark
+  font-weight: 700
+
+.gm-note
+  display: flex
+  align-items: flex-start
+  gap: 0.45rem
+  font-size: 0.875rem
+  color: $lc-body
+  line-height: 1.45
+
+  > i
+    margin-top: 0.18rem
+    width: 0.9rem
+    color: $lc-muted
+
+  &--ok > i
+    color: #198754
+
+  &--warn > i
+    color: #b58100
+
+  &--bad > i
+    color: #c0392b
+
+.gm-meta
+  margin-left: 0.35rem
+  color: $lc-muted
+
+.dc-btn
+  border-radius: 10px !important
+  padding: 8px 14px !important
+  font-size: 0.875rem !important

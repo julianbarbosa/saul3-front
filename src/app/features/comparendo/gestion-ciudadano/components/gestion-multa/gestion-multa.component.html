@@ -1,0 +1,84 @@
+<div class="gm" *ngIf="mostrarPago || (mostrarObjecion && mostrarSeccionObjecion)">
+
+  <div class="gm-row" *ngIf="mostrarPago">
+    <div class="gm-copy">
+      <span class="gm-kicker">Pago</span>
+
+      <p *ngIf="tieneFechaPago" class="gm-note gm-note--ok mb-0">
+        <i class="bi bi-check-circle-fill" aria-hidden="true"></i>
+        <span>Pagado el <strong>{{ toDate(fechaPago) | date:'dd/MM/yyyy' }}</strong></span>
+      </p>
+
+      <ng-container *ngIf="!tieneFechaPago && puedePagar">
+        <p *ngIf="aplicaDescuentoProntoPago" class="gm-note gm-note--warn mb-0">          
+          <span>
+            {{ infoPago.porcentajeDescuentoProntoPago }}% de descuento hasta el
+            <strong>{{ infoPago.fechaLimiteDescuento | date:'dd/MM/yyyy' }}</strong>
+          </span>
+        </p>
+        <p *ngIf="!aplicaDescuentoProntoPago && infoPago.fechaLimiteDescuento" class="gm-note gm-note--bad mb-0">
+          <span class="text-danger">
+            El descuento venció el
+            <strong>{{ infoPago.fechaLimiteDescuento | date:'dd/MM/yyyy' }}</strong>
+          </span>
+        </p>
+        <p *ngIf="!infoPago.fechaLimiteDescuento" class="gm-note mb-0">
+          <i class="bi bi-receipt" aria-hidden="true"></i>
+          <span>Genera el recibo y págalo en una entidad autorizada.</span>
+        </p>
+      </ng-container>
+
+      <p *ngIf="!tieneFechaPago && !puedePagar" class="gm-note mb-0">
+        Este comparendo no requiere pago en este momento.
+      </p>
+    </div>
+
+    <button *ngIf="!tieneFechaPago && puedePagar" type="button"
+      class="btn btn-primary d-flex align-items-center justify-content-center gap-2 fw-semibold dc-btn flex-shrink-0"
+      (click)="generarRecibo()">
+      <i class="bi bi-receipt" aria-hidden="true"></i>
+      Generar Recibo
+    </button>
+  </div>
+
+  <div class="gm-row" *ngIf="mostrarObjecion && mostrarSeccionObjecion">
+    <div class="gm-copy">
+      <span class="gm-kicker">Objeción</span>
+
+      <p class="gm-note mb-0">
+        La objeción es la manifestación de inconformidad del presunto infractor ante el inspector de Policía, frente a la orden de comparendo o a la medida correctiva impuesta por el agente de Policía.
+      </p>
+
+      <p *ngIf="objecionId" class="gm-note mb-0 mt-2">
+        <i class="bi bi-hammer" aria-hidden="true"></i>
+        <span>
+          Radicada
+          <ng-container *ngIf="fechaObjecion">
+            el <strong>{{ toDate(fechaObjecion) | date:'dd/MM/yyyy' }}</strong>
+          </ng-container>
+          <span class="gm-meta" *ngIf="expediente">· {{ expediente }}</span>
+        </span>
+      </p>
+
+      <p *ngIf="!puedeObjetar && !objecionId && objecionValidacionMsg" class="gm-note gm-note--bad mb-0 mt-2">        
+        <span class="text-danger">{{ objecionValidacionMsg }}</span>
+      </p>
+    </div>
+
+    <div class="d-flex flex-wrap gap-2 flex-shrink-0" *ngIf="puedeObjetar || objecionId">
+      <button *ngIf="puedeObjetar" type="button"
+        class="btn btn-primary d-flex align-items-center gap-2 fw-semibold dc-btn"
+        (click)="solicitarObjecion.emit()">
+        <i class="bi bi-hammer" aria-hidden="true"></i>
+        Objetar
+      </button>
+      <button *ngIf="objecionId" type="button"
+        class="btn btn-outline-primary d-flex align-items-center gap-2 fw-semibold dc-btn"
+        (click)="descargarCertificadoObjecion()">
+        <i class="bi bi-file-earmark-arrow-down" aria-hidden="true"></i>
+        Descargar certificado
+      </button>
+    </div>
+  </div>
+
+</div>
