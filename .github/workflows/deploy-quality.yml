@@ -69,7 +69,7 @@ jobs:
       - name: Build quality
         working-directory: /var/www/qa/saul3-front
         run: |
-          npm run build:qa
+          npm run build:qa -- --base-href=/qa/
 
       - name: Verify deployment
         working-directory: /var/www/qa/saul3-front
