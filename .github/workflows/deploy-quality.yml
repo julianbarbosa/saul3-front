@@ -1,9 +1,8 @@
 
-# Despliegue de gestion-front en QA (rama quality).
-# DEPLOY_ROOT: directorio del clon del proyecto en el runner.
-# build:qa utiliza --base-href=/qa/saul3-front/
+# Despliegue de saul3-front en QA (rama quality) → dist/saul3-front/browser/.
+# DEPLOY_ROOT: directorio del clon en el runner.
 
-name: Deploy gestion-front Quality
+name: Deploy saul3-front Quality
 
 on:
   push:
@@ -12,12 +11,12 @@ on:
   workflow_dispatch:
 
 concurrency:
-  group: gestion-front-quality
+  group: saul3-front-quality
   cancel-in-progress: false
 
 jobs:
   deploy:
-    name: Deploy to gestion-front quality
+    name: Deploy to saul3-front quality
     runs-on: self-hosted
     timeout-minutes: 30
 
@@ -51,6 +50,25 @@ jobs:
           echo "Código actualizado:"
           git log -1 --oneline
 
+      - name: Verify project (saul3-front, no legacy tysa-front)
+        working-directory: /var/www/qa/saul3-front
+        run: |
+          echo "package.json name: $(node -p "require('./package.json').name")"
+          if ! grep -q '"name": "saul3-front"' package.json; then
+            echo "::error::Este clon sigue siendo el proyecto antiguo (tysa-front / Angular 15)."
+            echo "Haz push de saul3-front a origin/quality o apunta DEPLOY_ROOT al repo correcto."
+            head -20 package.json
+            exit 1
+          fi
+          node -e "
+            const p = require('./package.json');
+            const v = p.dependencies && p.dependencies['@angular/core'];
+            if (!v || !/^\\^21\\./.test(v)) {
+              console.error('::error::Se esperaba @angular/core ^21.x (saul3-front), encontrado:', v);
+              process.exit(1);
+            }
+          "
+
       - name: Setup Node.js
         run: |
           node --version
@@ -64,8 +82,9 @@ jobs:
       - name: Clean previous build
         working-directory: /var/www/qa/saul3-front
         run: |
-          rm -rf dist/gestion-front
+          rm -rf dist/saul3-front
 
+      # base-href=/qa/ va en package.json → script build:qa (no pasar flags extra al npm)
       - name: Build quality
         working-directory: /var/www/qa/saul3-front
         run: |
@@ -76,7 +95,7 @@ jobs:
         run: |
           echo "Verificando compilación..."
 
-          if [ ! -f dist/gestion-front/browser/index.html ]; then
+          if [ ! -f dist/saul3-front/browser/index.html ]; then
             echo "ERROR: No se encontró index.html"
             echo "Contenido de dist:"
             find dist -maxdepth 5 -type f | head -100
@@ -84,7 +103,7 @@ jobs:
           fi
 
           echo "Compilación correcta:"
-          ls -lh dist/gestion-front/browser/index.html
+          ls -lh dist/saul3-front/browser/index.html
 
           echo "Estado Git:"
           git status -sb

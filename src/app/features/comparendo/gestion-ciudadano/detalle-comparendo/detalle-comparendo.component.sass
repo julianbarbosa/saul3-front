@@ -1,3 +1,5 @@
+@use 'sass:color'
+
 // Paleta visual — alineada con lista-comparendos
 $lc-blue:    #1a56db
 $lc-dark:    #1a2b4a
@@ -54,7 +56,7 @@ $lc-border:  #e8edf5
       background-color: $lc-bg
       box-shadow: none
       &:hover
-        background-color: mix($lc-bg, $lc-tint2, 55%)
+        background-color: color.mix($lc-bg, $lc-tint2, 55%)
     &:focus
       box-shadow: none
       border-color: transparent
