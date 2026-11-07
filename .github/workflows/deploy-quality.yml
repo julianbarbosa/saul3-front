@@ -1,9 +1,8 @@
 
-# Despliegue de gestion-front en QA (rama quality).
-# DEPLOY_ROOT: directorio del clon del proyecto en el runner.
-# build:qa utiliza --base-href=/qa/saul3-front/
+# Despliegue de saul3-front en QA (rama quality) → dist/saul3-front/browser/.
+# DEPLOY_ROOT: directorio del clon en el runner.
 
-name: Deploy gestion-front Quality
+name: Deploy saul3-front Quality
 
 on:
   push:
@@ -12,12 +11,12 @@ on:
   workflow_dispatch:
 
 concurrency:
-  group: gestion-front-quality
+  group: saul3-front-quality
   cancel-in-progress: false
 
 jobs:
   deploy:
-    name: Deploy to gestion-front quality
+    name: Deploy to saul3-front quality
     runs-on: self-hosted
     timeout-minutes: 30
 
@@ -64,7 +63,7 @@ jobs:
       - name: Clean previous build
         working-directory: /var/www/qa/saul3-front
         run: |
-          rm -rf dist/gestion-front
+          rm -rf dist/saul3-front
 
       - name: Build quality
         working-directory: /var/www/qa/saul3-front
@@ -76,7 +75,7 @@ jobs:
         run: |
           echo "Verificando compilación..."
 
-          if [ ! -f dist/gestion-front/browser/index.html ]; then
+          if [ ! -f dist/saul3-front/browser/index.html ]; then
             echo "ERROR: No se encontró index.html"
             echo "Contenido de dist:"
             find dist -maxdepth 5 -type f | head -100
@@ -84,7 +83,7 @@ jobs:
           fi
 
           echo "Compilación correcta:"
-          ls -lh dist/gestion-front/browser/index.html
+          ls -lh dist/saul3-front/browser/index.html
 
           echo "Estado Git:"
           git status -sb

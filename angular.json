@@ -7,7 +7,7 @@
   },
   "newProjectRoot": "projects",
   "projects": {
-    "gestion-front": {
+    "saul3-front": {
       "projectType": "application",
       "schematics": {},
       "root": "",
@@ -97,10 +97,10 @@
           },
           "configurations": {
             "production": {
-              "buildTarget": "gestion-front:build:production"
+              "buildTarget": "saul3-front:build:production"
             },
             "development": {
-              "buildTarget": "gestion-front:build:development"
+              "buildTarget": "saul3-front:build:development"
             }
           },
           "defaultConfiguration": "development"
