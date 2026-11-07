@@ -50,6 +50,25 @@ jobs:
           echo "Código actualizado:"
           git log -1 --oneline
 
+      - name: Verify project (saul3-front, no legacy tysa-front)
+        working-directory: /var/www/qa/saul3-front
+        run: |
+          echo "package.json name: $(node -p "require('./package.json').name")"
+          if ! grep -q '"name": "saul3-front"' package.json; then
+            echo "::error::Este clon sigue siendo el proyecto antiguo (tysa-front / Angular 15)."
+            echo "Haz push de saul3-front a origin/quality o apunta DEPLOY_ROOT al repo correcto."
+            head -20 package.json
+            exit 1
+          fi
+          node -e "
+            const p = require('./package.json');
+            const v = p.dependencies && p.dependencies['@angular/core'];
+            if (!v || !/^\\^21\\./.test(v)) {
+              console.error('::error::Se esperaba @angular/core ^21.x (saul3-front), encontrado:', v);
+              process.exit(1);
+            }
+          "
+
       - name: Setup Node.js
         run: |
           node --version
@@ -65,10 +84,11 @@ jobs:
         run: |
           rm -rf dist/saul3-front
 
+      # base-href=/qa/ va en package.json → script build:qa (no pasar flags extra al npm)
       - name: Build quality
         working-directory: /var/www/qa/saul3-front
         run: |
-          npm run build:qa -- --base-href=/qa/
+          npm run build:qa
 
       - name: Verify deployment
         working-directory: /var/www/qa/saul3-front

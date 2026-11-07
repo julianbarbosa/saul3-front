@@ -6,7 +6,7 @@
     "start": "ng serve",
     "build": "ng build",
     "build:prod": "ng build --configuration=production --base-href=/gestion/",
-    "build:qa": "ng build --configuration=production --base-href=/qa/tramites-front/",
+    "build:qa": "ng build --configuration=production --base-href=/qa/",
     "watch": "ng build --watch --configuration development",
     "test": "ng test"
   },
