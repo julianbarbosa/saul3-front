@@ -1,5 +1,5 @@
 # Despliegue del front de gestión (npm package: gestion-front, app Angular: gestion-front).
-# DEPLOY_ROOT debe ser el directorio del clon en el runner; cámbialo si en el servidor usas otra ruta (p. ej. /var/www/prd/gestion-front).
+# DEPLOY_ROOT debe ser el directorio del clon en el runner; cámbialo si en el servidor usas otra ruta.
 name: Deploy gestion-front Production
 
 on:
