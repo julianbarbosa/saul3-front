@@ -36,6 +36,7 @@ jobs:
 
           test "$(whoami)" = "saul"
           test -d "$DEPLOY_ROOT"
+          git config --global --add safe.directory "$DEPLOY_ROOT"
 
       - name: Update quality code
         working-directory: /var/www/qa/saul3-front
