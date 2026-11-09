@@ -1,6 +1,8 @@
-<div class="gm" *ngIf="mostrarPago || (mostrarObjecion && mostrarSeccionObjecion)">
+<div
+  class="gm gm-panel"
+  *ngIf="mostrarPago || (mostrarObjecion && mostrarSeccionObjecion)">
 
-  <div class="gm-row" *ngIf="mostrarPago">
+  <div class="gm-row gm-row--pago" *ngIf="mostrarPago">
     <div class="gm-copy">
       <span class="gm-kicker">Pago</span>
 
@@ -41,7 +43,10 @@
     </button>
   </div>
 
-  <div class="gm-row" *ngIf="mostrarObjecion && mostrarSeccionObjecion">
+  <div
+    class="gm-row gm-row--objecion"
+    *ngIf="mostrarObjecion && mostrarSeccionObjecion"
+    [class.gm-row--solo-objecion]="!mostrarPago">
     <div class="gm-copy">
       <span class="gm-kicker">Objeción</span>
 

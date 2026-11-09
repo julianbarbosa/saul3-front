@@ -1,9 +1,14 @@
 import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
-import { Router } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { CrearObjecionService } from 'src/app/core/services/crear-objecion.service';
 import { BusquedaStateService } from 'src/app/core/services/busqueda-state.service';
+import {
+  marcarAccesoPublicoCodigoPolicia,
+  rutasCodigoPolicia,
+  RutasCodigoPoliciaCtx,
+} from 'src/app/core/helpers/codigo-policia-route.helper';
 
 @Component({
   selector: 'app-crea-objecion',
@@ -15,6 +20,7 @@ export class CreaObjecionComponent implements OnInit {
 
   private fb            = inject(FormBuilder);
   private router        = inject(Router);
+  private route         = inject(ActivatedRoute);
   private objecionSvc   = inject(CrearObjecionService);
   private busquedaState = inject(BusquedaStateService);
 
@@ -43,7 +49,12 @@ export class CreaObjecionComponent implements OnInit {
     termsGov:     [false, Validators.requiredTrue]
   });
 
+  private ctxNavegacion(): RutasCodigoPoliciaCtx {
+    return { route: this.route, busquedaState: this.busquedaState };
+  }
+
   ngOnInit(): void {
+    marcarAccesoPublicoCodigoPolicia(this.router, this.route, this.busquedaState);
     this.idComparendo        = this.busquedaState.comparendoId;
     this.identificacionParam = this.busquedaState.identificacion;
 
@@ -143,10 +154,10 @@ export class CreaObjecionComponent implements OnInit {
   }
 
   volver(): void {
-    this.router.navigate(['/gestion-acceso-justicia/comparendo/gestion-ciudadano/detalle-comparendo']);
+    this.router.navigate(rutasCodigoPolicia(this.router, 'detalle-comparendo', this.ctxNavegacion()));
   }
 
   finalizarYVolver(): void {
-    this.router.navigate(['/gestion-acceso-justicia/comparendo/gestion-ciudadano/lista-comparendos']);
+    this.router.navigate(rutasCodigoPolicia(this.router, 'lista-comparendos', this.ctxNavegacion()));
   }
 }
