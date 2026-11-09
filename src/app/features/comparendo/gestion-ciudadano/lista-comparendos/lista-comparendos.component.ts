@@ -8,6 +8,11 @@ import { CrearReciboPagoService } from 'src/app/core/services/crear-recibo.servi
 import { CrearObjecionService } from 'src/app/core/services/crear-objecion.service';
 import { ComparendoService } from 'src/app/core/services/comparendo.service';
 import { BusquedaStateService } from 'src/app/core/services/busqueda-state.service';
+import {
+  marcarAccesoPublicoCodigoPolicia,
+  rutasCodigoPolicia,
+  RutasCodigoPoliciaCtx,
+} from 'src/app/core/helpers/codigo-policia-route.helper';
 interface Comparendo {
   comparendoId: string | number;
   expediente: string;
@@ -203,7 +208,17 @@ export class ListaComparendosComponent implements OnInit {
     };
   }
 
+  /** Enlace de detalle según flujo público (/codigopolicia) o con sesión. */
+  enlaceDetalleComparendo(): string[] {
+    return rutasCodigoPolicia(this.router, 'detalle-comparendo', this.ctxNavegacion());
+  }
+
+  private ctxNavegacion(): RutasCodigoPoliciaCtx {
+    return { route: this.route, busquedaState: this.busquedaState };
+  }
+
   ngOnInit(): void {
+    marcarAccesoPublicoCodigoPolicia(this.router, this.route, this.busquedaState);
     this.route.queryParamMap.subscribe(params => {
       // En vista embebida el padre (main) ya cargó los comparendos y los pasa por @Input.
       // Si volvemos a consultar aquí, una respuesta fallida o distinta sobrescribe la lista.
@@ -261,11 +276,15 @@ export class ListaComparendosComponent implements OnInit {
     });
   }
 
-  verMas(comparendo: Comparendo): void {
+  prepararDetalle(comparendo: Comparendo): void {
     this.busquedaState.comparendoId = +comparendo.comparendoId;
     this.busquedaState.objecionId = comparendo.objecionId;
     this.busquedaState.fechaObjecion = comparendo.fechaObjecion;
-    this.router.navigate(['/gestion-acceso-justicia/comparendo/gestion-ciudadano/detalle-comparendo']);
+  }
+
+  verMas(comparendo: Comparendo): void {
+    this.prepararDetalle(comparendo);
+    this.router.navigate(rutasCodigoPolicia(this.router, 'detalle-comparendo', this.ctxNavegacion()));
   }
 
   abrirModalObjecion(comparendo: Comparendo): void {
@@ -292,17 +311,17 @@ export class ListaComparendosComponent implements OnInit {
 
   irAObjecion(comparendo: Comparendo): void {
     this.busquedaState.comparendoId = +comparendo.comparendoId;
-    this.router.navigate(['/gestion-acceso-justicia/comparendo/gestion-ciudadano/crea-objecion']);
+    this.router.navigate(rutasCodigoPolicia(this.router, 'crea-objecion', this.ctxNavegacion()));
   }
 
   verPedagogia(comparendo: Comparendo): void {
     this.busquedaState.comparendoId = +comparendo.comparendoId;
     this.busquedaState.expediente = comparendo.numeroFormato || comparendo.expediente;
-    this.router.navigate(['/gestion-acceso-justicia/comparendo/gestion-ciudadano/lista-pedagogia']);
+    this.router.navigate(rutasCodigoPolicia(this.router, 'lista-pedagogia', this.ctxNavegacion()));
   }
 
   irAlInicio(): void {
-    this.router.navigate(['/gestion-acceso-justicia/comparendo/gestion-ciudadano']);
+    this.router.navigate(rutasCodigoPolicia(this.router, undefined, this.ctxNavegacion()));
   }
 
   getEstadoBadgeClase(estado: string): string {

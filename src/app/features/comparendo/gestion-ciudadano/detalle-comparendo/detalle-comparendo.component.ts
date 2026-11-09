@@ -1,7 +1,7 @@
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { Router } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { GestionMultaComponent } from '../components/gestion-multa/gestion-multa.component';
 import { GestionPedagogiaComponent } from '../components/gestion-pedagogia/gestion-pedagogia.component';
 import {
@@ -18,6 +18,11 @@ import {
   MedidaCorrectiva,
 } from 'src/app/core/services/comparendo.service';
 import { BusquedaStateService } from 'src/app/core/services/busqueda-state.service';
+import {
+  marcarAccesoPublicoCodigoPolicia,
+  rutasCodigoPolicia,
+  RutasCodigoPoliciaCtx,
+} from 'src/app/core/helpers/codigo-policia-route.helper';
 
 interface InformacionPago {
   valorBase: number;
@@ -47,6 +52,7 @@ const DESCRIPCION_AMONESTACION =
 })
 export class DetalleComparendoComponent implements OnInit {
   private router = inject(Router);
+  private route = inject(ActivatedRoute);
   private pedagogiaService = inject(PedagogiaService);
   private crearObjecionService = inject(CrearObjecionService);
   private crearReciboService = inject(CrearReciboPagoService);
@@ -75,7 +81,12 @@ export class DetalleComparendoComponent implements OnInit {
   pasoModalObjecion: 1 | 2 = 1;
   aceptaAdvertencia = false;
 
+  private ctxNavegacion(): RutasCodigoPoliciaCtx {
+    return { route: this.route, busquedaState: this.busquedaState };
+  }
+
   ngOnInit(): void {
+    marcarAccesoPublicoCodigoPolicia(this.router, this.route, this.busquedaState);
     this.identificacionParam = this.busquedaState.identificacion;
 
     const comparendoId = this.busquedaState.comparendoId;
@@ -461,11 +472,11 @@ export class DetalleComparendoComponent implements OnInit {
   }
 
   volver(): void {
-    this.router.navigate(['/gestion-acceso-justicia/comparendo/gestion-ciudadano/lista-comparendos']);
+    this.router.navigate(rutasCodigoPolicia(this.router, 'lista-comparendos', this.ctxNavegacion()));
   }
 
   irAlInicio(): void {
-    this.router.navigate(['/gestion-acceso-justicia/comparendo/gestion-ciudadano']);
+    this.router.navigate(rutasCodigoPolicia(this.router, undefined, this.ctxNavegacion()));
   }
 
   pagarMulta(): void {
@@ -517,7 +528,7 @@ export class DetalleComparendoComponent implements OnInit {
     const c = this.comparendo();
     if (c) {
       this.busquedaState.expediente = c.expediente || c.numeroFormato;
-      this.router.navigate(['/gestion-acceso-justicia/comparendo/gestion-ciudadano/lista-pedagogia']);
+      this.router.navigate(rutasCodigoPolicia(this.router, 'lista-pedagogia', this.ctxNavegacion()));
     }
   }
 
@@ -597,7 +608,7 @@ export class DetalleComparendoComponent implements OnInit {
 
   objetarComparendo(): void {
     if (this.comparendo()) {
-      this.router.navigate(['/gestion-acceso-justicia/comparendo/gestion-ciudadano/crea-objecion']);
+      this.router.navigate(rutasCodigoPolicia(this.router, 'crea-objecion', this.ctxNavegacion()));
     }
   }
 
