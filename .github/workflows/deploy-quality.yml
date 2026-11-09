@@ -36,6 +36,7 @@ jobs:
 
           test "$(whoami)" = "saul"
           test -d "$DEPLOY_ROOT"
+          git config --global --add safe.directory "$DEPLOY_ROOT"
 
       - name: Update quality code
         working-directory: /var/www/qa/saul3-front
@@ -88,7 +89,7 @@ jobs:
       - name: Build quality
         working-directory: /var/www/qa/saul3-front
         run: |
-          npm run build:qa -- --base-href=/qa/
+          npm run build:qa
 
       - name: Verify deployment
         working-directory: /var/www/qa/saul3-front

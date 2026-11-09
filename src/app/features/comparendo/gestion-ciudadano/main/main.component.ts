@@ -5,6 +5,8 @@ import { ListaComparendosComponent } from '../lista-comparendos/lista-comparendo
 import { FormularioHelper } from 'src/app/core/helpers/formulario.helper';
 import { ComparendoService, TipoDocIdentificacionApi } from 'src/app/core/services/comparendo.service';
 import { BusquedaStateService } from 'src/app/core/services/busqueda-state.service';
+import { ActivatedRoute, Router } from '@angular/router';
+import { marcarAccesoPublicoCodigoPolicia } from 'src/app/core/helpers/codigo-policia-route.helper';
 
 interface TipoIdentificacionOpcion {
   id: number;
@@ -34,6 +36,8 @@ export class MainComponent implements OnInit, AfterViewInit {
   public formularioHelper = inject(FormularioHelper);
   private comparendoService = inject(ComparendoService);
   private busquedaState = inject(BusquedaStateService);
+  private router = inject(Router);
+  private route = inject(ActivatedRoute);
 
   busquedaRealizada = signal(false);
   /** Mientras la petición HTTP de comparendos está en curso */
@@ -75,6 +79,7 @@ export class MainComponent implements OnInit, AfterViewInit {
   ];
 
   ngOnInit(): void {
+    marcarAccesoPublicoCodigoPolicia(this.router, this.route, this.busquedaState);
     this.formularioHelper.setFormulario(this.buscarForm);
     this.cargarTiposIdentificacion();
   }

@@ -27,6 +27,14 @@ export const routes: Routes = [
     ],
   },
   {
+    path: 'codigopolicia',
+    loadChildren: () =>
+      import('./features/comparendo/gestion-ciudadano/codigo-policia.module').then(
+        (m) => m.CodigoPoliciaModule,
+      ),
+    title: 'Código de Policía - Consulta de comparendos',
+  },
+  {
     path: 'visita',
     component: Layout,
     // canActivate: [authGuard],
