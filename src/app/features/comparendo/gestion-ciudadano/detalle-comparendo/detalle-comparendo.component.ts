@@ -472,7 +472,7 @@ export class DetalleComparendoComponent implements OnInit {
   }
 
   volver(): void {
-    this.router.navigate(rutasCodigoPolicia(this.router, 'lista-comparendos', this.ctxNavegacion()));
+    this.router.navigate(rutasCodigoPolicia(this.router, undefined, this.ctxNavegacion()));
   }
 
   irAlInicio(): void {
