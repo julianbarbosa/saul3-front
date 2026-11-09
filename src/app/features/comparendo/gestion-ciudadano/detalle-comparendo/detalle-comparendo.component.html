@@ -190,20 +190,7 @@
           </div>
         </div>
 
-        <app-gestion-multa
-          *ngIf="medida.esEconomica"
-          class="mt-2 pt-3 border-top"
-          [mostrarPago]="false"
-          [mostrarObjecion]="true"
-          [comparendoId]="comparendo()!.comparendoId"
-          [numeroIdentificacion]="identificacionParam ?? comparendo()!.identificacion"
-          [expediente]="comparendo()!.expediente"
-          [objecionId]="comparendo()!.objecionId"
-          [fechaObjecion]="comparendo()!.fechaObjecion"
-          [puedeObjetar]="puedeObjetar()"
-          [objecionValidacionMsg]="objecionValidacion()?.msg ?? ''"
-          (solicitarObjecion)="abrirModalObjecion()">
-        </app-gestion-multa> 
+       
       </div>
     </div>
 
