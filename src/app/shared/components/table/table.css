@@ -1,0 +1,490 @@
+/*
+ * Tabla de listados según VIS_TABL (KIT UI SAUL3):
+ * encabezado azul, tarjeta con bordes redondeados, filas blancas con línea gris
+ * y paginador «« Anterior 1 Siguiente »».
+ *
+ * Responsive: el componente mide si la tabla cabe completa en el espacio que tiene
+ * (no según la ventana), así se adapta igual con el menú abierto, con zoom o con más columnas.
+ * - Si cabe: tabla completa, sin desplazamiento lateral.
+ * - Si no cabe: clase `tabla-ssj--tarjetas`, cada fila es una tarjeta con etiqueta:valor.
+ * Los colores salen de la guía (`--ssj-*` los pone EstilosVisitaService);
+ * el valor después de la coma es el mismo color, por si la tabla se usa fuera de Visitas.
+ */
+
+:host {
+  display: block;
+  min-width: 0;
+}
+
+.tabla-ssj {
+  container-type: inline-size;
+  container-name: tabla-ssj;
+  min-width: 0;
+  color: var(--ssj-gris-texto, #4b4b4b);
+}
+
+/* ---------- Filtros superiores ---------- */
+
+.filter-select--placeholder {
+  color: var(--ssj-gris-borde, #737373);
+}
+
+.filter-select option:not(:disabled) {
+  color: var(--ssj-negro, #000);
+}
+
+.typeahead {
+  position: relative;
+}
+
+.typeahead-lista {
+  position: absolute;
+  z-index: 5;
+  left: 0;
+  right: 0;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  background: #fff;
+  border: 1px solid var(--ssj-gris-borde, #737373);
+  border-radius: 0.25rem;
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.typeahead-lista button {
+  display: block;
+  width: 100%;
+  text-align: left;
+  background: transparent;
+  border: 0;
+  padding: 0.35rem 0.5rem;
+}
+
+.typeahead-lista button:hover {
+  background: var(--ssj-azul-claro, #b5c7e9);
+}
+
+/* ---------- Tarjeta y tabla ---------- */
+
+.table-scroll {
+  border: 1px solid #e0e0e0;
+  border-radius: 0.75rem;
+  background: #fff;
+  /* Solo como respaldo mientras se mide; la tabla pasa a tarjetas si no cabe. */
+  overflow-x: auto;
+}
+
+.tabla-ssj__tabla {
+  width: 100%;
+  margin: 0;
+  table-layout: auto;
+  font-size: 0.9375rem;
+  --bs-table-bg: #fff;
+  --bs-table-color: var(--ssj-gris-texto, #4b4b4b);
+  --bs-table-border-color: #e0e0e0;
+}
+
+.tabla-ssj__tabla.table-has-checkboxes {
+  table-layout: fixed;
+}
+
+.tabla-ssj__tabla thead th {
+  padding: 1rem 0.75rem;
+  border-bottom: 0;
+  background: var(--ssj-azul, #0943b5);
+  color: #fff;
+  font-weight: 700;
+  vertical-align: top;
+  white-space: normal;
+}
+
+.tabla-ssj__tabla thead th .btn-link {
+  color: #fff !important;
+  font-size: inherit;
+}
+
+.tabla-ssj__tabla tbody td {
+  padding: 0.875rem 0.75rem;
+  border-bottom: 1px solid #e0e0e0;
+  vertical-align: middle;
+  /* break-word (no anywhere): las palabras no se parten por sílabas y la medición es real. */
+  overflow-wrap: break-word;
+  word-break: normal;
+}
+
+.tabla-ssj__tabla tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+.tabla-ssj__tabla tbody td a {
+  color: var(--ssj-azul, #0943b5);
+}
+
+/* ---------- Encabezado: título, filtro (embudo) y orden (KIT UI SAUL3, pág. 11) ---------- */
+
+.encabezado {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.125rem 0.25rem;
+}
+
+.encabezado__titulo {
+  margin-right: 0.125rem;
+}
+
+/* Embudo y orden siempre juntos; si la columna es angosta, el título baja de línea, no los íconos. */
+.encabezado__iconos {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.125rem;
+  white-space: nowrap;
+}
+
+.icono-encabezado {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.75rem;
+  height: 1.75rem;
+  padding: 0;
+  border: 0;
+  border-radius: 0.375rem;
+  background: transparent;
+  color: #fff;
+  cursor: pointer;
+}
+
+/* Foco con teclado (no está en el KIT; lo exige accesibilidad): anillo blanco y negro como los botones. */
+.icono-encabezado:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px #fff, 0 0 0 4px #000;
+}
+
+/* Embudo: contorno (Default); relleno al pasar el mouse (Hover), abierto (Focus) o con filtro aplicado. */
+.icono-filtro svg path {
+  fill: none;
+  transition: fill 0.12s ease;
+}
+
+.icono-filtro:hover svg path,
+.icono-filtro--activo svg path {
+  fill: currentColor;
+}
+
+/* Orden: opaco si no es la columna ordenada; la flecha apunta abajo cuando el orden es descendente. */
+.icono-orden {
+  opacity: 0.75;
+}
+
+.icono-orden:hover,
+.icono-orden--activo {
+  opacity: 1;
+}
+
+.icono-orden__flecha {
+  transform-origin: 4px 9px;
+  transition: transform 0.15s ease;
+}
+
+.icono-orden--desc .icono-orden__flecha {
+  transform: rotate(180deg);
+}
+
+.icono-orden--activo {
+  background: rgb(255 255 255 / 18%);
+}
+
+/* Tarjeta del filtro (se dibuja en <body>, fuera de la tabla: el contenido lleva estos estilos). */
+.tarjeta-filtro {
+  width: 11.875rem;
+  padding: 0.75rem 1rem 1rem;
+}
+
+.tarjeta-filtro__encabezado {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-bottom: 0.625rem;
+}
+
+.tarjeta-filtro__titulo {
+  color: var(--ssj-azul, #0943b5);
+  font-size: 1rem;
+  font-weight: 700;
+  line-height: 1.25;
+  overflow-wrap: anywhere;
+}
+
+.tarjeta-filtro__cerrar {
+  display: inline-flex;
+  flex: 0 0 auto;
+  padding: 0.125rem;
+  border: 0;
+  border-radius: 0.25rem;
+  background: transparent;
+  color: var(--ssj-azul, #0943b5);
+  cursor: pointer;
+}
+
+.tarjeta-filtro__cerrar:focus-visible {
+  outline: 2px solid #000;
+  outline-offset: 1px;
+}
+
+.tarjeta-filtro__campo {
+  width: 100%;
+  min-height: 2.25rem;
+  border: 1px solid var(--ssj-azul, #0943b5);
+  border-radius: 0.375rem;
+}
+
+.tarjeta-filtro__campo:focus {
+  border-color: var(--ssj-azul, #0943b5);
+  box-shadow: 0 0 0 2px rgb(9 67 181 / 25%);
+}
+
+.limpiar-filtros {
+  color: var(--ssj-azul, #0943b5);
+  font-weight: 600;
+}
+
+col.table-checkbox-col-width {
+  width: 40px;
+}
+
+.table-checkbox-col {
+  width: 40px;
+  min-width: 40px;
+  max-width: 40px;
+  padding: 0 !important;
+  overflow: hidden;
+  text-align: center;
+  vertical-align: middle;
+}
+
+.table-checkbox-col .form-check-input {
+  width: 14px;
+  height: 14px;
+  margin: 0;
+  float: none;
+}
+
+.table-checkbox-col .form-check-input:checked {
+  background-color: var(--ssj-control, #004884);
+  border-color: var(--ssj-control, #004884);
+}
+
+/*
+ * Marcas de fila (rowClass). Un borde a la izquierda en lugar de pintar toda la fila,
+ * para no competir con las etiquetas de estado del diseño.
+ */
+.tabla-ssj__tabla tbody tr.fila-alerta-alta > td:first-child {
+  box-shadow: inset 5px 0 0 var(--ssj-rojo, #a80521);
+}
+
+.tabla-ssj__tabla tbody tr.fila-alerta-media > td:first-child {
+  box-shadow: inset 5px 0 0 var(--ssj-amarillo, #fecc2f);
+}
+
+/* ---------- Paginador ---------- */
+
+.tabla-ssj__paginacion {
+  display: flex;
+  justify-content: center;
+  margin-top: 1.5rem;
+}
+
+.tabla-ssj__paginacion .pagination {
+  flex-wrap: wrap;
+  justify-content: center;
+  --bs-pagination-color: var(--ssj-gris-texto, #4b4b4b);
+  --bs-pagination-bg: #e8ecef;
+  --bs-pagination-border-color: #e1e2e4;
+  --bs-pagination-hover-color: var(--ssj-azul, #0943b5);
+  --bs-pagination-hover-bg: var(--ssj-azul-claro, #b5c7e9);
+  --bs-pagination-hover-border-color: #e1e2e4;
+  --bs-pagination-focus-color: var(--ssj-azul, #0943b5);
+  --bs-pagination-focus-bg: #e8ecef;
+  --bs-pagination-focus-box-shadow: 0 0 0 2px #fff, 0 0 0 4px #000;
+  --bs-pagination-active-color: #fff;
+  --bs-pagination-active-bg: var(--ssj-azul, #0943b5);
+  --bs-pagination-active-border-color: var(--ssj-azul, #0943b5);
+  --bs-pagination-disabled-color: var(--ssj-gris-borde, #737373);
+  --bs-pagination-disabled-bg: #e8ecef;
+  --bs-pagination-disabled-border-color: #e1e2e4;
+}
+
+.tabla-ssj__flecha {
+  display: none;
+}
+
+.tabla-ssj__resumen {
+  margin: 0.5rem 0 0;
+  color: var(--ssj-gris-texto, #4b4b4b);
+  font-size: 0.875rem;
+  text-align: center;
+}
+
+/* Contenedor angosto: «‹ ›» en lugar de «Anterior / Siguiente». */
+@container tabla-ssj (max-width: 479.98px) {
+  .tabla-ssj__texto-paginador {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+  }
+
+  .tabla-ssj__flecha {
+    display: inline;
+  }
+}
+
+/* ---------- Tarjetas (la tabla no cabe completa) ---------- */
+
+.tabla-ssj--tarjetas .table-scroll {
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  overflow: visible;
+}
+
+.tabla-ssj--tarjetas .tabla-ssj__tabla,
+.tabla-ssj--tarjetas .tabla-ssj__tabla.table-has-checkboxes {
+  table-layout: auto;
+  background: transparent;
+}
+
+.tabla-ssj--tarjetas .tabla-ssj__tabla,
+.tabla-ssj--tarjetas .tabla-ssj__tabla tbody,
+.tabla-ssj--tarjetas .tabla-ssj__tabla tr,
+.tabla-ssj--tarjetas .tabla-ssj__tabla td {
+  display: block;
+  width: 100% !important;
+}
+
+.tabla-ssj--tarjetas .tabla-ssj__tabla colgroup {
+  display: none;
+}
+
+/* Cabecera: solo los filtros y el orden, en una franja azul. */
+.tabla-ssj--tarjetas .tabla-ssj__tabla thead {
+  display: block;
+}
+
+/* Tarjetas: una fila de «Título ▿ ↑» por cada columna que filtra u ordena. */
+.tabla-ssj--tarjetas .tabla-ssj__tabla thead tr {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.375rem 1rem;
+}
+
+.tabla-ssj--tarjetas .tabla-ssj__tabla thead {
+  margin-bottom: 1rem;
+  padding: 0.875rem;
+  border-radius: 0.75rem;
+  background: var(--ssj-azul, #0943b5);
+}
+
+.tabla-ssj--tarjetas .tabla-ssj__tabla thead th {
+  display: block;
+  width: auto !important;
+  padding: 0;
+  font-size: 0.875rem;
+}
+
+.tabla-ssj--tarjetas .tabla-ssj__tabla thead th:not(:has(.icono-encabezado)) {
+  display: none;
+}
+
+.tabla-ssj--tarjetas .tabla-ssj__tabla tbody {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 22rem), 1fr));
+  gap: 0.75rem;
+}
+
+.tabla-ssj--tarjetas .tabla-ssj__tabla tbody tr {
+  border: 1px solid #e0e0e0;
+  border-radius: 0.75rem;
+  background: #fff;
+  overflow: hidden;
+}
+
+.tabla-ssj--tarjetas .tabla-ssj__tabla tbody td,
+.tabla-ssj--tarjetas .tabla-ssj__tabla tbody tr:last-child td {
+  display: grid;
+  grid-template-columns: minmax(6.5rem, 38%) minmax(0, 1fr);
+  gap: 0.5rem;
+  padding: 0.5rem 0.875rem;
+  border-bottom: 1px solid #f2f2f2;
+  overflow-wrap: anywhere;
+  /* Etiquetas y botones con su ancho natural, no estirados a toda la celda. */
+  justify-items: start;
+}
+
+.tabla-ssj--tarjetas .tabla-ssj__tabla tbody td:last-child {
+  border-bottom: 0;
+}
+
+.tabla-ssj--tarjetas .tabla-ssj__tabla tbody td::before {
+  content: attr(data-label);
+  color: var(--ssj-negro, #000);
+  font-weight: 700;
+}
+
+/* Fila de «sin registros» y celdas sin título: sin etiqueta. */
+.tabla-ssj--tarjetas .tabla-ssj__tabla tbody td[colspan] {
+  display: block;
+}
+
+.tabla-ssj--tarjetas .tabla-ssj__tabla tbody td[colspan]::before,
+.tabla-ssj--tarjetas .tabla-ssj__tabla tbody td[data-label='']::before {
+  content: none;
+}
+
+.tabla-ssj--tarjetas .tabla-ssj__tabla .table-checkbox-col {
+  max-width: none;
+  padding: 0.5rem 0.875rem !important;
+  text-align: left;
+}
+
+.tabla-ssj--tarjetas .tabla-ssj__tabla tbody tr.fila-alerta-alta,
+.tabla-ssj--tarjetas .tabla-ssj__tabla tbody tr.fila-alerta-media {
+  border-left-width: 6px;
+}
+
+.tabla-ssj--tarjetas .tabla-ssj__tabla tbody tr.fila-alerta-alta {
+  border-left-color: var(--ssj-rojo, #a80521);
+}
+
+.tabla-ssj--tarjetas .tabla-ssj__tabla tbody tr.fila-alerta-media {
+  border-left-color: var(--ssj-amarillo, #fecc2f);
+}
+
+.tabla-ssj--tarjetas .tabla-ssj__tabla tbody tr.fila-alerta-alta > td:first-child,
+.tabla-ssj--tarjetas .tabla-ssj__tabla tbody tr.fila-alerta-media > td:first-child {
+  box-shadow: none;
+}
+
+/*
+ * Envoltura de la tarjeta (la crea ng-bootstrap en <body>): borde azul de 1px, esquinas
+ * redondeadas, sin flecha ni sombra, como en el KIT. ::ng-deep porque está fuera del componente.
+ */
+::ng-deep .popover.filtro-popover {
+  --bs-popover-max-width: none;
+  --bs-popover-border-color: var(--ssj-azul, #0943b5);
+  --bs-popover-border-radius: 0.875rem;
+  --bs-popover-body-padding-x: 0;
+  --bs-popover-body-padding-y: 0;
+  --bs-popover-box-shadow: none;
+  border-width: 1px;
+  font-family: 'Nunito Sans', sans-serif;
+}
+
+::ng-deep .popover.filtro-popover .popover-arrow {
+  display: none;
+}

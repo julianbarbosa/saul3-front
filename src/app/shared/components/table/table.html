@@ -1,0 +1,402 @@
+<div class="tabla-ssj" [class.tabla-ssj--tarjetas]="modoTarjetas()">
+  @if (filters.length > 0) {
+    <div class="row">
+      @for (filter of filters; track filter.campo) {
+        <div [class]="getFilterNgClass(filter)">
+          <label [for]="'filtro-' + filter.campo">{{ filter.label }}</label>
+          @if (filter.tipo === 'input') {
+            <input
+              class="form-control"
+              [id]="'filtro-' + filter.campo"
+              [name]="'filtro-' + filter.campo"
+              [value]="valorTextoFiltro(filter)"
+              (input)="onTextoFiltro(filter, valorInput($event))"
+              [placeholder]="filter.placeholder || filter.label"
+            />
+          }
+          @if (filter.tipo === 'select') {
+            <select
+              class="form-control filter-select"
+              [class.filter-select--placeholder]="isFilterSelectEmpty(filter.value)"
+              [id]="'filtro-' + filter.campo"
+              [name]="'filtro-' + filter.campo"
+              [value]="valorTextoFiltro(filter)"
+              (change)="onCambioSelectFiltro(filter, $event)"
+            >
+              <option value="">--</option>
+              @for (option of filter.options ?? []; track option.value) {
+                <option [value]="option.value">{{ option.label }}</option>
+              }
+            </select>
+          }
+          @if (filter.tipo === 'input-typeahead') {
+            <div class="typeahead">
+              <input
+                class="form-control"
+                [id]="'filtro-' + filter.campo"
+                [name]="'filtro-' + filter.campo"
+                [placeholder]="filter.placeholder || filter.label"
+                [value]="textoTypeahead(filter)"
+                (input)="onTextoTypeahead(filter, valorInput($event))"
+                (focus)="abrirTypeahead(filter)"
+                (blur)="cerrarTypeahead(filter)"
+                autocomplete="off"
+              />
+              @if (typeaheadVisible(filter)) {
+                <ul class="typeahead-lista">
+                  @for (opcion of sugerenciasTypeahead(filter); track $index) {
+                    <li>
+                      <button type="button" (mousedown)="seleccionarTypeahead(filter, opcion)">
+                        {{ etiquetaTypeahead(filter, opcion) }}
+                      </button>
+                    </li>
+                  }
+                </ul>
+              }
+            </div>
+          }
+        </div>
+      }
+    </div>
+    <div class="row my-2">
+      <div class="col-12 d-flex justify-content-end align-items-center gap-2 flex-wrap">
+        @if (mostrarBotonLimpiar) {
+          <button type="button" class="btn ssj-boton ssj-boton--pequeno" (click)="cleanFilters()">
+            Limpiar
+          </button>
+        }
+        @if (mostrarBotonAplicar) {
+          <button
+            type="button"
+            class="btn ssj-boton ssj-boton--relleno ssj-boton--pequeno"
+            (click)="applyFilters()"
+          >
+            Aplicar
+          </button>
+        }
+        @if (mostrarBotonEditar || editFilter) {
+          <button
+            type="button"
+            class="btn ssj-boton ssj-boton--exito ssj-boton--pequeno"
+            [disabled]="!hayFilasSeleccionadas"
+            (click)="onEditar()"
+          >
+            Editar
+          </button>
+        }
+      </div>
+    </div>
+  }
+
+  <div class="row mt-3">
+    <div class="col-12">
+      <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-2">
+        <div class="d-flex align-items-center gap-2">
+          <span class="text-muted small mb-0">{{ textoMostrar }}</span>
+          <select
+            class="form-select form-select-sm w-auto"
+            aria-label="Registros por página"
+            [value]="pageSize"
+            (change)="onCambioLimite($event)"
+          >
+            @for (opcion of pageSizeOptions; track opcion) {
+              <option [value]="opcion">{{ opcion }}</option>
+            }
+          </select>
+          <span class="text-muted small">{{ textoRegistros }}</span>
+        </div>
+        @if (mostrarEnlaceRelacionar) {
+          <button type="button" class="btn btn-link btn-sm" (click)="relacionarClick.emit()">
+            Relacionar
+          </button>
+        }
+        @if (cantidadFiltrosColumna > 0) {
+          <button type="button" class="btn btn-link btn-sm p-0 limpiar-filtros" (click)="clearColumnFilters()">
+            Limpiar filtros ({{ cantidadFiltrosColumna }})
+          </button>
+        }
+        <span class="text-muted small">
+          @if (total > 0) {
+            {{ rangoDesde }} – {{ rangoHasta }} de {{ total }}
+          } @else {
+            0 {{ textoRegistros }}
+          }
+        </span>
+      </div>
+
+      <div class="table-scroll">
+        <table class="table tabla-ssj__tabla" [class.table-has-checkboxes]="showCheckboxes">
+          <colgroup>
+            @if (showCheckboxes) {
+              <col class="table-checkbox-col-width" />
+            }
+            @for (column of columns; track $index) {
+              <col [style.width]="getColumnWidth(column)" />
+            }
+          </colgroup>
+          <thead>
+            <tr>
+              @if (showCheckboxes) {
+                <th class="table-checkbox-col">
+                  <input
+                    type="checkbox"
+                    class="form-check-input"
+                    [checked]="allRowsOnPageSelected"
+                    (change)="onToggleAllOnPageChange(casillaMarcada($event))"
+                    aria-label="Seleccionar todos en esta página"
+                  />
+                </th>
+              }
+              @for (column of columns; track $index) {
+                <th
+                  class="table-data-col"
+                  [style.width]="getColumnWidth(column)"
+                  [attr.aria-sort]="ariaOrden(column)"
+                  #celdaEncabezado
+                >
+                  <span class="encabezado">
+                    <span class="encabezado__titulo">{{ column.label }}</span>
+                    <span class="encabezado__iconos">
+                    @if (tieneFiltro(column)) {
+                      <!-- Filtro (KIT UI SAUL3): embudo de contorno; relleno al pasar el mouse, abierto o con valor. -->
+                      <button
+                        type="button"
+                        class="icono-encabezado icono-filtro"
+                        [class.icono-filtro--activo]="filtroActivo(column) || p.isOpen()"
+                        [attr.aria-label]="'Filtrar por ' + column.label + (filtroActivo(column) ? ' (filtro aplicado)' : '')"
+                        aria-haspopup="dialog"
+                        [attr.aria-expanded]="p.isOpen()"
+                        [ngbPopover]="tarjetaFiltro"
+                        [popoverContext]="{ $implicit: column, popover: p }"
+                        [positionTarget]="celdaEncabezado"
+                        triggers="manual"
+                        autoClose="outside"
+                        container="body"
+                        placement="bottom-start bottom-end"
+                        popoverClass="filtro-popover"
+                        [popperOptions]="ajustePopover"
+                        #p="ngbPopover"
+                        #botonFiltro
+                        (click)="p.toggle()"
+                        (shown)="enfocarCampoFiltro()"
+                        (hidden)="botonFiltro.focus()"
+                      >
+                        <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true" focusable="false">
+                          <path
+                            d="M1.5 2h13l-5 6.2V13l-3 1.5V8.2z"
+                            stroke="currentColor"
+                            stroke-width="1.4"
+                            stroke-linejoin="round"
+                          />
+                        </svg>
+                      </button>
+                    }
+                    @if (column.sortable) {
+                      <!-- Orden: ↑ con Z/A. Opaco si no es la columna ordenada; la flecha baja en DESC. -->
+                      <button
+                        type="button"
+                        class="icono-encabezado icono-orden"
+                        [class.icono-orden--activo]="esColumnaOrdenada(column)"
+                        [class.icono-orden--desc]="esColumnaOrdenada(column) && sortDir === 'DESC'"
+                        [attr.aria-label]="etiquetaOrden(column)"
+                        (click)="ordenarPor(column)"
+                      >
+                        <svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true" focusable="false">
+                          <path
+                            class="icono-orden__flecha"
+                            d="M4 15.5V2.5M1.5 5L4 2.5 6.5 5"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="1.4"
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                          />
+                          <text x="9.5" y="8" font-size="8" font-weight="800" fill="currentColor">Z</text>
+                          <text x="9.5" y="16.5" font-size="8" font-weight="800" fill="currentColor">A</text>
+                        </svg>
+                      </button>
+                    }
+                    </span>
+                  </span>
+                </th>
+              }
+            </tr>
+          </thead>
+          <tbody>
+            @if (!data?.length) {
+              <tr>
+                <td [attr.colspan]="colspanTabla" class="text-center text-muted py-3">
+                  No se encontraron registros que coincidan con la búsqueda.
+                </td>
+              </tr>
+            } @else {
+              @for (row of data ?? []; track rowSelectionKey(row) ?? $index) {
+                <tr [class]="claseFila(row)">
+                  @if (showCheckboxes) {
+                    <td class="table-checkbox-col">
+                      <input
+                        type="checkbox"
+                        class="form-check-input"
+                        [checked]="isRowSelected(row)"
+                        (change)="onRowCheckboxChange(row, casillaMarcada($event))"
+                        [attr.aria-label]="'Seleccionar fila ' + (rowSelectionKey(row) ?? '')"
+                      />
+                    </td>
+                  }
+                  @for (column of columns; track $index) {
+                    <td
+                      [style.width]="getColumnWidth(column)"
+                      [attr.data-label]="column.label ?? column.titulo ?? ''"
+                    >
+                      @if (column.template) {
+                        <ng-container
+                          *ngTemplateOutlet="column.template; context: { $implicit: row }"
+                        />
+                      } @else if (column.toHtml) {
+                        <span [innerHTML]="cellHtml(row, column.campo ?? null)"></span>
+                      } @else {
+                        {{ formatCell(row, column.campo ?? null) }}
+                      }
+                    </td>
+                  }
+                </tr>
+              }
+            }
+          </tbody>
+        </table>
+      </div>
+
+      @if (data?.length) {
+        <nav class="tabla-ssj__paginacion" aria-label="Paginación">
+          <ul class="pagination mb-0">
+            <li class="page-item" [class.disabled]="page === 1">
+              <button
+                type="button"
+                class="page-link"
+                [disabled]="page === 1"
+                (click)="cambiarPagina(1)"
+                aria-label="Primera página"
+              >
+                ««
+              </button>
+            </li>
+            <li class="page-item" [class.disabled]="page === 1">
+              <button
+                type="button"
+                class="page-link"
+                [disabled]="page === 1"
+                (click)="onPaginaAnterior()"
+                aria-label="Página anterior"
+              >
+                <span aria-hidden="true" class="tabla-ssj__flecha">‹</span
+                ><span class="tabla-ssj__texto-paginador">Anterior</span>
+              </button>
+            </li>
+            @for (p of paginas; track p) {
+              <li class="page-item" [class.active]="p === page">
+                <button
+                  type="button"
+                  class="page-link"
+                  [attr.aria-current]="p === page ? 'page' : null"
+                  [attr.aria-label]="'Página ' + p"
+                  (click)="cambiarPagina(p)"
+                >
+                  {{ p }}
+                </button>
+              </li>
+            }
+            <li class="page-item" [class.disabled]="page === totalPaginas">
+              <button
+                type="button"
+                class="page-link"
+                [disabled]="page === totalPaginas"
+                (click)="onPaginaSiguiente()"
+                aria-label="Página siguiente"
+              >
+                <span class="tabla-ssj__texto-paginador">Siguiente</span
+                ><span aria-hidden="true" class="tabla-ssj__flecha">›</span>
+              </button>
+            </li>
+            <li class="page-item" [class.disabled]="page === totalPaginas">
+              <button
+                type="button"
+                class="page-link"
+                [disabled]="page === totalPaginas"
+                (click)="cambiarPagina(totalPaginas)"
+                aria-label="Última página"
+              >
+                »»
+              </button>
+            </li>
+          </ul>
+        </nav>
+        <p class="tabla-ssj__resumen">
+          Página {{ page }} de {{ totalPaginas }} · Mostrando {{ data!.length }} de {{ total }}
+          {{ textoRegistros }}.
+        </p>
+      }
+    </div>
+  </div>
+</div>
+
+<!-- Tarjeta del filtro (KIT UI SAUL3, pág. 11): título de la columna, cerrar y un campo. Sin botones: se aplica sola. -->
+<ng-template #tarjetaFiltro let-column let-popover="popover">
+  <div class="tarjeta-filtro" role="dialog" [attr.aria-label]="'Filtrar por ' + column.label">
+    <div class="tarjeta-filtro__encabezado">
+      <span class="tarjeta-filtro__titulo">{{ column.label }}</span>
+      <button
+        type="button"
+        class="tarjeta-filtro__cerrar"
+        aria-label="Cerrar filtro"
+        (click)="popover.close()"
+      >
+        <svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true" focusable="false">
+          <path d="M1 1l12 12M13 1L1 13" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" />
+        </svg>
+      </button>
+    </div>
+    @switch (tipoIconoFiltro(column)) {
+      @case ('select') {
+        <select
+          class="form-select tarjeta-filtro__campo"
+          [attr.aria-label]="'Filtrar por ' + column.label"
+          [value]="valorFiltroColumna(column)"
+          (change)="onFiltroColumna(claveConsulta(column), valorInput($event))"
+        >
+          <option value="">Todos</option>
+          @for (opcion of opcionesIconoFiltro(column); track opcion.id) {
+            <option [value]="'' + opcion.id" [selected]="'' + opcion.id === valorFiltroColumna(column)">
+              {{ opcion.nombre }}
+            </option>
+          }
+        </select>
+      }
+      @case ('multiselect') {
+        <select
+          multiple
+          class="form-select tarjeta-filtro__campo"
+          [attr.aria-label]="'Filtrar por ' + column.label"
+          (change)="onMultiselectColumna(column, $event)"
+        >
+          @for (opcion of opcionesIconoFiltro(column); track opcion.id) {
+            <option [value]="'' + opcion.id" [selected]="multiselectMarcada(column, opcion.id)">
+              {{ opcion.nombre }}
+            </option>
+          }
+        </select>
+      }
+      @default {
+        <input
+          class="form-control tarjeta-filtro__campo"
+          [type]="tipoIconoFiltro(column) === 'number' ? 'number' : 'text'"
+          [attr.inputmode]="tipoIconoFiltro(column) === 'number' ? 'numeric' : null"
+          [attr.aria-label]="'Filtrar por ' + column.label"
+          [value]="valorFiltroColumna(column)"
+          autocomplete="off"
+          (input)="programarFiltroColumna(column, valorInput($event))"
+          (keydown.enter)="aplicarFiltroColumnaYa(column, valorInput($event))"
+        />
+      }
+    }
+  </div>
+</ng-template>

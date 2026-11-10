@@ -48,6 +48,8 @@
               "path": ":comparendoId/segunda-instancia",
               "loadComponent": "@modules/medida-multa/pages/segunda-instancia/segunda-instancia.component#SegundaInstanciaComponent"
             }
+
+            
           ]
         },
         {
@@ -86,6 +88,22 @@
               "path": "calendario",
               "loadComponent": "@modules/pedagogia/pages/calendario/calendario-pedagogia.component#CalendarioPedagogiaComponent"
             }
+          ]
+        },
+        {
+          "id": "control-construcciones",
+          "label": "Control a Construcciones",
+          "basePath": "/visita",
+          "path": "",
+          "children": [
+            { "id": "cc-crear-solicitud", "label": "Crear Solicitud", "path": "crear-solicitud" },
+            { "id": "cc-licencias", "label": "Licencias", "path": "licencias" },
+            { "id": "cc-asignar-visita", "label": "Asignar Visita", "path": "asignar-visita" },
+            { "id": "cc-asignar-visita-masiva", "label": "Asignar Visita Masiva", "path": "asignar-visita-masiva" },
+            { "id": "cc-visitas-pendientes", "label": "Visitas Pendientes", "path": "listar-visita" },
+            { "id": "cc-visitas-emitidas", "label": "Visitas Emitidas", "path": "emitidos" },
+            { "id": "cc-todas-las-visitas", "label": "Todas las Visitas", "path": "listar-visita-todo" },
+            { "id": "cc-reportes", "label": "Reportes", "path": "reportes" }
           ]
         }
       ]

@@ -129,3 +129,57 @@ export interface VisitaCategoria {
   /** Orden de tablas y campos sueltos. Si falta, la pantalla deriva un bloque. */
   bloques?: BloquePresentacion[];
 }
+
+/**
+ * Fila del listado de visitas (`GET /visita` de saul2, VisitaRepository::consultarNoCerrado).
+ * Los nombres son los que devuelve el backend; no se renombran.
+ */
+export interface VisitaListadoFila {
+  idvisita: number;
+  idsolicitud: number;
+  direccion?: string | null;
+  radicado?: string | null;
+  radicadoInspeccion?: string | null;
+  identificacionDocumento?: string | null;
+  numIdentificacionRevisor?: string | null;
+  nombreTipoSolicitud?: string | null;
+  nombreEstado?: string | null;
+  codigoEstado?: string | null;
+  visitador?: string | null;
+  supervisor?: string | null;
+  /** Ruta de SAUL para gestionar la visita según su tipo y estado (ej. `/visita/registrar/`). */
+  ruta?: string | null;
+  fechaVisita?: FechaSaulRaw | string | null;
+  fechaRevision?: FechaSaulRaw | string | null;
+  fecha_programacion?: FechaSaulRaw | string | null;
+  comuna?: number | string | null;
+  /** Días desde la asignación: 1 = más de 20 días (rojo), 2 = más de 15 (amarillo), 0 = a tiempo. */
+  rowWarning?: number | string | null;
+}
+
+/** Respuesta completa de `GET /visita`. `visitadores` y `estados` alimentan los filtros. */
+export interface VisitaListadoRespuesta {
+  /** Solo viene cuando falla (ej. sin sesión ni token): `{ success: false, msg }`. */
+  success?: boolean;
+  msg?: string;
+  data: VisitaListadoFila[];
+  totalItems: number;
+  visitadores?: { visitador: string | null }[];
+  estados?: { codigoEstado: string | null }[];
+}
+
+/** Lo que pide la pantalla: página, tamaño y filtros por columna (campo → valor). */
+export interface VisitaListadoConsulta {
+  page: number;
+  pageSize: number;
+  filtros: Record<string, string>;
+  orderBy?: string;
+  orderDir?: 'ASC' | 'DESC';
+}
+
+/** Respuesta `{ success, message | msg }` de las acciones sobre una visita. */
+export interface VisitaAccionRespuesta {
+  success: boolean;
+  message?: string;
+  msg?: string;
+}

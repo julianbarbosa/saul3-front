@@ -9,6 +9,8 @@ export interface MenuModuleItem {
   id: string;
   label: string;
   path: string;
+  /** Ruta base propia del módulo (ej. `/visita`). Si no viene, se usa la del menú. */
+  basePath?: string;
   loadChildren?: string;
   children: MenuChildItem[];
 }

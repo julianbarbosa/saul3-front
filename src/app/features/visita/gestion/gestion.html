@@ -5,6 +5,7 @@
 @if (encabezado(); as visita) {
   <section class="gestion-encabezado" aria-labelledby="gestion-encabezado-titulo">
     <h1 id="gestion-encabezado-titulo" class="gestion-encabezado__titulo">Registro de Visita</h1>
+    <h2 class="gestion-encabezado__subtitulo">Datos generales de la solicitud</h2>
     <dl class="gestion-encabezado__datos">
       <div><dt>Consecutivo</dt><dd>{{ visita.consecutivo }}</dd></div>
       <div><dt>Estado</dt><dd>{{ visita.estado || 'Sin estado' }}</dd></div>

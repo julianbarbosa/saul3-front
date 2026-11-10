@@ -5,12 +5,16 @@ import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import {
   PersonaSaulRaw,
+  VisitaAccionRespuesta,
   VisitaCampo,
   VisitaCategoria,
   VisitaDetalle,
   VisitaEncabezado,
   VisitaFormularioCategoriaRaw,
+  VisitaListadoConsulta,
+  VisitaListadoRespuesta,
 } from '../interfaces/visita.interface';
+import { EstilosVisitaService } from './estilos-visita.service';
 import { serializarValorVisita } from './visita-limpia.service';
 
 export interface VisitaGuardadoRespuesta {
@@ -25,6 +29,11 @@ export interface VisitaGuardadoRespuesta {
 export class VisitaService {
   private readonly http = inject(HttpClient);
   private readonly baseUrl = environment.SAUL2_API_URL;
+
+  constructor() {
+    // Toda pantalla de Visitas usa este servicio: así la guía de estilos siempre queda aplicada.
+    inject(EstilosVisitaService).iniciar();
+  }
 
   obtenerFormulario(idVisita: number): Observable<VisitaFormularioCategoriaRaw[] | VisitaCategoria[]> {
     return this.http.get<VisitaFormularioCategoriaRaw[] | VisitaCategoria[]>(
@@ -75,6 +84,80 @@ export class VisitaService {
       `${this.baseUrl}/visita`,
       cuerpoImagenVisita(idVisita, campo, archivo),
     );
+  }
+
+  /* ---------- Listados (Control a Construcciones) ---------- */
+
+  /** Visitas Pendientes: las que el usuario tiene por gestionar (SAUL: listarVisita). */
+  listarPendientes(consulta: VisitaListadoConsulta): Observable<VisitaListadoRespuesta> {
+    return this.listar(consulta, {});
+  }
+
+  /** Todas las Visitas (SAUL: listarVisitaTodo). */
+  listarTodas(consulta: VisitaListadoConsulta): Observable<VisitaListadoRespuesta> {
+    return this.listar(consulta, { type: 'all' });
+  }
+
+  /** Visitas Emitidas (SAUL: listarVisitaTodo?emitir). */
+  listarEmitidas(consulta: VisitaListadoConsulta): Observable<VisitaListadoRespuesta> {
+    return this.listar(consulta, { type: 'all', nombreEstado: 'Emitido' });
+  }
+
+  /* ---------- Acciones sobre una visita ---------- */
+
+  anularVisita(idVisita: number): Observable<VisitaAccionRespuesta> {
+    return this.http.post<VisitaAccionRespuesta>(`${this.baseUrl}/visita/anular-visita/${idVisita}`, {
+      confirmar: true,
+    });
+  }
+
+  anularAsignacion(idVisita: number): Observable<VisitaAccionRespuesta> {
+    return this.http.post<VisitaAccionRespuesta>(`${this.baseUrl}/visita/${idVisita}/anular_asignacion`, {
+      confirmar: true,
+    });
+  }
+
+  pasarControlPosterior(idVisita: number): Observable<VisitaAccionRespuesta> {
+    return this.http.post<VisitaAccionRespuesta>(
+      `${this.baseUrl}/visita/pasar-control-posterior/${idVisita}`,
+      { confirmar: true },
+    );
+  }
+
+  editarRadicado(idVisita: number, radicado: string): Observable<VisitaAccionRespuesta> {
+    return this.http.get<VisitaAccionRespuesta>(
+      `${this.baseUrl}/visita/editar-numero-radicado/${idVisita}/${encodeURIComponent(radicado.trim())}`,
+    );
+  }
+
+  /**
+   * GET `/visita` de saul2. El backend espera cada parámetro como JSON `{"name","value"}`
+   * (así los manda el $resource de AngularJS); la clave de la query no importa.
+   * `fijos` son los filtros propios de cada pantalla y ganan sobre los de la tabla.
+   */
+  private listar(
+    consulta: VisitaListadoConsulta,
+    fijos: Record<string, string>,
+  ): Observable<VisitaListadoRespuesta> {
+    const pares: [string, string | number][] = [
+      ['currentPage', consulta.page],
+      ['numPerPage', consulta.pageSize],
+      ['orderBy', consulta.orderBy ?? 'idsolicitud'],
+      ['orderDir', consulta.orderDir ?? 'ASC'],
+    ];
+    const filtros = { ...consulta.filtros, ...fijos };
+    for (const [name, value] of Object.entries(filtros)) {
+      if (String(value).trim() !== '') {
+        pares.push([name, value]);
+      }
+    }
+
+    let params = new HttpParams();
+    pares.forEach(([name, value], i) => {
+      params = params.set(String(i), JSON.stringify({ name, value }));
+    });
+
+    return this.http.get<VisitaListadoRespuesta>(`${this.baseUrl}/visita`, { params });
   }
 }
 
