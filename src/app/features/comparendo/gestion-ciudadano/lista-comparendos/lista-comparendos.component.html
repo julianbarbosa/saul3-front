@@ -243,6 +243,25 @@
 
 </div>
 
+<!-- Modal detalle de comparendo -->
+<ng-container *ngIf="mostrarModalDetalle">
+  <div class="modal-objecion-backdrop" (click)="cerrarModalDetalle()" aria-hidden="true"></div>
+  <div class="modal-detalle-wrapper" role="dialog" aria-modal="true" aria-labelledby="modalDetalleTitulo">
+    <div class="card border-0 shadow-lg w-100 modal-detalle-card">
+      <div class="modal-detalle-header d-flex align-items-center justify-content-between gap-3 px-4 py-3 border-bottom">
+        <h2 class="h5 fw-bold mb-0 text-primary" id="modalDetalleTitulo">Detalle de comparendo</h2>
+        <button type="button" class="btn btn-link text-secondary p-1 border-0 text-decoration-none"
+          aria-label="Cerrar" (click)="cerrarModalDetalle()">
+          <i class="bi bi-x-lg" aria-hidden="true"></i>
+        </button>
+      </div>
+      <div class="modal-detalle-body px-3 px-md-4 py-2">
+        <app-detalle-comparendo [enModal]="true" (cerrarModal)="cerrarModalDetalle()" />
+      </div>
+    </div>
+  </div>
+</ng-container>
+
 <!-- ══════════════════════════════════════════════
      MODAL ADVERTENCIA OBJECIÓN — Kit UI Gov.co 9.2
      ══════════════════════════════════════════════ -->

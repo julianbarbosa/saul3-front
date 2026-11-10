@@ -13,6 +13,7 @@ import {
   rutasCodigoPolicia,
   RutasCodigoPoliciaCtx,
 } from 'src/app/core/helpers/codigo-policia-route.helper';
+import { DetalleComparendoComponent } from '../detalle-comparendo/detalle-comparendo.component';
 interface Comparendo {
   comparendoId: string | number;
   expediente: string;
@@ -32,7 +33,7 @@ interface Comparendo {
 
 @Component({
   selector: 'app-lista-comparendos',
-  imports: [CommonModule, FormsModule, NgbPaginationModule],
+  imports: [CommonModule, FormsModule, NgbPaginationModule, DetalleComparendoComponent],
   templateUrl: './lista-comparendos.component.html',
   styleUrls: ['./lista-comparendos.component.sass']
 })
@@ -62,6 +63,7 @@ export class ListaComparendosComponent implements OnInit {
   cargando: boolean = false;
   errorAlCargar: boolean = false;
 
+  mostrarModalDetalle = false;
   mostrarModalObjecion: boolean = false;
   pasoModalObjecion: 1 | 2 = 1;
   aceptaAdvertencia: boolean = false;
@@ -303,7 +305,11 @@ export class ListaComparendosComponent implements OnInit {
 
   verMas(comparendo: Comparendo): void {
     this.prepararDetalle(comparendo);
-    this.router.navigate(rutasCodigoPolicia(this.router, 'detalle-comparendo', this.ctxNavegacion()));
+    this.mostrarModalDetalle = true;
+  }
+
+  cerrarModalDetalle(): void {
+    this.mostrarModalDetalle = false;
   }
 
   abrirModalObjecion(comparendo: Comparendo): void {
