@@ -82,6 +82,18 @@ export class MainComponent implements OnInit, AfterViewInit {
     marcarAccesoPublicoCodigoPolicia(this.router, this.route, this.busquedaState);
     this.formularioHelper.setFormulario(this.buscarForm);
     this.cargarTiposIdentificacion();
+    this.restaurarConsultaComparendos();
+  }
+
+  private restaurarConsultaComparendos(): void {
+    const identificacion = this.busquedaState.identificacion;
+    const cache = this.busquedaState.comparendosConsulta;
+    if (!identificacion || !cache?.length) return;
+
+    this.identificacionBusqueda.set(identificacion);
+    this.comparendos.set([...cache]);
+    this.busquedaRealizada.set(true);
+    this.buscarForm.patchValue({ identificacion });
   }
 
   ngAfterViewInit(): void {
@@ -147,8 +159,10 @@ export class MainComponent implements OnInit, AfterViewInit {
     this.comparendoService.getComparendosPorIdentificacion(identificacion, tipo).subscribe({
       next: (response) => {
         const raw = response?.data;
-        this.comparendos.set(
-          Array.isArray(raw) ? raw : raw != null ? [raw] : [],
+        const lista = Array.isArray(raw) ? raw : raw != null ? [raw] : [];
+        this.comparendos.set(lista);
+        this.busquedaState.comparendosConsulta = lista.map((item) =>
+          typeof item === 'object' && item != null ? { ...(item as Record<string, unknown>) } : {},
         );
         this.busquedaRealizada.set(true);
         this.cargandoBusqueda.set(false);
@@ -165,6 +179,9 @@ export class MainComponent implements OnInit, AfterViewInit {
   limpiar(): void {
     this.buscarForm.reset({ tipoIdentificacion: 'CC', identificacion: '' });
     this.comparendos.set([]);
+    this.busquedaState.comparendosConsulta = null;
+    this.busquedaState.identificacion = null;
+    this.busquedaState.tipo = undefined;
     this.busquedaRealizada.set(false);
     this.cargandoBusqueda.set(false);
     this.enfocarIdentificacion();
