@@ -5,6 +5,9 @@ $lc-muted: #7a8aab
 :host
   display: block
 
+.gm-panel
+  padding: 0.25rem 0 0
+
 .gm-row
   display: flex
   align-items: flex-start
@@ -14,6 +17,13 @@ $lc-muted: #7a8aab
 
   & + &
     margin-top: 1rem
+    padding-top: 1rem
+    border-top: 1px solid #e8edf5
+
+  &--solo-objecion
+    margin-top: 0
+    padding-top: 0
+    border-top: none
 
 .gm-copy
   min-width: 0

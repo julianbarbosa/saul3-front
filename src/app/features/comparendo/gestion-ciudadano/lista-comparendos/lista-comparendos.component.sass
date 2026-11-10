@@ -68,6 +68,32 @@
   justify-content: center
   padding: 1rem
 
+.modal-detalle-wrapper
+  position: fixed
+  inset: 0
+  z-index: 1060
+  display: flex
+  align-items: center
+  justify-content: center
+  padding: 0.75rem
+
+.modal-detalle-card
+  max-width: min(1100px, 98vw)
+  max-height: 92vh
+  border-radius: 16px
+  display: flex
+  flex-direction: column
+  overflow: hidden
+
+.modal-detalle-header
+  flex-shrink: 0
+  background: #fff
+
+.modal-detalle-body
+  overflow-y: auto
+  flex: 1
+  min-height: 0
+
 .modal-objecion-card
   max-width: 540px
   border-radius: 20px

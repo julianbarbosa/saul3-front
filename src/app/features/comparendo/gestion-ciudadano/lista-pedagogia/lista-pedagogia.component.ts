@@ -1,9 +1,14 @@
 import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule, Location } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { Router } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { PedagogiaService, ProgramacionPedagogia } from 'src/app/core/services/pedagogia.service';
 import { BusquedaStateService } from 'src/app/core/services/busqueda-state.service';
+import {
+  marcarAccesoPublicoCodigoPolicia,
+  rutasCodigoPolicia,
+  RutasCodigoPoliciaCtx,
+} from 'src/app/core/helpers/codigo-policia-route.helper';
 
 interface Comparendo {
   comparendoId: number;
@@ -31,6 +36,7 @@ interface Comparendo {
 export class ListaPedagogiaComponent implements OnInit {
 
   private router = inject(Router);
+  private route = inject(ActivatedRoute);
   private location = inject(Location);
   private pedagogiaService = inject(PedagogiaService);
   private busquedaState = inject(BusquedaStateService);
@@ -71,7 +77,12 @@ export class ListaPedagogiaComponent implements OnInit {
   contactoInvalido: boolean = false;
   errorMensaje: string = '';
 
+  private ctxNavegacion(): RutasCodigoPoliciaCtx {
+    return { route: this.route, busquedaState: this.busquedaState };
+  }
+
   ngOnInit(): void {
+    marcarAccesoPublicoCodigoPolicia(this.router, this.route, this.busquedaState);
     this.comparendoIdParam   = this.busquedaState.expediente;
     this.comparendoIdNum     = this.busquedaState.comparendoId;
     this.identificacionParam = this.busquedaState.identificacion;
@@ -216,7 +227,7 @@ export class ListaPedagogiaComponent implements OnInit {
   volver(): void { this.location.back(); }
 
   irADetalle(): void {
-    this.router.navigate(['/gestion-acceso-justicia/comparendo/gestion-ciudadano/detalle-comparendo']);
+    this.router.navigate(rutasCodigoPolicia(this.router, 'detalle-comparendo', this.ctxNavegacion()));
   }
 
   imprimirComprobante(): void {
@@ -243,7 +254,7 @@ export class ListaPedagogiaComponent implements OnInit {
   finalizarYDescargar(): void {
     const id = Number(this.pedagogiaId);
     if (!id) {
-      this.router.navigate(['/gestion-acceso-justicia/comparendo/gestion-ciudadano/lista-comparendos']);
+      this.router.navigate(rutasCodigoPolicia(this.router, 'lista-comparendos', this.ctxNavegacion()));
       return;
     }
     this.pedagogiaService.certificadoInscripcionPedagogia(id).subscribe({
@@ -254,11 +265,11 @@ export class ListaPedagogiaComponent implements OnInit {
         a.download = `certificado-pedagogia-${id}.pdf`;
         a.click();
         setTimeout(() => URL.revokeObjectURL(url), 1000);
-        this.router.navigate(['/gestion-acceso-justicia/comparendo/gestion-ciudadano/lista-comparendos']);
+        this.router.navigate(rutasCodigoPolicia(this.router, 'lista-comparendos', this.ctxNavegacion()));
       },
       error: (err) => {
         console.error('Error al descargar certificado', err);
-        this.router.navigate(['/gestion-acceso-justicia/comparendo/gestion-ciudadano/lista-comparendos']);
+        this.router.navigate(rutasCodigoPolicia(this.router, 'lista-comparendos', this.ctxNavegacion()));
       }
     });
   }

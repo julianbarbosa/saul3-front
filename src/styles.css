@@ -1,2 +1,2 @@
 /* Estilos globales del proyecto (sobreescriben mintic.css si es necesario) */
-/* mintic.css se carga globalmente desde index.html → public/assets/css/mintic.css */
+/* mintic.css se incluye en angular.json (public/assets/css/mintic.css) */

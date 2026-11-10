@@ -1,6 +1,8 @@
-# Despliegue de gestion-front en QA (rama quality).
-# DEPLOY_ROOT: directorio del clon en el runner. build:qa usa --base-href=/qa/tramites-front/ (ajusta en package.json si cambia la URL pública).
-name: Deploy gestion-front Quality
+
+# Despliegue de saul3-front en QA (rama quality) → dist/saul3-front/browser/.
+# DEPLOY_ROOT: directorio del clon en el runner.
+
+name: Deploy saul3-front Quality
 
 on:
   push:
@@ -9,43 +11,104 @@ on:
   workflow_dispatch:
 
 concurrency:
-  group: gestion-front-quality
+  group: saul3-front-quality
   cancel-in-progress: false
 
 jobs:
   deploy:
-    name: Deploy to gestion-front quality
+    name: Deploy to saul3-front quality
     runs-on: self-hosted
     timeout-minutes: 30
+
     env:
-      DEPLOY_ROOT: /var/www/qa/tramites-front
+      DEPLOY_ROOT: /var/www/qa/saul3-front
+
+    defaults:
+      run:
+        shell: bash
 
     steps:
       - name: Verify server
         run: |
           echo "Servidor: $(hostname)"
           echo "Usuario: $(whoami)"
+          echo "Directorio: $DEPLOY_ROOT"
+
           test "$(whoami)" = "saul"
+          test -d "$DEPLOY_ROOT"
+          git config --global --add safe.directory "$DEPLOY_ROOT"
 
       - name: Update quality code
-        working-directory: ${{ env.DEPLOY_ROOT }}
+        working-directory: /var/www/qa/saul3-front
         run: |
-          git config --global --add safe.directory "${{ env.DEPLOY_ROOT }}"
+          git config --global --add safe.directory "$DEPLOY_ROOT"
+
           git fetch origin quality
+
+          git checkout quality
           git merge --ff-only origin/quality
 
+          echo "Código actualizado:"
+          git log -1 --oneline
+
+      - name: Verify project (saul3-front, no legacy tysa-front)
+        working-directory: /var/www/qa/saul3-front
+        run: |
+          echo "package.json name: $(node -p "require('./package.json').name")"
+          if ! grep -q '"name": "saul3-front"' package.json; then
+            echo "::error::Este clon sigue siendo el proyecto antiguo (tysa-front / Angular 15)."
+            echo "Haz push de saul3-front a origin/quality o apunta DEPLOY_ROOT al repo correcto."
+            head -20 package.json
+            exit 1
+          fi
+          node -e "
+            const p = require('./package.json');
+            const v = p.dependencies && p.dependencies['@angular/core'];
+            if (!v || !/^\\^21\\./.test(v)) {
+              console.error('::error::Se esperaba @angular/core ^21.x (saul3-front), encontrado:', v);
+              process.exit(1);
+            }
+          "
+
+      - name: Setup Node.js
+        run: |
+          node --version
+          npm --version
+
       - name: Install dependencies
-        working-directory: ${{ env.DEPLOY_ROOT }}
+        working-directory: /var/www/qa/saul3-front
         run: |
           npm ci --include=dev
 
+      - name: Clean previous build
+        working-directory: /var/www/qa/saul3-front
+        run: |
+          rm -rf dist/saul3-front
+
+      # base-href=/qa/ va en package.json → script build:qa (no pasar flags extra al npm)
       - name: Build quality
-        working-directory: ${{ env.DEPLOY_ROOT }}
+        working-directory: /var/www/qa/saul3-front
         run: |
           npm run build:qa
 
       - name: Verify deployment
-        working-directory: ${{ env.DEPLOY_ROOT }}
+        working-directory: /var/www/qa/saul3-front
         run: |
-          test -f dist/gestion-front/browser/index.html
+          echo "Verificando compilación..."
+
+          if [ ! -f dist/saul3-front/browser/index.html ]; then
+            echo "ERROR: No se encontró index.html"
+            echo "Contenido de dist:"
+            find dist -maxdepth 5 -type f | head -100
+            exit 1
+          fi
+
+          echo "Compilación correcta:"
+          ls -lh dist/saul3-front/browser/index.html
+
+          echo "Estado Git:"
           git status -sb
+
+      - name: Deployment completed
+        run: |
+          echo "Despliegue QA finalizado correctamente."

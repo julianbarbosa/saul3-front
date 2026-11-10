@@ -1,7 +1,8 @@
 import { Component, Input, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { Router } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { BusquedaStateService } from 'src/app/core/services/busqueda-state.service';
+import { rutasCodigoPolicia } from 'src/app/core/helpers/codigo-policia-route.helper';
 import {
   PedagogiaInscripcion,
   PedagogiaService,
@@ -19,6 +20,7 @@ export class GestionPedagogiaComponent {
     'Medida correctiva de carácter pedagógico y restaurativo, mediante el cual el presunto infractor participa en un programa comunitario o en una actividad pedagógica, con el fin de reflexionar sobre las consecuencias de su conducta y reforzar el respeto por las normas de convivencia.';
   private pedagogiaService = inject(PedagogiaService);
   private router = inject(Router);
+  private route = inject(ActivatedRoute);
   private busquedaState = inject(BusquedaStateService);
 
   @Input() conmutablePorPedagogia = false;
@@ -80,7 +82,12 @@ export class GestionPedagogiaComponent {
   inscribirsePedagogia(): void {
     if (this.expediente) {
       this.busquedaState.expediente = this.expediente;
-      this.router.navigate(['/gestion-acceso-justicia/comparendo/gestion-ciudadano/lista-pedagogia']);
+      this.router.navigate(
+        rutasCodigoPolicia(this.router, 'lista-pedagogia', {
+          route: this.route,
+          busquedaState: this.busquedaState,
+        }),
+      );
     }
   }
 

@@ -1,12 +1,12 @@
 {
-  "name": "gestion-front",
+  "name": "saul3-front",
   "version": "0.0.0",
   "scripts": {
     "ng": "ng",
     "start": "ng serve",
     "build": "ng build",
-    "build:prod": "ng build --configuration=production --base-href=/gestion/",
-    "build:qa": "ng build --configuration=production --base-href=/qa/tramites-front/",
+    "build:prod": "ng build --configuration=production --base-href=/",
+    "build:qa": "ng build --configuration=quality --base-href=/qa/",
     "watch": "ng build --watch --configuration development",
     "test": "ng test"
   },

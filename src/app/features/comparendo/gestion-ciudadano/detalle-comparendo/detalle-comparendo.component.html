@@ -1,7 +1,7 @@
-<div class="container py-4">
+<div [ngClass]="enModal ? 'container-fluid px-0 py-0' : 'container py-4'">
 
   <!-- Breadcrumb -->
-  <nav aria-label="breadcrumb" class="mb-4">
+  <nav *ngIf="!enModal" aria-label="breadcrumb" class="mb-4">
     <ol class="breadcrumb">
       <li class="breadcrumb-item">
         <a class="dc-link" (click)="volver()">Inicio</a>
@@ -165,6 +165,7 @@
                   [descripcionPedagogia]="programacion?.descripcionPedagogia ?? ''"
                   [pedagogia]="comparendo()!.pedagogia">
                 </app-gestion-pedagogia>
+             
                 <app-gestion-multa
                   *ngIf="medida.esEconomica"
                   class="mt-3"
@@ -188,30 +189,15 @@
             </div>
           </div>
         </div>
+
+       
       </div>
     </div>
-
-   
-
-    <app-gestion-multa
-      *ngIf="!tieneMedidaEconomica && (comparendo()!.objecionId || puedeObjetar() || objecionValidacion()?.msg)"
-      class="mb-4"
-      [mostrarPago]="false"
-      [mostrarObjecion]="true"
-      [comparendoId]="comparendo()!.comparendoId"
-      [numeroIdentificacion]="identificacionParam ?? comparendo()!.identificacion"
-      [expediente]="comparendo()!.expediente"
-      [objecionId]="comparendo()!.objecionId"
-      [fechaObjecion]="comparendo()!.fechaObjecion"
-      [puedeObjetar]="puedeObjetar()"
-      [objecionValidacionMsg]="objecionValidacion()?.msg ?? ''"
-      (solicitarObjecion)="abrirModalObjecion()">
-    </app-gestion-multa>
 
   </ng-container>
 
 
-  <div class="mt-2 d-flex flex-wrap justify-content-end gap-2">
+  <div *ngIf="!enModal" class="mt-2 d-flex flex-wrap justify-content-end gap-2">
     <button type="button" class="btn btn-primary d-flex align-items-center gap-2 fw-semibold dc-btn"
       (click)="volver()">
       <i class="bi bi-arrow-left" aria-hidden="true"></i> Volver al listado de comparendos

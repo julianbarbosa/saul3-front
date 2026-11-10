@@ -87,14 +87,18 @@
               <ng-template #usarId>{{ comparendo.comparendoId }}</ng-template>
             </p>
           </div>
-
           <div>
             <p class="text-uppercase fw-bold mb-1" style="font-size: 0.68rem; letter-spacing: 0.07em; color: #7a8aab;">
               Fecha de Comparendo
             </p>
             <div class="d-flex align-items-center gap-2">
               <i class="bi bi-calendar-event text-secondary" style="font-size: 0.85rem;" aria-hidden="true"></i>
-              <span style="font-size: 0.9rem; color: #2d3a50;">{{ comparendo.fecha_comparendo | date:'dd/MM/yyyy' }}</span>
+              <span style="font-size: 0.9rem; color: #2d3a50;">
+                <ng-container *ngIf="toDateComparendo(comparendo.fechaComparendo) as fc; else fechaSinParse">
+                  {{ fc | date:'dd/MM/yyyy' }}
+                </ng-container>
+                <ng-template #fechaSinParse>{{ comparendo.fechaComparendo | slice:0:10 }}</ng-template>
+              </span>
             </div>
           </div>
 
@@ -141,60 +145,13 @@
         <!-- Columna derecha: Acciones -->
         <div class="col-md-3 d-flex flex-column justify-content-center gap-2 p-4" style="background-color: #fafbff;">
 
-          <button type="button"
+          <button
+            type="button"
             class="btn btn-outline-primary d-flex align-items-center justify-content-center gap-2 fw-semibold"
             style="border-radius: 10px; padding: 10px 16px; font-size: 0.875rem;"
             (click)="verMas(comparendo)">
             <i class="bi bi-folder2-open" aria-hidden="true"></i>
             Ver Detalle
-          </button>
-
-          <button type="button"
-            class="btn btn-primary d-flex align-items-center justify-content-center gap-2 fw-semibold"
-            style="border-radius: 10px; padding: 10px 16px; font-size: 0.875rem;"
-            (click)="descargarReciboPago(+comparendo.comparendoId)">
-            <i class="bi bi-receipt" aria-hidden="true"></i>
-            Generar Recibo
-          </button>
-
-
-          <button type="button"
-            *ngIf="comparendosPuedenObjetar.has(comparendo.comparendoId)"
-            class="btn btn-primary d-flex align-items-center justify-content-center gap-2 fw-semibold"
-            style="border-radius: 10px; padding: 10px 16px; font-size: 0.875rem;"
-            (click)="abrirModalObjecion(comparendo)">
-            <i class="bi bi-receipt" aria-hidden="true"></i>
-            Objetar
-          </button>
-          <button type="button"
-            *ngIf="comparendo.tienePedagogia === '1' && comparendo.pedagogiaId === null && comparendo.estado.toLowerCase() === 'activo'"
-            class="btn btn-primary d-flex align-items-center justify-content-center gap-2 fw-semibold"
-            style="border-radius: 10px; padding: 10px 16px; font-size: 0.875rem;" (click)="verPedagogia(comparendo)">
-            <i class="bi bi-mortarboard" aria-hidden="true"></i>
-            Inscribirse a Pedagogía
-          </button>
-           <button type="button"
-            *ngIf="comparendo.objecionId"
-            class="btn btn-outline-primary d-flex align-items-center justify-content-center gap-2 fw-semibold"
-            style="border-radius: 10px; padding: 10px 16px; font-size: 0.875rem;"
-            (click)="descargarCertificadoObjecion(comparendo.objecionId!)">
-            <i class="bi bi-download" aria-hidden="true"></i>
-            Descargar certificado Objecion
-          </button>
-          <button type="button" *ngIf="comparendo.pedagogiaId && comparendo.pedagogiaEstado === 1"
-            class="btn btn-primary d-flex align-items-center justify-content-center gap-2 fw-semibold"
-            style="border-radius: 10px; padding: 10px 16px; font-size: 0.875rem;"
-            (click)="descargarCertificado(comparendo.pedagogiaId!)">
-            <i class="bi bi-download" aria-hidden="true"></i>
-            Certificado Inscripción Pedagogía
-          </button>
-          <!-- Asistencia: pedagogiaId existe Y idestado = 3 -->
-          <button type="button" *ngIf="comparendo.pedagogiaId && comparendo.pedagogiaEstado === 3"
-            class="btn btn-primary d-flex align-items-center justify-content-center gap-2 fw-semibold"
-            style="border-radius: 10px; padding: 10px 16px; font-size: 0.875rem;"
-            (click)="descargarCertificadoAsistencia(comparendo.pedagogiaId!)">
-            <i class="bi bi-download" aria-hidden="true"></i>
-            Certificado Asistencia Pedagogía
           </button>
         </div>
 
@@ -241,6 +198,25 @@
   </div>
 
 </div>
+
+<!-- Modal detalle de comparendo -->
+<ng-container *ngIf="mostrarModalDetalle">
+  <div class="modal-objecion-backdrop" (click)="cerrarModalDetalle()" aria-hidden="true"></div>
+  <div class="modal-detalle-wrapper" role="dialog" aria-modal="true" aria-labelledby="modalDetalleTitulo">
+    <div class="card border-0 shadow-lg w-100 modal-detalle-card">
+      <div class="modal-detalle-header d-flex align-items-center justify-content-between gap-3 px-4 py-3 border-bottom">
+        <h2 class="h5 fw-bold mb-0 text-primary" id="modalDetalleTitulo">Detalle de comparendo</h2>
+        <button type="button" class="btn btn-link text-secondary p-1 border-0 text-decoration-none"
+          aria-label="Cerrar" (click)="cerrarModalDetalle()">
+          <i class="bi bi-x-lg" aria-hidden="true"></i>
+        </button>
+      </div>
+      <div class="modal-detalle-body px-3 px-md-4 py-2">
+        <app-detalle-comparendo [enModal]="true" (cerrarModal)="cerrarModalDetalle()" />
+      </div>
+    </div>
+  </div>
+</ng-container>
 
 <!-- ══════════════════════════════════════════════
      MODAL ADVERTENCIA OBJECIÓN — Kit UI Gov.co 9.2
