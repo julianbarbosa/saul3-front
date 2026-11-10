@@ -20,7 +20,7 @@ import { MapComponent } from '../../../shared/components/map/map';
 import { Select } from '../../../shared/components/select/select';
 import { Textarea } from '../../../shared/components/textarea/textarea';
 import { SharedModule } from '../../../shared/shared-module';
-import { CampoImagen } from './campo-imagen';
+import { CampoImagen } from '../components/campo-imagen/campo-imagen';
 import { fechaParaInput, fechaParaSaul, horaParaInput, horaParaSaul } from './fecha-hora-visita';
 import { configuracionVisita } from './configuracion-visita';
 
@@ -28,6 +28,9 @@ export type ModoVisualizacion = 'normal' | 'acordion' | 'horizontal';
 
 /** Centro del mapa cuando la visita no trae coordenadas válidas (Cali, igual que `MapComponent`). */
 const UBICACION_POR_DEFECTO: UbicacionVisita = { latitud: 3.4516, longitud: -76.5225 };
+
+/** Id de la visita en gestión: no va en la URL; solo en `history.state` y sesión del tab. */
+export const ID_VISITA_GESTION_SESION = 'ssj-visita-gestion-id';
 
 interface ParRegistro {
   imagen: VisitaCampo;
@@ -39,6 +42,15 @@ interface CeldaRegistro {
   clase: string;
   salto: boolean;
 }
+
+/** Paso del modo Normal (KIT UI SAUL3, pág. 12): el Mapa y luego cada categoría. */
+export interface PasoFormulario {
+  id: number;
+  nombre: string;
+  categoria: VisitaCategoria | null;
+}
+
+export type EstadoPaso = 'actual' | 'hecho' | 'pendiente';
 
 interface BloqueCampos {
   id: number;
@@ -73,6 +85,19 @@ export class Gestion implements OnInit, OnDestroy {
   /** Lo que se pinta en el mapa: la ubicación de la visita o, si no hay, Cali. */
   readonly centroMapa = computed<UbicacionVisita>(() => this.ubicacion() ?? UBICACION_POR_DEFECTO);
 
+  /** Pasos del modo Normal: el Mapa primero y luego las categorías en su orden. */
+  readonly pasos = computed<PasoFormulario[]>(() => [
+    { id: this.categoriaMapaId, nombre: this.categoriaMapaNombre, categoria: null },
+    ...this.dataForm().map((categoria) => ({ id: categoria.id, nombre: categoria.nombre, categoria })),
+  ]);
+  /** Paso abierto (índice en `pasos`). Solo uno a la vez, como en el KIT. */
+  readonly pasoActual = signal(0);
+  /**
+   * Pasos que el usuario ya dejó con «Continuar». SAUL no guarda este estado: se pierde al recargar.
+   * Los valores sí quedan guardados, porque cada campo se guarda al salir de él.
+   */
+  readonly pasosHechos = signal<ReadonlySet<number>>(new Set());
+
   visualizacion: ModoVisualizacion = 'normal';
   readonly visualizaciones = ['Normal', 'Acordion', 'Horizontal'];
   categoriaHorizontalIndice = 0;
@@ -100,7 +125,7 @@ export class Gestion implements OnInit, OnDestroy {
   readonly mensajeError = signal('');
   /**
    * Como `esModoObservacion` de SAUL (`accion === 'observar'`): se ve todo, no se guarda nada.
-   * Se activa con `/visita/gestionar/{id}?accion=observar`.
+   * Se activa con `/visita/gestionar?accion=observar`.
    */
   modoObservacion = false;
 
@@ -157,22 +182,35 @@ export class Gestion implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     this.modoObservacion = this.route.snapshot?.queryParamMap?.get('accion') === 'observar';
-    this.route.paramMap.subscribe((params) => {
-      const id = Number(params.get('idVisita'));
-      if (!Number.isFinite(id) || id <= 0) {
-        this.idVisita = null;
-        this.dataForm.set([]);
-        return;
-      }
-      void this.cargarFormulario(id);
-    });
+    const id = this.resolverIdVisita();
+    if (!Number.isFinite(id) || id <= 0) {
+      this.idVisita = null;
+      this.dataForm.set([]);
+      return;
+    }
+    void this.cargarFormulario(id);
   }
 
   ngOnDestroy(): void {
+    sessionStorage.removeItem(ID_VISITA_GESTION_SESION);
     this.liberarSelecciones();
   }
 
+  /** Id recibido al navegar (state) o al recargar (sessionStorage del mismo tab). */
+  private resolverIdVisita(): number {
+    const desdeEstado = Number((history.state as { idVisita?: unknown })?.idVisita);
+    if (Number.isFinite(desdeEstado) && desdeEstado > 0) {
+      sessionStorage.setItem(ID_VISITA_GESTION_SESION, String(desdeEstado));
+      return desdeEstado;
+    }
+    const desdeSesion = Number(sessionStorage.getItem(ID_VISITA_GESTION_SESION));
+    return Number.isFinite(desdeSesion) && desdeSesion > 0 ? desdeSesion : Number.NaN;
+  }
+
   private async cargarFormulario(idVisita: number): Promise<void> {
+    // Otra visita: se empieza desde el primer paso.
+    this.pasoActual.set(0);
+    this.pasosHechos.set(new Set());
     this.liberarSelecciones();
     this.imagenesNoDisponibles.clear();
     this.idVisita = idVisita;
@@ -226,6 +264,47 @@ export class Gestion implements OnInit, OnDestroy {
       this.categoriaHorizontalIndice = 0;
     }
     this.categoriaActivaId = this.categoriaMapaId;
+  }
+
+  estadoPaso(indice: number): EstadoPaso {
+    if (indice === this.pasoActual()) {
+      return 'actual';
+    }
+    return this.pasosHechos().has(indice) ? 'hecho' : 'pendiente';
+  }
+
+  textoEstadoPaso(indice: number): string {
+    return { actual: 'paso actual', hecho: 'completado', pendiente: 'pendiente' }[this.estadoPaso(indice)];
+  }
+
+  idCuerpoPaso(paso: PasoFormulario): string {
+    return `gestion-paso-cuerpo-${paso.id}`;
+  }
+
+  /** Abre un paso (cualquiera, en cualquier orden) y lo lleva a la vista. */
+  abrirPaso(indice: number): void {
+    if (indice < 0 || indice >= this.pasos().length) {
+      return;
+    }
+    this.pasoActual.set(indice);
+    this.categoriaActivaId = this.pasos()[indice].id;
+    this.llevarPasoALaVista(indice);
+  }
+
+  /** «Continuar»: marca el paso como hecho y abre el siguiente. */
+  continuarPaso(indice: number): void {
+    this.pasosHechos.update((hechos) => new Set(hechos).add(indice));
+    this.abrirPaso(indice + 1);
+  }
+
+  private llevarPasoALaVista(indice: number): void {
+    const paso = this.pasos()[indice];
+    // Después de dibujar: el paso anterior se cerró y cambió la altura de la página.
+    setTimeout(() => {
+      document
+        .getElementById(this.idSeccionCategoria(paso.id))
+        ?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
   }
 
   esCategoriaMapa(id: number): boolean {

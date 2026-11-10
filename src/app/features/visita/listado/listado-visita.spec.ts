@@ -5,6 +5,7 @@ import { TestBed } from '@angular/core/testing';
 import { environment } from '../../../../environments/environment';
 import { VisitaService } from '../../../core/services/visita.service';
 import {
+  aFilaVista,
   claseFilaVisita,
   formatearFechaSaul,
   opcionesVisitadores,
@@ -77,7 +78,21 @@ describe('Listado de visitas', () => {
     const local = new Date(2026, 9, 30, 15, 4, 5).getTime() / 1000;
     expect(formatearFechaSaul({ timestamp: local })).toBe('2026-10-30 15:04:05');
     expect(formatearFechaSaul('2026-10-30 10:00:00')).toBe('2026-10-30 10:00:00');
+    expect(formatearFechaSaul('2026-05-26')).toBe('2026-05-26 00:00:00');
     expect(formatearFechaSaul(null)).toBe('');
+  });
+
+  it('lee las fechas en minúsculas que devuelve saul3', () => {
+    const fila = aFilaVista({
+      idvisita: 3744,
+      idsolicitud: 99851,
+      fechavisita: '2026-05-26',
+      fecharevision: '2026-05-26 08:35:42',
+      fecha_programacion: null,
+    });
+    expect(fila.fechaVisitaTexto).toBe('2026-05-26 00:00:00');
+    expect(fila.fechaRevisionTexto).toBe('2026-05-26 08:35:42');
+    expect(fila.fechaActualizacionTexto).toBe('');
   });
 
   it('colorea la fila según rowWarning (número o texto)', () => {

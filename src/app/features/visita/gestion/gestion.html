@@ -210,26 +210,62 @@
 </ng-template>
 
 @if (idVisita !== null) {
-  <div class="gestion-layout">
-    <ng-container [ngTemplateOutlet]="menuCategorias" />
+  <div class="gestion-layout" [class.gestion-layout--pasos]="visualizacion === 'normal'">
+    <!-- En Normal los pasos hacen de menú; el menú lateral queda para Acordeón y Horizontal. -->
+    @if (visualizacion !== 'normal') {
+      <ng-container [ngTemplateOutlet]="menuCategorias" />
+    }
 
     <div class="gestion-layout__content">
       @if (visualizacion === 'normal') {
-        <section class="gestion-page">
-          <section class="gestion-categoria" [id]="idSeccionCategoria(categoriaMapaId)">
-            <h2 class="gestion-categoria__title">{{ categoriaMapaNombre }}</h2>
-            <ng-container [ngTemplateOutlet]="contenidoMapa" />
-          </section>
-
-          @for (categoria of dataForm(); track categoria.id) {
-            <section class="gestion-categoria" [id]="idSeccionCategoria(categoria.id)">
-              <h2 class="gestion-categoria__title">{{ categoria.nombre }}</h2>
-              <ng-container
-                [ngTemplateOutlet]="camposCategoria"
-                [ngTemplateOutletContext]="{ categoria: categoria, layout: 'normal' }"
-              />
-            </section>
-          }
+        <!-- Pasos numerados (KIT UI SAUL3, pág. 12): un paso por categoría, solo uno abierto. -->
+        <section class="gestion-pasos" aria-labelledby="gestion-pasos-titulo">
+          <h2 id="gestion-pasos-titulo" class="gestion-pasos__titulo">Categorías</h2>
+          <ol class="pasos">
+            @for (paso of pasos(); track paso.id; let i = $index, ultimo = $last) {
+              @let estado = estadoPaso(i);
+              <li
+                class="paso"
+                [class.paso--actual]="estado === 'actual'"
+                [class.paso--hecho]="estado === 'hecho'"
+                [class.paso--pendiente]="estado === 'pendiente'"
+                [id]="idSeccionCategoria(paso.id)"
+              >
+                <h3 class="paso__titulo">
+                  <button
+                    type="button"
+                    class="paso__encabezado"
+                    [attr.aria-expanded]="estado === 'actual'"
+                    [attr.aria-controls]="idCuerpoPaso(paso)"
+                    [attr.aria-current]="estado === 'actual' ? 'step' : null"
+                    (click)="abrirPaso(i)"
+                  >
+                    <span class="paso__numero" aria-hidden="true">{{ i + 1 }}</span>
+                    <span class="paso__nombre">{{ paso.nombre }}</span>
+                    <span class="visually-hidden">, {{ textoEstadoPaso(i) }}</span>
+                  </button>
+                </h3>
+                <!-- [hidden] y no @if: los campos, sus valores y el mapa se conservan al cambiar de paso. -->
+                <div class="paso__cuerpo" [id]="idCuerpoPaso(paso)" [hidden]="estado !== 'actual'">
+                  <div class="paso__tarjeta">
+                    @if (paso.categoria; as categoria) {
+                      <ng-container
+                        [ngTemplateOutlet]="camposCategoria"
+                        [ngTemplateOutletContext]="{ categoria: categoria, layout: 'normal' }"
+                      />
+                    } @else {
+                      <ng-container [ngTemplateOutlet]="contenidoMapa" />
+                    }
+                    @if (!ultimo) {
+                      <div class="paso__acciones">
+                        <app-button label="Continuar" [relleno]="true" (clicked)="continuarPaso(i)" />
+                      </div>
+                    }
+                  </div>
+                </div>
+              </li>
+            }
+          </ol>
         </section>
       }
 

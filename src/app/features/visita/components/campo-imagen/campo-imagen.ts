@@ -1,7 +1,7 @@
 import { Component, EventEmitter, Input, Output } from '@angular/core';
 
-import { VisitaCampo } from '../../../core/interfaces/visita.interface';
-import { Button } from '../../../shared/components/button/button';
+import { VisitaCampo } from '../../../../core/interfaces/visita.interface';
+import { Button } from '../../../../shared/components/button/button';
 
 @Component({
   selector: 'app-campo-imagen',

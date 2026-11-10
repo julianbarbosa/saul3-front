@@ -59,6 +59,10 @@ export function formatearFechaSaul(valor: FechaSaulRaw | string | null | undefin
   if (valor == null || valor === '') {
     return '';
   }
+  // Una fecha sin hora (`2026-05-26`) se interpreta en UTC y en Colombia queda en el día anterior.
+  if (typeof valor === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(valor)) {
+    return `${valor} 00:00:00`;
+  }
   let fecha: Date;
   if (typeof valor === 'object' && typeof valor.timestamp === 'number') {
     fecha = new Date(valor.timestamp * 1000);
@@ -112,8 +116,8 @@ export type VisitaFilaVista = VisitaListadoFila & {
 export function aFilaVista(fila: VisitaListadoFila): VisitaFilaVista {
   return {
     ...fila,
-    fechaVisitaTexto: formatearFechaSaul(fila.fechaVisita),
-    fechaRevisionTexto: formatearFechaSaul(fila.fechaRevision),
+    fechaVisitaTexto: formatearFechaSaul(fila.fechaVisita ?? fila.fechavisita),
+    fechaRevisionTexto: formatearFechaSaul(fila.fechaRevision ?? fila.fecharevision),
     fechaActualizacionTexto: formatearFechaSaul(fila.fecha_programacion),
   };
 }

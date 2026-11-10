@@ -1,15 +1,15 @@
 import { Component, computed, inject, OnInit, signal, TemplateRef, viewChild } from '@angular/core';
 
-import { VisitaListadoFila } from '../../../../core/interfaces/visita.interface';
-import { EstilosVisitaService } from '../../../../core/services/estilos-visita.service';
-import { VisitaService } from '../../../../core/services/visita.service';
+import { VisitaListadoFila } from '../../../core/interfaces/visita.interface';
+import { EstilosVisitaService } from '../../../core/services/estilos-visita.service';
+import { VisitaService } from '../../../core/services/visita.service';
 import {
   ColumnaTabla,
   OpcionFiltro,
   OrdenTablaEvento,
   Table,
-} from '../../../../shared/components/table/table';
-import { AccionesVisita } from '../../components/acciones-visita/acciones-visita';
+} from '../../../shared/components/table/table';
+import { AccionesVisita } from '../components/acciones-visita/acciones-visita';
 import {
   aFilaVista,
   claseFilaVisita,
@@ -20,16 +20,16 @@ import {
   TIPOS_SOLICITUD_PENDIENTES,
   urlRadicado,
   VisitaFilaVista,
-} from '../../listado/listado-visita';
+} from '../listado/listado-visita';
 
 /** Visitas Pendientes: Visitas que el usuario tiene por gestionar (SAUL: listarVisita). */
 @Component({
-  selector: 'app-listar-visita',
+  selector: 'app-tarea',
   imports: [Table, AccionesVisita],
-  templateUrl: './listar-visita.html',
-  styleUrl: './listar-visita.css',
+  templateUrl: './tarea.html',
+  styleUrl: './tarea.css',
 })
-export class ListarVisita implements OnInit {
+export class Tarea implements OnInit {
   private readonly visitaService = inject(VisitaService);
   /** Etiquetas de estado y botones de la guía (KIT UI SAUL3). */
   readonly estilos = inject(EstilosVisitaService);
@@ -125,7 +125,7 @@ export class ListarVisita implements OnInit {
     this.cargando.set(true);
     this.error.set('');
     this.visitaService
-      .listarPendientes({
+      .listarTareas({
         page: this.page,
         pageSize: this.pageSize,
         filtros: this.filtros,
@@ -134,6 +134,7 @@ export class ListarVisita implements OnInit {
       })
       .subscribe({
         next: (r) => {
+          console.log(r);
           if (r?.success === false) {
             // saul2 responde 200 con { success: false, msg } cuando no reconoce al usuario.
             this.filas.set([]);

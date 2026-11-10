@@ -91,6 +91,46 @@ describe('Gestion', () => {
     await new Promise((resolver) => setTimeout(resolver));
   });
 
+  describe('modo Normal: pasos numerados (KIT UI SAUL3, pág. 12)', () => {
+    beforeEach(() => {
+      component.dataForm.set([
+        { ...categoriaRegistro([]), id: 11, nombre: 'Datos generales' },
+        { ...categoriaRegistro([]), id: 12, nombre: 'Licencia' },
+      ]);
+      fixture.detectChanges();
+    });
+
+    it('arma un paso por categoría, con el Mapa primero, y abre solo el primero', () => {
+      expect(component.pasos().map((paso) => paso.nombre)).toEqual(['Mapa', 'Datos generales', 'Licencia']);
+      const raiz: HTMLElement = fixture.nativeElement;
+      expect(raiz.querySelectorAll('.paso')).toHaveLength(3);
+      expect(raiz.querySelector('.gestion-sidebar')).toBeNull();
+      const abiertos = [...raiz.querySelectorAll<HTMLElement>('.paso__cuerpo')].filter((cuerpo) => !cuerpo.hidden);
+      expect(abiertos).toHaveLength(1);
+      expect([0, 1, 2].map((i) => component.estadoPaso(i))).toEqual(['actual', 'pendiente', 'pendiente']);
+    });
+
+    it('Continuar marca el paso como hecho y abre el siguiente', () => {
+      component.continuarPaso(0);
+      expect([0, 1, 2].map((i) => component.estadoPaso(i))).toEqual(['hecho', 'actual', 'pendiente']);
+      expect(component.categoriaActivaId).toBe(11);
+    });
+
+    it('se puede volver a un paso anterior sin perder los hechos', () => {
+      component.continuarPaso(0);
+      component.continuarPaso(1);
+      component.abrirPaso(0);
+      expect([0, 1, 2].map((i) => component.estadoPaso(i))).toEqual(['actual', 'hecho', 'pendiente']);
+    });
+
+    it('el último paso no tiene Continuar', () => {
+      component.abrirPaso(2);
+      fixture.detectChanges();
+      const ultimo = (fixture.nativeElement as HTMLElement).querySelectorAll('.paso')[2];
+      expect(ultimo.querySelector('.paso__acciones')).toBeNull();
+    });
+  });
+
   it('should create', () => {
     expect(component).toBeTruthy();
   });

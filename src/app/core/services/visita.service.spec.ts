@@ -43,6 +43,29 @@ describe('VisitaService', () => {
     expect((await respuesta).idVisita).toBe(7243);
   });
 
+  it('listarTareas hace GET a /api/visita/tarea con la consulta del listado', () => {
+    servicio
+      .listarTareas({ page: 2, pageSize: 20, filtros: { direccion: 'CL 5' }, orderBy: 'idvisita', orderDir: 'DESC' })
+      .subscribe();
+
+    const peticion = http.expectOne((r) => r.url === `${environment.TAREA_API_URL}/visita/tarea`);
+    expect(peticion.request.method).toBe('GET');
+    expect(peticion.request.url).toBe('http://localhost:8000/api/visita/tarea');
+    const enviados: Record<string, unknown> = {};
+    for (const clave of peticion.request.params.keys()) {
+      const { name, value } = JSON.parse(peticion.request.params.get(clave) ?? '{}');
+      enviados[name] = value;
+    }
+    expect(enviados).toEqual({
+      currentPage: 2,
+      numPerPage: 20,
+      orderBy: 'idvisita',
+      orderDir: 'DESC',
+      direccion: 'CL 5',
+    });
+    peticion.flush({ success: true, data: [], totalItems: 0 });
+  });
+
   it('obtenerFormulario hace GET a /visita/generar/{id}', async () => {
     const respuesta = firstValueFrom(servicio.obtenerFormulario(7054));
     const peticion = http.expectOne(`${base}/visita/generar/7054`);

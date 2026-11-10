@@ -151,6 +151,9 @@ export interface VisitaListadoFila {
   ruta?: string | null;
   fechaVisita?: FechaSaulRaw | string | null;
   fechaRevision?: FechaSaulRaw | string | null;
+  /** saul3 devuelve la columna de MySQL tal cual: `fechavisita` y `fecharevision`. */
+  fechavisita?: FechaSaulRaw | string | null;
+  fecharevision?: FechaSaulRaw | string | null;
   fecha_programacion?: FechaSaulRaw | string | null;
   comuna?: number | string | null;
   /** Días desde la asignación: 1 = más de 20 días (rojo), 2 = más de 15 (amarillo), 0 = a tiempo. */

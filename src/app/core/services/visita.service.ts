@@ -29,6 +29,7 @@ export interface VisitaGuardadoRespuesta {
 export class VisitaService {
   private readonly http = inject(HttpClient);
   private readonly baseUrl = environment.SAUL2_API_URL;
+  private readonly baseUrl3 = environment.SAUL3_API_URL;
 
   constructor() {
     // Toda pantalla de Visitas usa este servicio: así la guía de estilos siempre queda aplicada.
@@ -103,6 +104,12 @@ export class VisitaService {
     return this.listar(consulta, { type: 'all', nombreEstado: 'Emitido' });
   }
 
+  /** Tareas de visita (saul3: GET /api/visita/tarea). Misma consulta que el listado de saul2. */
+  listarTareas(consulta: VisitaListadoConsulta): Observable<any> {
+    return this.http.get<VisitaDetalle>(`${this.baseUrl3}/visita/tarea`);    
+  }
+
+  /************************************************************************************** */
   /* ---------- Acciones sobre una visita ---------- */
 
   anularVisita(idVisita: number): Observable<VisitaAccionRespuesta> {
@@ -131,13 +138,15 @@ export class VisitaService {
   }
 
   /**
-   * GET `/visita` de saul2. El backend espera cada parámetro como JSON `{"name","value"}`
+   * GET del listado. saul2 y saul3 esperan cada parámetro como JSON `{"name","value"}`
    * (así los manda el $resource de AngularJS); la clave de la query no importa.
    * `fijos` son los filtros propios de cada pantalla y ganan sobre los de la tabla.
+   * `url` apunta a `/visita` de saul2, salvo el listado de tareas.
    */
   private listar(
     consulta: VisitaListadoConsulta,
     fijos: Record<string, string>,
+    url = `${this.baseUrl}/visita`,
   ): Observable<VisitaListadoRespuesta> {
     const pares: [string, string | number][] = [
       ['currentPage', consulta.page],

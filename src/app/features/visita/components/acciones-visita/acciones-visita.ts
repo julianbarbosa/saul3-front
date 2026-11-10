@@ -10,6 +10,7 @@ import {
 } from '../../../../core/interfaces/visita.interface';
 import { AuthService } from '../../../../core/services/auth.service';
 import { VisitaService } from '../../../../core/services/visita.service';
+import { ID_VISITA_GESTION_SESION } from '../../gestion/gestion';
 
 /** Roles de SAUL que habilitan cada acción (los mismos que valida el backend). */
 const ROL_ANULAR_VISITA = 'controlconstrucciones_anularvisita';
@@ -80,13 +81,14 @@ export class AccionesVisita implements OnChanges {
     return !this.esEmitida && this.roles.has(ROL_ANULAR_VISITA);
   }
 
-  /** Abre la gestión de la visita en ssjfront (/visita/gestionar/:idVisita). */
+  /** Abre la gestión de la visita en ssjfront (`/visita/gestionar`, sin id en la URL). */
   gestionar(): void {
     const v = this.visita;
     if (!v?.idvisita) {
       return;
     }
-    void this.router.navigate(['/visita/gestionar', v.idvisita]);
+    sessionStorage.setItem(ID_VISITA_GESTION_SESION, String(v.idvisita));
+    void this.router.navigate(['/visita/gestionar'], { state: { idVisita: v.idvisita } });
     this.cerrar.emit();
   }
 
