@@ -13,6 +13,7 @@ import {
   rutasCodigoPolicia,
   RutasCodigoPoliciaCtx,
 } from 'src/app/core/helpers/codigo-policia-route.helper';
+import { DetalleComparendoComponent } from '../detalle-comparendo/detalle-comparendo.component';
 interface Comparendo {
   comparendoId: string | number;
   expediente: string;
@@ -32,7 +33,7 @@ interface Comparendo {
 
 @Component({
   selector: 'app-lista-comparendos',
-  imports: [CommonModule, FormsModule, NgbPaginationModule],
+  imports: [CommonModule, FormsModule, NgbPaginationModule, DetalleComparendoComponent],
   templateUrl: './lista-comparendos.component.html',
   styleUrls: ['./lista-comparendos.component.sass']
 })
@@ -62,6 +63,7 @@ export class ListaComparendosComponent implements OnInit {
   cargando: boolean = false;
   errorAlCargar: boolean = false;
 
+  mostrarModalDetalle = false;
   mostrarModalObjecion: boolean = false;
   pasoModalObjecion: 1 | 2 = 1;
   aceptaAdvertencia: boolean = false;
@@ -238,10 +240,26 @@ export class ListaComparendosComponent implements OnInit {
         this.busquedaState.tipo
         ?? params.get('tipo')
         ?? undefined;
+
+      if (this._comparendos.length === 0 && this.restaurarComparendosDesdeEstado()) {
+        return;
+      }
+
       if (this.identificacionParam && this._comparendos.length === 0) {
         this.buscarComparendos(this.identificacionParam, tipo);
       }
     });
+  }
+
+  private restaurarComparendosDesdeEstado(): boolean {
+    const cache = this.busquedaState.comparendosConsulta;
+    if (!this.busquedaState.identificacion || !cache?.length) {
+      return false;
+    }
+    this.asignarComparendos(
+      cache.map((item) => this.mapearComparendo(item)),
+    );
+    return true;
   }
 
   buscarComparendos(identificacion: string, tipo?: string): void {
@@ -251,11 +269,11 @@ export class ListaComparendosComponent implements OnInit {
     this.comparendoService.getComparendosPorIdentificacion(identificacion, tipo).subscribe({
       next: (response) => {
         const data = this.extraerListaComparendos(response);
-        this.asignarComparendos(
-          data.map((item) =>
-            this.mapearComparendo(item as Record<string, unknown>),
-          ),
+        const mapeados = data.map((item) =>
+          this.mapearComparendo(item as Record<string, unknown>),
         );
+        this.asignarComparendos(mapeados);
+        this.busquedaState.comparendosConsulta = mapeados.map((c) => ({ ...c }));
 
         this._comparendos.forEach((c) => {
           this.crearObjecionService.validarObjecion(+c.comparendoId).subscribe({
@@ -280,11 +298,18 @@ export class ListaComparendosComponent implements OnInit {
     this.busquedaState.comparendoId = +comparendo.comparendoId;
     this.busquedaState.objecionId = comparendo.objecionId;
     this.busquedaState.fechaObjecion = comparendo.fechaObjecion;
+    if (this._comparendos.length > 0) {
+      this.busquedaState.comparendosConsulta = this._comparendos.map((c) => ({ ...c }));
+    }
   }
 
   verMas(comparendo: Comparendo): void {
     this.prepararDetalle(comparendo);
-    this.router.navigate(rutasCodigoPolicia(this.router, 'detalle-comparendo', this.ctxNavegacion()));
+    this.mostrarModalDetalle = true;
+  }
+
+  cerrarModalDetalle(): void {
+    this.mostrarModalDetalle = false;
   }
 
   abrirModalObjecion(comparendo: Comparendo): void {

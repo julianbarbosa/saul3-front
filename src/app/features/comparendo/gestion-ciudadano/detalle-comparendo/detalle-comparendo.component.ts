@@ -1,4 +1,4 @@
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { Component, EventEmitter, Input, OnInit, Output, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
@@ -51,6 +51,10 @@ const DESCRIPCION_AMONESTACION =
   styleUrls: ['./detalle-comparendo.component.sass'],
 })
 export class DetalleComparendoComponent implements OnInit {
+  /** Vista embebida en modal de la lista (sin breadcrumb ni navegación de pie). */
+  @Input() enModal = false;
+  @Output() cerrarModal = new EventEmitter<void>();
+
   private router = inject(Router);
   private route = inject(ActivatedRoute);
   private pedagogiaService = inject(PedagogiaService);
@@ -471,11 +475,20 @@ export class DetalleComparendoComponent implements OnInit {
     }
   }
 
+  private cerrarModalSiAplica(): void {
+    if (this.enModal) this.cerrarModal.emit();
+  }
+
   volver(): void {
-    this.router.navigate(rutasCodigoPolicia(this.router, 'lista-comparendos', this.ctxNavegacion()));
+    if (this.enModal) {
+      this.cerrarModalSiAplica();
+      return;
+    }
+    this.router.navigate(rutasCodigoPolicia(this.router, undefined, this.ctxNavegacion()));
   }
 
   irAlInicio(): void {
+    this.cerrarModalSiAplica();
     this.router.navigate(rutasCodigoPolicia(this.router, undefined, this.ctxNavegacion()));
   }
 
@@ -528,6 +541,7 @@ export class DetalleComparendoComponent implements OnInit {
     const c = this.comparendo();
     if (c) {
       this.busquedaState.expediente = c.expediente || c.numeroFormato;
+      this.cerrarModalSiAplica();
       this.router.navigate(rutasCodigoPolicia(this.router, 'lista-pedagogia', this.ctxNavegacion()));
     }
   }
@@ -608,6 +622,7 @@ export class DetalleComparendoComponent implements OnInit {
 
   objetarComparendo(): void {
     if (this.comparendo()) {
+      this.cerrarModalSiAplica();
       this.router.navigate(rutasCodigoPolicia(this.router, 'crea-objecion', this.ctxNavegacion()));
     }
   }
