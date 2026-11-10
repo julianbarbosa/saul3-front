@@ -13,10 +13,7 @@ import { HttpLoadingService } from '../../services/http-loading.service';
         role="alert"
         aria-live="polite"
         aria-busy="true">
-        <div class="http-loading-panel shadow">
           <div class="spinner-border text-primary" role="status" aria-hidden="true"></div>
-          <p class="mb-0 mt-3 fw-semibold text-body">Cargando información…</p>
-        </div>
       </div>
     }
   `,
