@@ -18,17 +18,9 @@ interface Comparendo {
   comparendoId: string | number;
   expediente: string;
   numeroFormato?: string;
-  fecha_comparendo: string;
-  estado: string;
-  conmutar: string;
-  tienePedagogia: string;
-  pedagogiaId: number | null;
-  pedagogiaEstado: number | null;
-  objecionId: number | null;
-  fechaObjecion: string | null;
+  fechaComparendo: string;
   descripcion?: string;
   comportamientocontrario?: string;
-  valor?: number;
 }
 
 @Component({
@@ -51,7 +43,12 @@ export class ListaComparendosComponent implements OnInit {
 
   @Input()
   set comparendos(value: Comparendo[] | null | undefined) {
-    this.asignarComparendos(Array.isArray(value) ? value : []);
+    const list = Array.isArray(value) ? value : [];
+    this.asignarComparendos(
+      list.map((item) =>
+        this.mapearComparendo(item as unknown as Record<string, unknown>),
+      ),
+    );
   }
   get comparendos(): Comparendo[] {
     return this._comparendos;
@@ -68,7 +65,6 @@ export class ListaComparendosComponent implements OnInit {
   pasoModalObjecion: 1 | 2 = 1;
   aceptaAdvertencia: boolean = false;
   comparendoParaObjetar: Comparendo | null = null;
-  comparendosPuedenObjetar = new Set<string | number>();
 
   page = 1;
   readonly pageSize = 5;
@@ -78,6 +74,14 @@ export class ListaComparendosComponent implements OnInit {
 
   toggleExpandido(id: string | number): void {
     this.expandidos.has(id) ? this.expandidos.delete(id) : this.expandidos.add(id);
+  }
+
+  /** Convierte fechas API (`YYYY-MM-DD HH:mm:ss`) para el pipe `date`. */
+  toDateComparendo(valor: string | undefined): Date | null {
+    if (!valor || valor === 'N/A') return null;
+    const normalizada = valor.includes('T') ? valor : valor.replace(' ', 'T');
+    const d = new Date(normalizada);
+    return Number.isNaN(d.getTime()) ? null : d;
   }
 
   textoCorto(texto: string | undefined): string {
@@ -101,8 +105,7 @@ export class ListaComparendosComponent implements OnInit {
         c.comparendoId,
         c.numeroFormato,
         c.expediente,
-        c.fecha_comparendo,
-        c.estado,
+        c.fechaComparendo,
         c.descripcion,
         c.comportamientocontrario,
       ];
@@ -165,40 +168,18 @@ export class ListaComparendosComponent implements OnInit {
         this.leerCampo(item, 'numero_formato', 'numeroFormato', 'id') ?? 'N/A',
       ),
       expediente: String(
-        this.leerCampo(item, 'numero_formato', 'numeroFormato', 'id') ?? 'N/A',
+        this.leerCampo(
+          item,
+          'numeroExpediente',
+          'expediente',
+          'numero_formato',
+          'numeroFormato',
+        ) ?? 'N/A',
       ),
-      fecha_comparendo: String(
-        this.leerCampo(item, 'fecha_comparendo', 'fechaComparendo', 'fecha') ??
+      fechaComparendo: String(
+        this.leerCampo(item, 'fechaComparendo', 'fecha_comparendo', 'fecha') ??
           'N/A',
       ),
-      estado: String(item['estado'] ?? 'Registrado'),
-      valor: Number(item['valor'] ?? item['valor_multa'] ?? 0),
-      conmutar: String(item['conmutar'] ?? '0'),
-      tienePedagogia: String(
-        item['tienePedagogia'] ?? item['tiene_pedagogia'] ?? '0',
-      ),
-      pedagogiaId:
-        (item['pedagogiaId'] as number | null) ??
-        (item['pedagogia_id'] as number | null) ??
-        null,
-      pedagogiaEstado:
-        (item['pedagogia'] as { idestado?: number } | undefined)?.idestado ??
-        (item['pedagogiaEstado'] as number | null) ??
-        (item['pedagogia_estado'] as number | null) ??
-        (item['pedagogia_estado_id'] as number | null) ??
-        (item['pedagogia_idestado'] as number | null) ??
-        null,
-      objecionId:
-        (item['objecionId'] as number | null) ??
-        (item['objecion_id'] as number | null) ??
-        ((item['objecion'] as { id?: number } | undefined)?.id ?? null),
-      fechaObjecion:
-        (item['fechaObjecion'] as string | null) ??
-        (item['fecha_objecion'] as string | null) ??
-        ((item['objecion'] as { fechaobjecion?: string; fecha_objecion?: string } | undefined)
-          ?.fechaobjecion ??
-          (item['objecion'] as { fecha_objecion?: string } | undefined)?.fecha_objecion ??
-          null),
       descripcion:
         String(item['descripcion'] ?? item['infraccion'] ?? 'Sin descripción'),
       comportamientocontrario: String(
@@ -265,7 +246,6 @@ export class ListaComparendosComponent implements OnInit {
   buscarComparendos(identificacion: string, tipo?: string): void {
     this.cargando = true;
     this.errorAlCargar = false;
-    this.comparendosPuedenObjetar.clear();
     this.comparendoService.getComparendosPorIdentificacion(identificacion, tipo).subscribe({
       next: (response) => {
         const data = this.extraerListaComparendos(response);
@@ -274,13 +254,6 @@ export class ListaComparendosComponent implements OnInit {
         );
         this.asignarComparendos(mapeados);
         this.busquedaState.comparendosConsulta = mapeados.map((c) => ({ ...c }));
-
-        this._comparendos.forEach((c) => {
-          this.crearObjecionService.validarObjecion(+c.comparendoId).subscribe({
-            next: (res: any) => { if (res.data || res.success) this.comparendosPuedenObjetar.add(c.comparendoId); },
-            error: () => {}
-          });
-        });
 
         this.page = 1;
         this.cargando = false;
@@ -296,8 +269,6 @@ export class ListaComparendosComponent implements OnInit {
 
   prepararDetalle(comparendo: Comparendo): void {
     this.busquedaState.comparendoId = +comparendo.comparendoId;
-    this.busquedaState.objecionId = comparendo.objecionId;
-    this.busquedaState.fechaObjecion = comparendo.fechaObjecion;
     if (this._comparendos.length > 0) {
       this.busquedaState.comparendosConsulta = this._comparendos.map((c) => ({ ...c }));
     }
