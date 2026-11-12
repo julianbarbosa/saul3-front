@@ -17,6 +17,8 @@ import {
   AUTH_REFRESH_EXPIRES_COOKIE_KEY,
   AUTH_TOKEN_EXPIRES_COOKIE_KEY,
   AUTH_TOKEN_TYPE_COOKIE_KEY,
+  MARGEN_RENOVACION_ACCESS_SEG,
+  MARGEN_RENOVACION_REFRESH_SEG,
 } from '../constants/auth-cookie-keys';
 import {
   cookieFits,
@@ -26,6 +28,7 @@ import {
 } from '../utils/auth-cookie.util';
 
 const ROLES_OVERFLOW_KEY = `${AUTH_COOKIE_KEY}-roles`;
+const INTERVAL_CONTROL_INACTIVIDAD_MS = 10_000;
 
 interface RefreshTokensPayload {
   access_token: string;
@@ -51,13 +54,31 @@ export class AuthService {
   private readonly router = inject(Router);
 
   private refresh$: Observable<string> | null = null;
+  private controlInactividadIntervalId: ReturnType<typeof setInterval> | null = null;
+
+  constructor() {
+    if (getAuthCookie(AUTH_COOKIE_KEY) === 'true') {
+      this.iniciarControlInactividad();
+    }
+  }
 
   isAuthenticated(): boolean {
-    return getAuthCookie(AUTH_COOKIE_KEY) === 'true' && !!this.obtenerToken();
+    if (getAuthCookie(AUTH_COOKIE_KEY) !== 'true') {
+      return false;
+    }
+    const token = this.obtenerToken();
+    if (!token) {
+      return false;
+    }
+    return !this.estaVencido(token, 0);
   }
 
   obtenerToken(): string | null {
     return getAuthCookie(AUTH_TOKEN_COOKIE_KEY);
+  }
+
+  obtenerExperacionToken(): string | null {
+    return getAuthCookie(AUTH_TOKEN_EXPIRES_COOKIE_KEY);
   }
 
   obtenerRefreshToken(): string | null {
@@ -68,8 +89,30 @@ export class AuthService {
     return getAuthCookie(AUTH_TOKEN_TYPE_COOKIE_KEY) ?? 'Bearer';
   }
 
-  /** true si no hay access o está vencido (cookie/API o JWT), con margen de renovación anticipada. */
-  tokenDeAccesoVencido(margenSegundos = 30): boolean {
+  cerrarSessionPorInactividad(): void {
+    if (this.refreshTokenExpirado()) {
+      this.limpiarSesionLocal();
+      this.irAlInicio();
+    }
+  }
+
+  private iniciarControlInactividad(): void {
+    this.detenerControlInactividad();
+    this.controlInactividadIntervalId = setInterval(
+      () => this.cerrarSessionPorInactividad(),
+      INTERVAL_CONTROL_INACTIVIDAD_MS,
+    );
+  }
+
+  private detenerControlInactividad(): void {
+    if (this.controlInactividadIntervalId !== null) {
+      clearInterval(this.controlInactividadIntervalId);
+      this.controlInactividadIntervalId = null;
+    }
+  }
+
+  /** true si no hay access o está vencido (`token_expires_at` en cookie), con margen anticipado. */
+  tokenDeAccesoVencido(margenSegundos = MARGEN_RENOVACION_ACCESS_SEG): boolean {
     const token = this.obtenerToken();
     if (!token) {
       return true;
@@ -77,21 +120,13 @@ export class AuthService {
     return this.estaVencido(token, margenSegundos);
   }
 
-  /** true si el refresh token no existe o ya expiró según la cookie de la API. */
+  /** true si el refresh token no existe o ya expiró (`refresh_token_expires_at` en cookie). */
   refreshTokenVencido(margenSegundos = 0): boolean {
     const refresh = this.obtenerRefreshToken();
     if (!refresh) {
       return true;
     }
-    const raw = getAuthCookie(AUTH_REFRESH_EXPIRES_COOKIE_KEY);
-    if (!raw) {
-      return false;
-    }
-    const expiraEn = Number(raw);
-    if (!Number.isFinite(expiraEn)) {
-      return true;
-    }
-    return expiraEn <= Date.now() + margenSegundos * 1000;
+    return this.refreshTokenExpirado(margenSegundos);
   }
 
   /** Devuelve un token vigente: el actual si no venció, o uno nuevo vía refresh. */
@@ -115,7 +150,11 @@ export class AuthService {
 
     if (!this.refresh$) {
       this.refresh$ = this.http
-        .post<RefreshTokenResponse>(`${environment.SAUL3_API_URL}/auth/refresh`, {})
+        .post<RefreshTokenResponse>(
+          `${environment.SAUL3_API_URL}/auth/refresh`,
+          {},
+          { headers: { Authorization: `Bearer ${this.obtenerRefreshToken()}` } },
+        )
         .pipe(
           map((response): RefreshTokensPayload => {
             if (!response.success || !response.data) {
@@ -141,34 +180,75 @@ export class AuthService {
     return this.refresh$;
   }
 
-  private estaVencido(token: string, margenSegundos = 30): boolean {
-    if (this.esJwt(token)) {
-      try {
-        const base64 = token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/');
-        const { exp } = JSON.parse(atob(base64)) as { exp?: number };
-        if (!exp) {
-          return false;
-        }
-        return exp * 1000 <= Date.now() + margenSegundos * 1000;
-      } catch {
-        return true;
-      }
-    }
 
+  /** Expiración del access token en ms (cookie guardada al login/refresh), o null si no hay dato válido. */
+  private obtenerExpiracionTokenMs(): number | null {
     const raw = getAuthCookie(AUTH_TOKEN_EXPIRES_COOKIE_KEY);
     if (!raw) {
-      return false;
+      return null;
     }
-    const expiraEn = Number(raw);
-    if (!Number.isFinite(expiraEn)) {
-      return true;
-    }
-    return expiraEn <= Date.now() + margenSegundos * 1000;
+    const ms = Number(raw);
+    return Number.isFinite(ms) ? ms : null;
   }
 
-  private esJwt(token: string): boolean {
-    const partes = token.split('.');
-    return partes.length >= 3 && partes[1].length > 0;
+  private obtenerExpiracionRefreshTokenMs(): number | null {
+    const raw = getAuthCookie(AUTH_REFRESH_EXPIRES_COOKIE_KEY);
+    if (!raw) {
+      return null;
+    }
+    const ms = Number(raw);
+    return Number.isFinite(ms) ? ms : null;
+  }
+
+  /**
+   * true si ya pasó `token_expires_at` o faltan ≤ `margenSegundos` para vencer (renovación anticipada).
+   */
+  public tokenExpirado(margenSegundos = MARGEN_RENOVACION_ACCESS_SEG): boolean {
+    const expiraEnMs = this.obtenerExpiracionTokenMs();
+    if (expiraEnMs === null) {
+      return false;
+    }
+    return this.compararConFechaExpiracion(expiraEnMs, margenSegundos);
+  }
+
+  /**
+   * true si ya pasó `refresh_token_expires_at` o faltan ≤ `margenSegundos` (p. ej. margen 0 en interceptor).
+   */
+  public refreshTokenExpirado(margenSegundos = MARGEN_RENOVACION_REFRESH_SEG): boolean {
+    const expiraEnMs = this.obtenerExpiracionRefreshTokenMs();
+    if (expiraEnMs === null) {
+      return false;
+    }
+    return this.compararConFechaExpiracion(expiraEnMs, margenSegundos);
+  }
+
+  /** Compara una fecha ISO de la API con la fecha actual. */
+  expiradoSegunIso(fechaExpiracionIso: string | undefined, margenSegundos = 0): boolean {
+    const expiraEnMs = this.milisegundosDesdeIso(fechaExpiracionIso);
+    if (expiraEnMs === null) {
+      return false;
+    }
+    return this.compararConFechaExpiracion(expiraEnMs, margenSegundos);
+  }
+
+  public estaVencido(token: string, margenSegundos = MARGEN_RENOVACION_ACCESS_SEG): boolean {
+    const refresh = this.obtenerRefreshToken();
+    if (refresh && token === refresh) {
+      return this.refreshTokenExpirado(margenSegundos);
+    }
+    return this.tokenExpirado(margenSegundos);
+  }
+
+  /** Compara `token_expires_at` (ms) con Date.now(); margen = renovar antes de llegar a cero. */
+  private compararConFechaExpiracion(expiraEnMs: number, margenSegundos: number): boolean {
+    const ahora = Date.now();
+    if (ahora >= expiraEnMs) {
+      return true;
+    }
+    if (margenSegundos <= 0) {
+      return false;
+    }
+    return expiraEnMs - ahora <= margenSegundos * 1000;
   }
 
   private guardarTokens(res: RefreshTokensPayload): void {
@@ -226,6 +306,8 @@ export class AuthService {
       deleteAuthCookie(`${AUTH_COOKIE_KEY}-roles`);
       sessionStorage.removeItem(ROLES_OVERFLOW_KEY);
     }
+
+    this.iniciarControlInactividad();
   }
 
   guardarParTokens(tokens: TokenParData): void {
@@ -273,10 +355,8 @@ export class AuthService {
               },
               tokenPar,
             );
-            void this.router.navigate(['/gestion-acceso-justicia/comparendo/descargar']);
             return { success: true, message: response.message };
           }
-
           return {
             success: false,
             message: response.message ?? 'Usuario o contraseña incorrectos.',
@@ -298,6 +378,7 @@ export class AuthService {
   }
 
   limpiarSesionLocal(): void {
+    this.detenerControlInactividad();
     deleteAuthCookie(AUTH_COOKIE_KEY);
     deleteAuthCookie(AUTH_TOKEN_COOKIE_KEY);
     deleteAuthCookie(AUTH_TOKEN_TYPE_COOKIE_KEY);
@@ -309,7 +390,8 @@ export class AuthService {
     sessionStorage.removeItem(ROLES_OVERFLOW_KEY);
   }
 
-  cerrarSesion(): void {
+  /** Cierra sesión en servidor (si hay token) y limpia cookies locales. */
+  cerrarSesion$(): Observable<void> {
     const limpiarLocal = (): void => {
       this.limpiarSesionLocal();
       void this.router.navigate(['/']);
@@ -317,15 +399,22 @@ export class AuthService {
 
     if (!this.obtenerToken()) {
       limpiarLocal();
-      return;
+      return of(undefined);
     }
 
-    this.http
+    return this.http
       .post<{ success: boolean; message?: string }>(
         `${environment.SAUL3_API_URL}/auth/logout`,
         {},
       )
-      .pipe(catchError(() => of({ success: false })))
-      .subscribe(() => limpiarLocal());
+      .pipe(
+        catchError(() => of({ success: false })),
+        tap(() => limpiarLocal()),
+        map(() => undefined),
+      );
+  }
+
+  cerrarSesion(): void {
+    this.cerrarSesion$().subscribe();
   }
 }
