@@ -1,11 +1,16 @@
 <div class="form-group">
-  <label [for]="id" [class.campo-etiqueta--oculta]="ocultarEtiqueta">{{ label }}</label>
-  <select class="form-control" [id]="id" [disabled]="readOnly" (change)="onChange($event)" (blur)="onBlur()">
+  <label [for]="id">{{ label }}</label>
+  <select class="form-control" [id]="id" [disabled]="readOnly" (change)="onChange($event)">
     @if (!value) {
       <option value="" disabled selected></option>
     }
-    @for (option of options; track option) {
-      <option [value]="option" [selected]="option === value">{{ option }}</option>
+    @for (option of options; track trackOption(option)) {
+      <option
+        [value]="optionValue(option)"
+        [selected]="optionValue(option) === value"
+      >
+        {{ optionLabel(option) }}
+      </option>
     }
   </select>
 </div>
