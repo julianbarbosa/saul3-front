@@ -1,5 +1,25 @@
 // Estilos para el componente ListaPedagogia
 
+// Modal a pantalla completa (mismo tamaño que gp-modal-panel)
+.lista-pedagogia--modal
+  width: 100vw
+  height: 100vh
+  max-width: 100vw
+  max-height: 100vh
+  margin: 0
+  padding: 0 !important
+  overflow: auto
+  background: #f5f7fb
+
+  .confirm-card,
+  .exito-card,
+  > .card
+    width: 100%
+    min-height: 100vh
+    max-width: none
+    border-radius: 0
+    margin: 0
+
 .confirm-card
   max-width: 700px
   border-radius: 20px
@@ -48,6 +68,7 @@
 .exito-card
   max-width: 700px
   border-radius: 20px
+  overflow: hidden
 
 .exito-header
   background: linear-gradient(145deg, #f0f7ff, #ffffff)

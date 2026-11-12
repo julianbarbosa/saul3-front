@@ -6,7 +6,7 @@
       <li class="breadcrumb-item">
         <a class="dc-link" (click)="volver()">Inicio</a>
       </li>
-      <li class="breadcrumb-item active" aria-current="page">Detalle de comparendo</li>
+      <h1>Detalle de comparendo</h1>
     </ol>
   </nav>
 
@@ -39,7 +39,7 @@
         <i class="bi bi-file-earmark-text text-primary" aria-hidden="true"></i>
       </div>
       <div>
-        <h1 class="fw-bold mb-0 dc-titulo">Información de comparendo</h1>
+        <h2>Información de comparendo</h2>
         <p class="mb-0 dc-subtitle">Comparendo: {{ comparendo()!.expediente }}</p>
         <p class="mb-0 dc-subtitle">Número de identificación: {{ identificacionParam ?? comparendo()!.identificacion }}</p>
       </div>
@@ -95,7 +95,7 @@
         <i class="bi bi-exclamation-triangle-fill text-primary" aria-hidden="true"></i>
       </div>
       <div>
-        <h1 class="fw-bold mb-0 dc-titulo">Medidas Correctivas</h1>
+        <h2>Medidas Correctivas</h2>
       </div>
     </div>
     <div class="card border-0 shadow-sm dc-card mb-4" *ngIf="comparendo()!.medidasCorrectivas.length">
@@ -157,13 +157,17 @@
                   class="mt-3"
                   [conmutablePorPedagogia]="true"
                   [mostrarPedagogia]="esPrimeraMedidaConPedagogia(medida)"
-                  [expediente]="comparendo()!.expediente"
+                  [expediente]="comparendo()!.numeroFormato || comparendo()!.expediente"
+                  [numeroExpediente]="comparendo()!.expediente"
+                  [comparendoId]="comparendo()!.comparendoId"
+                  [identificacion]="identificacionParam || comparendo()!.identificacion || null"
                   [pedagogiaId]="comparendo()!.pedagogiaId"
                   [pedagogiaEstado]="comparendo()!.pedagogiaEstado"
                   [puedeInscribirsePedagogia]="puedeInscribirsePedagogia"
                   [nombrePedagogia]="programacion?.nombrePedagogia ?? ''"
                   [descripcionPedagogia]="programacion?.descripcionPedagogia ?? ''"
-                  [pedagogia]="comparendo()!.pedagogia">
+                  [pedagogia]="comparendo()!.pedagogia"
+                  (inscripcionCompletada)="recargarDetalleTrasPedagogia()">
                 </app-gestion-pedagogia>
              
                 <app-gestion-multa
@@ -240,7 +244,7 @@
           </div>
           <button type="button" (click)="cerrarModalObjecion()"
             class="btn btn-link p-1 border-0 text-decoration-none modal-close-warning" aria-label="Cerrar">
-            <i class="bi bi-x-lg" aria-hidden="true"></i>
+            <i class="bi bi-x-lg" aria-hidden="true" style="font-size: 1.5em;"></i>
           </button>
         </div>
 

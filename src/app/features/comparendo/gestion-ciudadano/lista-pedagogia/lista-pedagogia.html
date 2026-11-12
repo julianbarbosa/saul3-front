@@ -1,4 +1,9 @@
-<div class="container py-4" id="pedagogiaSeccion">
+<div
+  class="py-4"
+  id="pedagogiaSeccion"
+  [class.container]="!enModal"
+  [class.lista-pedagogia--modal]="enModal"
+>
 
     <!-- PANTALLA 1: MODAL DE LISTA DE CURSOS -->
     <main *ngIf="!confirmandoInscripcion && !inscripcionExitosa" class="card border-0 shadow-sm"
@@ -18,25 +23,15 @@
                     <p class="text-muted mb-0 small">Seleccione una opción para conmutar su medida correctiva</p>
                 </div>
             </div>
-            <button aria-label="Cerrar modal" (click)="irADetalle()"
+            <!-- <button aria-label="Cerrar modal" (click)="irADetalle()"
                 class="btn btn-link text-secondary text-decoration-none p-1 border-0"
                 style="font-size: 1.5rem; line-height: 1;">
                 <i class="bi bi-x-lg" aria-hidden="true"></i>
-            </button>
+            </button> -->
         </div>
 
         <!-- Body -->
         <div class="card-body p-4" style="background-color: #ffffff;">
-
-            <!-- Banner informativo -->
-            <div class="d-flex align-items-start gap-3 p-3 mb-4 rounded-3"
-                style="background-color: #f8faff; border-left: 4px solid #0a58ca;">
-                <i class="bi bi-info-circle-fill text-primary" style="font-size: 1.25rem; margin-top: 0.1rem;" aria-hidden="true"></i>
-                <p class="mb-0" style="font-size: 0.9rem; color: #2d3a50;">
-                    Seleccione una actividad pedagógica disponible para conmutar su medida correctiva.
-                    Comparendo: <strong>{{ comparendoIdParam }}</strong>
-                </p>
-            </div>
 
             <!-- Error de inscripción -->
             <div *ngIf="errorInscripcion" class="alert alert-danger d-flex align-items-center gap-2 mb-3" role="alert">
@@ -44,9 +39,24 @@
                 <span>No se pudo completar la inscripción. Verifique su conexión e intente nuevamente.</span>
             </div>
 
+
+            <div *ngIf="cargando()" class="text-center py-5 text-muted" role="status">
+                <div class="spinner-border text-primary mb-3" aria-hidden="true"></div>
+                <p class="mb-0">Cargando actividades pedagógicas…</p>
+            </div>
+
+            <div
+                *ngIf="!cargando() && (errorAlCargar() || !!errorMensajeCarga())"
+                class="alert alert-warning d-flex align-items-start gap-2 mb-3"
+                role="alert"
+            >
+                <i class="bi bi-exclamation-triangle-fill flex-shrink-0 mt-1" aria-hidden="true"></i>
+                <span>{{ errorMensajeCarga() || 'No se pudieron cargar las actividades.' }}</span>
+            </div>
+
             <!-- Lista de cursos -->
-            <div class="d-flex flex-column gap-3">
-                <ng-container *ngFor="let curso of cursos">
+            <div *ngIf="!cargando()" class="d-flex flex-column gap-3">
+                <ng-container *ngFor="let curso of cursos()">
                     <div class="card border-0 shadow-sm overflow-hidden bg-white"
                         style="border-radius: 14px; transition: box-shadow 0.2s ease;">
                         <div class="row g-0 align-items-stretch">
@@ -176,23 +186,22 @@
     </main>
 
     <!-- PANTALLA 2: CONFIRMACIÓN — RESUMEN + CELULAR -->
-    <main *ngIf="confirmandoInscripcion && !inscripcionExitosa" class="card border-0 shadow-sm mx-auto confirm-card">
+    <main *ngIf="confirmandoInscripcion && !inscripcionExitosa" class="card border-0 shadow-sm confirm-card">
 
         <div class="card-header bg-white border-0 py-4 px-4 d-flex align-items-center gap-3 confirm-header">
             <div class="d-inline-flex align-items-center justify-content-center rounded-circle confirm-icon">
                 <i class="bi bi-mortarboard text-primary confirm-icon-bi"></i>
             </div>
             <div>
-                <h1 class="fw-bold mb-0 confirm-title">Confirmar Inscripción</h1>
+                <h1 class="fw-bold mb-0 confirm-title">Confirmar Inscripción a Actividad Pedagógica</h1>
                 <p class="text-muted mb-0 small">Verifique los datos y proporcione su número de contacto</p>
             </div>
         </div>
 
-        <div class="card-body p-4 bg-white">
+        <div class="card-body px-3 bg-white">
 
             <!-- Resumen del curso seleccionado -->
-            <div class="rounded-3 p-4 mb-4 confirm-resumen">
-                <h6 class="fw-bold mb-3 confirm-resumen-title">Actividad Pedagógica Seleccionada</h6>
+            <div class="rounded-3 px-4 mb-2 confirm-resumen">
                 <div class="row g-3">
                     <div class="col-6">
                         <p class="text-uppercase fw-bold mb-1 confirm-label">Tipo</p>
@@ -200,14 +209,14 @@
                             {{ cursoSeleccionado?.nombrePedagogia }}
                         </p>
                     </div>
-                    <div class="col-6">
+                    <div class="col-3">
                         <p class="text-uppercase fw-bold mb-1 confirm-label">Fecha</p>
                         <p class="mb-0">
                             <i class="bi bi-calendar3 text-secondary me-1" aria-hidden="true"></i>
                             {{ cursoSeleccionado?.fecha | date:'dd/MM/yyyy' }}
                         </p>
                     </div>
-                    <div class="col-6">
+                    <div class="col-3">
                         <p class="text-uppercase fw-bold mb-1 confirm-label">Hora</p>
                         <p class="mb-0">
                             <i class="bi bi-clock text-secondary me-1" aria-hidden="true"></i>
@@ -273,24 +282,24 @@
                 <i class="bi bi-exclamation-circle-fill flex-shrink-0" aria-hidden="true"></i>
                 <span>{{ errorMensajeInscripcion || 'No se pudo completar la inscripción. Verifique su conexión e intente nuevamente.' }}</span>
             </div>
-        </div>
 
-        <div class="card-footer bg-white border-0 py-3 px-4 d-flex justify-content-between confirm-footer">
-            <button type="button" (click)="cancelarConfirmacion()"
-                class="btn btn-outline-secondary d-flex align-items-center gap-2 fw-semibold px-4 confirm-btn">
-                <i class="bi bi-arrow-left-circle" aria-hidden="true"></i>
-                CANCELAR
-            </button>
-            <button type="button" (click)="confirmarInscripcion()"
-                class="btn btn-primary d-flex align-items-center gap-2 fw-semibold px-4 confirm-btn">
-                <i class="bi bi-pencil-square" aria-hidden="true"></i>
-                CONFIRMAR INSCRIPCIÓN
-            </button>
+            <div class="bg-white border-0 pt-3 d-flex justify-content-between confirm-footer">
+                <button type="button" (click)="cancelarConfirmacion()"
+                    class="btn btn-outline-secondary d-flex align-items-center gap-2 fw-semibold px-4 confirm-btn">
+                    <i class="bi bi-arrow-left-circle" aria-hidden="true"></i>
+                    CANCELAR
+                </button>
+                <button type="button" (click)="confirmarInscripcion()"
+                    class="btn btn-primary d-flex align-items-center gap-2 fw-semibold px-4 confirm-btn">
+                    <i class="bi bi-pencil-square" aria-hidden="true"></i>
+                    CONFIRMAR INSCRIPCIÓN
+                </button>
+            </div>
         </div>
     </main>
 
     <!-- PANTALLA 3: COMPROBANTE DE ÉXITO (con estilo gobierno) -->
-    <main *ngIf="inscripcionExitosa" class="card border-0 shadow-sm mx-auto exito-card">
+    <main *ngIf="inscripcionExitosa" class="card border-0 shadow-sm exito-card">
         <div class="card-header bg-white border-0 text-center py-5 exito-header">
             <div class="d-inline-flex align-items-center justify-content-center rounded-circle mb-3 exito-check-circle">
                 <i class="bi bi-check-lg text-white exito-check-icon"></i>

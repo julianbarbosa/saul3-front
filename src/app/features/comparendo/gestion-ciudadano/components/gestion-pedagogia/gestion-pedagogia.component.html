@@ -1,4 +1,4 @@
-<div class="dc-pedagogia mt-3"
+<div class="dc-pedagogia p-4"
   *ngIf="conmutablePorPedagogia && mostrarPedagogia && mostrarSeccionPedagogia">
   <div class="d-flex align-items-start justify-content-between gap-3 flex-wrap mb-3">
     <p class="dc-text small mb-0">{{ descripcionMedidaPedagogica }}</p>
@@ -60,3 +60,41 @@
     </div>
   </div>
 </div>
+
+<ng-container *ngIf="mostrarModalListaPedagogia">
+  <div
+    class="gp-modal-backdrop"
+    (click)="cerrarModalListaPedagogia()"
+    aria-hidden="true"
+  ></div>
+  <div class="gp-modal-wrapper" role="dialog" aria-modal="true" aria-labelledby="gpModalPedagogiaTitulo">
+    <div class="gp-modal-panel">
+      <div class="gp-modal-header d-flex align-items-center justify-content-between gap-3 px-4 py-3 border-bottom">
+        <div id="gpModalPedagogiaTitulo">
+          <h1 >Detalle de comparendo</h1>
+          <p *ngIf="numeroExpediente" class="mb-0 small text-secondary">
+            Comparendo: {{ numeroExpediente }}
+          </p>
+        </div>
+        <button
+          type="button"
+          class="btn btn-link text-secondary p-1 border-0 text-decoration-none"
+          aria-label="Cerrar"
+          (click)="cerrarModalListaPedagogia()"
+        >
+          <i class="bi bi-x-lg" aria-hidden="true"></i>
+        </button>
+      </div>
+      <div class="gp-modal-body">
+        <app-lista-pedagogia
+          [enModal]="true"
+          [numeroComparendo]="expediente"
+          [identificacionEntrada]="identificacion"
+          [comparendoIdEntrada]="comparendoId"
+          (cerrarModal)="cerrarModalListaPedagogia()"
+          (inscripcionCompletada)="onInscripcionCompletada()"
+        />
+      </div>
+    </div>
+  </div>
+</ng-container>

@@ -1,0 +1,28 @@
+.saul3-inicio__eyebrow {
+  font-size: 0.875rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--bs-primary, #3366cc);
+}
+
+.saul3-inicio__titulo {
+  font-size: clamp(1.5rem, 2.5vw, 2rem);
+  font-weight: 700;
+  color: #1a1a1a;
+}
+
+.saul3-inicio__texto {
+  max-width: 52rem;
+  color: #4a4a4a;
+  line-height: 1.6;
+}
+
+.saul3-inicio__hero {
+  background: linear-gradient(135deg, #f8fafc 0%, #ffffff 55%);
+}
+
+.saul3-inicio__card-titulo {
+  font-weight: 600;
+  color: #1a1a1a;
+}

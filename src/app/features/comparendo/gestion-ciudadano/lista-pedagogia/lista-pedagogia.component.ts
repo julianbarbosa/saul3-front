@@ -1,7 +1,18 @@
-import { Component, OnInit, inject } from '@angular/core';
+import {
+  Component,
+  EventEmitter,
+  Input,
+  OnChanges,
+  OnInit,
+  Output,
+  SimpleChanges,
+  inject,
+  signal,
+} from '@angular/core';
 import { CommonModule, Location } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
+import { ResponseI } from 'src/app/core/interfaces/response.interface';
 import { PedagogiaService, ProgramacionPedagogia } from 'src/app/core/services/pedagogia.service';
 import { BusquedaStateService } from 'src/app/core/services/busqueda-state.service';
 import {
@@ -33,7 +44,15 @@ interface Comparendo {
   templateUrl: './lista-pedagogia.html',
   styleUrls: ['./lista-pedagogia.component.sass']
 })
-export class ListaPedagogiaComponent implements OnInit {
+export class ListaPedagogiaComponent implements OnInit, OnChanges {
+  /** Cuando true, cerrar/volver emite eventos en lugar de navegar por rutas. */
+  @Input() enModal = false;
+  /** Número de comparendo (formato RNMC); en modal tiene prioridad sobre BusquedaStateService. */
+  @Input() numeroComparendo: string | null = null;
+  @Input() identificacionEntrada: string | null = null;
+  @Input() comparendoIdEntrada: number | null = null;
+  @Output() cerrarModal = new EventEmitter<void>();
+  @Output() inscripcionCompletada = new EventEmitter<void>();
 
   private router = inject(Router);
   private route = inject(ActivatedRoute);
@@ -41,17 +60,19 @@ export class ListaPedagogiaComponent implements OnInit {
   private pedagogiaService = inject(PedagogiaService);
   private busquedaState = inject(BusquedaStateService);
 
-  comparendoIdParam: string | null = null;
+  // Estado leído por el template: signals para evitar NG0100
+  comparendoIdParam = signal<string | null>(null);
   comparendoIdNum: number | null = null;
   identificacionParam: string | null = null;
   yaInscrito: boolean = false;
-  cargando: boolean = true;
-  errorAlCargar: boolean = false;
+  cargando = signal(true);
+  errorAlCargar = signal(false);
+  errorMensajeCarga = signal('');
   errorInscripcion: boolean = false;
   errorMensajeInscripcion: string = '';
   comparendo: Comparendo | null = null;
 
-  cursos: ProgramacionPedagogia[] = [];
+  cursos = signal<ProgramacionPedagogia[]>([]);
   expandidosCursos = new Set<number>();
   readonly LIMITE_DESC = 90;
 
@@ -81,39 +102,132 @@ export class ListaPedagogiaComponent implements OnInit {
     return { route: this.route, busquedaState: this.busquedaState };
   }
 
+  private consultaIniciada = false;
+
   ngOnInit(): void {
     marcarAccesoPublicoCodigoPolicia(this.router, this.route, this.busquedaState);
-    this.comparendoIdParam   = this.busquedaState.expediente;
-    this.comparendoIdNum     = this.busquedaState.comparendoId;
-    this.identificacionParam = this.busquedaState.identificacion;
+    this.inicializarConsulta();
+    this.consultaIniciada = true;
+  }
 
-    if (this.comparendoIdParam && this.identificacionParam) {
-      this.cargarPedagogias(this.comparendoIdParam, this.identificacionParam);
-    } else {
-      this.errorAlCargar = true;
-      this.cargando = false;
+  ngOnChanges(changes: SimpleChanges): void {
+    const claves = ['numeroComparendo', 'identificacionEntrada', 'comparendoIdEntrada'] as const;
+    if (!this.consultaIniciada) {
+      return;
     }
+    if (!claves.some((k) => k in changes && !changes[k].firstChange)) {
+      return;
+    }
+    this.inicializarConsulta();
+  }
+
+  private inicializarConsulta(): void {
+    const numero =
+      this.numeroComparendo?.trim() ||
+      this.busquedaState.expediente?.trim() ||
+      null;
+    const identificacion =
+      this.identificacionEntrada?.trim() ||
+      this.busquedaState.identificacion?.trim() ||
+      null;
+    const comparendoId = this.comparendoIdEntrada ?? this.busquedaState.comparendoId;
+
+    this.comparendoIdParam.set(numero);
+    this.comparendoIdNum = comparendoId;
+    this.identificacionParam = identificacion;
+
+    if (numero) {
+      this.busquedaState.expediente = numero;
+    }
+    if (identificacion) {
+      this.busquedaState.identificacion = identificacion;
+    }
+    if (comparendoId != null) {
+      this.busquedaState.comparendoId = comparendoId;
+    }
+
+    if (numero && identificacion) {
+      this.cargarPedagogias(numero, identificacion);
+      return;
+    }
+
+    this.cursos.set([]);
+    this.errorAlCargar.set(true);
+    this.errorMensajeCarga.set(
+      `Faltan datos para consultar (${!numero ? 'número de comparendo' : 'identificación'}).`,
+    );
+    this.cargando.set(false);
   }
 
   cargarPedagogias(numeroComparendo: string, identificacion: string): void {
-    this.cargando = true;
-    this.errorAlCargar = false;
+    this.cargando.set(true);
+    this.errorAlCargar.set(false);
+    this.errorMensajeCarga.set('');
+    this.cursos.set([]);
 
-    this.pedagogiaService.getProgramacionPedagogia(numeroComparendo, identificacion)
-      .subscribe({
-        next: (resp) => {
-          this.cargando = false;
-          this.cursos = Array.isArray(resp.data) ? resp.data : [];
-          if (this.cursos.length === 0) {
-            console.warn('Sin pedagogías disponibles para este comparendo');
-          }
-        },
-        error: (err) => {
-          this.cargando = false;
-          this.errorAlCargar = true;
-          console.error('Error al cargar pedagogías', err);
+    this.pedagogiaService.getProgramacionPedagogia(numeroComparendo, identificacion).subscribe({
+      next: (resp) => {
+        console.log('Respuesta API:', resp);
+        console.log('Data es array:', Array.isArray(resp.data));
+
+        const cursos = this.extraerCursos(resp);
+        this.cursos.set(cursos);
+
+        console.log('Cursos asignados:', cursos);
+
+        if (cursos.length === 0 && !this.errorAlCargar()) {
+          this.errorMensajeCarga.set(
+            'No hay actividades pedagógicas disponibles para este comparendo en este momento.',
+          );
         }
-      });
+        this.cargando.set(false);
+      },
+      error: (err) => {
+        this.errorAlCargar.set(true);
+        this.errorMensajeCarga.set(
+          err?.error?.msg ||
+          err?.error?.message ||
+          'No fue posible cargar las actividades pedagógicas.',
+        );
+        this.cargando.set(false);
+        console.error('Error al cargar pedagogías', err);
+      },
+    });
+  }
+
+  private extraerCursos(resp: ResponseI): ProgramacionPedagogia[] {
+    if (resp?.success === false) {
+      this.errorAlCargar.set(true);
+      this.errorMensajeCarga.set(
+        resp.msg || resp.message || 'No se encontraron programaciones para este comparendo.',
+      );
+      return [];
+    }
+
+    const raw = resp?.data as unknown;
+
+    if (Array.isArray(raw)) {
+      return raw as ProgramacionPedagogia[];
+    }
+
+    if (raw && typeof raw === 'object') {
+      const nested = (raw as { data?: unknown }).data;
+      if (Array.isArray(nested)) {
+        return nested as ProgramacionPedagogia[];
+      }
+
+      // Collection/objeto indexado numéricamente
+      const values = Object.values(raw);
+      if (values.length > 0 && values.every((v) => v && typeof v === 'object')) {
+        return values as ProgramacionPedagogia[];
+      }
+    }
+
+    this.errorAlCargar.set(true);
+    this.errorMensajeCarga.set(
+      resp?.msg || resp?.message || 'La respuesta de programaciones no tiene el formato esperado.',
+    );
+    return [];
   }
 
   inscribirCurso(curso: ProgramacionPedagogia): void {
@@ -190,6 +304,7 @@ export class ListaPedagogiaComponent implements OnInit {
         this.fechaInscripcion = new Date();
         this.confirmandoInscripcion = false;
         this.inscripcionExitosa = true;
+        this.inscripcionCompletada.emit();
       },
       error: (err) => {
         const msg: string = err?.error?.msg || err?.error?.message || '';
@@ -224,9 +339,19 @@ export class ListaPedagogiaComponent implements OnInit {
     return               { clase: 'cupos-badge--verde',   texto: `${d} cupos` };
   }
 
-  volver(): void { this.location.back(); }
+  volver(): void {
+    if (this.enModal) {
+      this.cerrarModal.emit();
+      return;
+    }
+    this.location.back();
+  }
 
   irADetalle(): void {
+    if (this.enModal) {
+      this.cerrarModal.emit();
+      return;
+    }
     this.router.navigate(rutasCodigoPolicia(this.router, 'detalle-comparendo', this.ctxNavegacion()));
   }
 
@@ -253,8 +378,16 @@ export class ListaPedagogiaComponent implements OnInit {
 
   finalizarYDescargar(): void {
     const id = Number(this.pedagogiaId);
-    if (!id) {
+    const salir = (): void => {
+      if (this.enModal) {
+        this.cerrarModal.emit();
+        return;
+      }
       this.router.navigate(rutasCodigoPolicia(this.router, 'lista-comparendos', this.ctxNavegacion()));
+    };
+
+    if (!id) {
+      salir();
       return;
     }
     this.pedagogiaService.certificadoInscripcionPedagogia(id).subscribe({
@@ -265,11 +398,11 @@ export class ListaPedagogiaComponent implements OnInit {
         a.download = `certificado-pedagogia-${id}.pdf`;
         a.click();
         setTimeout(() => URL.revokeObjectURL(url), 1000);
-        this.router.navigate(rutasCodigoPolicia(this.router, 'lista-comparendos', this.ctxNavegacion()));
+        salir();
       },
       error: (err) => {
         console.error('Error al descargar certificado', err);
-        this.router.navigate(rutasCodigoPolicia(this.router, 'lista-comparendos', this.ctxNavegacion()));
+        salir();
       }
     });
   }

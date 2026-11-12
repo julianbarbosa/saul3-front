@@ -127,11 +127,15 @@ export class DetalleComparendoComponent implements OnInit {
   private procesarComparendo(data: ComparendoDetalle): void {
     const info = data.informacionComparendo as Record<string, unknown>;
 
+    const numeroFormato =
+      (data.numeroFormato || data.expediente || '').toString().trim();
+    const expediente = (data.expediente || data.numeroFormato || '').toString().trim();
+
     const mapped: Comparendo = {
       comparendoId: data.comparendo,
-      numeroFormato: data.expediente,
-      expediente: data.expediente,
-      numeroExpediente: data.expediente,
+      numeroFormato,
+      expediente,
+      numeroExpediente: expediente || numeroFormato,
       fechaComparendo:
         (info['fechaComparendo'] as string | null | undefined) ??
         (info['fecha_comparendo'] as string | null | undefined) ??
@@ -223,7 +227,7 @@ export class DetalleComparendoComponent implements OnInit {
     }
 
     if (mapped.pedagogiaId && !this.programacion?.nombrePedagogia) {
-      this.cargarInfoPedagogia(data.expediente);
+      this.cargarInfoPedagogia(numeroFormato || expediente);
     }
 
     this.cargando.set(false);
@@ -537,12 +541,10 @@ export class DetalleComparendoComponent implements OnInit {
     console.log('Iniciar conmutación del comparendo:', this.comparendo()?.expediente);
   }
 
-  inscribirsePedagogia(): void {
-    const c = this.comparendo();
-    if (c) {
-      this.busquedaState.expediente = c.expediente || c.numeroFormato;
-      this.cerrarModalSiAplica();
-      this.router.navigate(rutasCodigoPolicia(this.router, 'lista-pedagogia', this.ctxNavegacion()));
+  recargarDetalleTrasPedagogia(): void {
+    const id = this.busquedaState.comparendoId ?? this.comparendo()?.comparendoId;
+    if (id) {
+      this.cargarDetalle(id);
     }
   }
 
