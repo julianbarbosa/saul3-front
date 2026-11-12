@@ -29,6 +29,7 @@ export const authTokenInterceptor: HttpInterceptorFn = (req, next) => {
   const esApiSaul3 = req.url.startsWith(environment.SAUL3_API_URL);
   const esLogin = req.url.includes('/auth/login');
   const esRefresh = req.url.includes('/auth/refresh');
+  // const esLogout = req.url.includes('/auth/logout');
 
   if (!esApiSaul3 || esLogin || esRefresh || req.headers.has('Authorization')) {
     return next(req);
@@ -43,13 +44,13 @@ export const authTokenInterceptor: HttpInterceptorFn = (req, next) => {
   /** Refresca (una sola llamada compartida) y reintenta la petición con el token nuevo. */
   const refrescarYReintentar = () => {
     if (auth.refreshTokenExpirado()) {
-      alert("se venció el refresh token, cerrando sesión");
+      console.log("se venció el refresh token, cerrando sesión");
       auth.cerrarSesion();
       return cerrarSesion(
         new HttpErrorResponse({ status: 401, statusText: 'Sesión expirada' }),
       );
     }
-
+    console.log("refrescando token");
     return auth.refrescarToken().pipe(
       catchError((error: unknown) => cerrarSesion(error)),
       switchMap((nuevoToken) => next(conToken(req, nuevoToken))),

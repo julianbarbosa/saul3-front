@@ -27,7 +27,7 @@ export class Login implements OnInit {
 
   ngOnInit(): void {
     if (this.auth.isAuthenticated()) {
-      void this.router.navigate(['/gestion-acceso-justicia/comparendo/descargar']);
+      void this.router.navigate(['/main']);
     }
   }
 
@@ -49,7 +49,9 @@ export class Login implements OnInit {
     this.auth.login(usuario!, contrasena!).subscribe({
       next: (result) => {
         this.cargando = false;
-        if (!result.success) {
+        if (result.success) {
+          void this.router.navigate(['/main']);
+        } else {
           this.error = result.message ?? 'Usuario o contraseña incorrectos.';
         }
       },
