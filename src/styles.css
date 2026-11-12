@@ -1,2 +1,11 @@
 /* Estilos globales del proyecto (sobreescriben mintic.css si es necesario) */
 /* mintic.css se incluye en angular.json (public/assets/css/mintic.css) */
+h1 {
+  font-size: 1.5rem;
+}
+h2 {
+  font-size: 1.25rem;
+}
+h3 {
+  font-size: 1rem;
+}
