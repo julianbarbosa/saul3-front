@@ -134,7 +134,6 @@ export class Tarea implements OnInit {
       })
       .subscribe({
         next: (r) => {
-          console.log(r);
           if (r?.success === false) {
             // saul2 responde 200 con { success: false, msg } cuando no reconoce al usuario.
             this.filas.set([]);

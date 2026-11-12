@@ -48,7 +48,7 @@ describe('VisitaService', () => {
       .listarTareas({ page: 2, pageSize: 20, filtros: { direccion: 'CL 5' }, orderBy: 'idvisita', orderDir: 'DESC' })
       .subscribe();
 
-    const peticion = http.expectOne((r) => r.url === `${environment.TAREA_API_URL}/visita/tarea`);
+    const peticion = http.expectOne((r) => r.url === `${environment.SAUL3_API_URL}/visita/tarea`);
     expect(peticion.request.method).toBe('GET');
     expect(peticion.request.url).toBe('http://localhost:8000/api/visita/tarea');
     const enviados: Record<string, unknown> = {};

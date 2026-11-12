@@ -104,9 +104,9 @@ export class VisitaService {
     return this.listar(consulta, { type: 'all', nombreEstado: 'Emitido' });
   }
 
-  /** Tareas de visita (saul3: GET /api/visita/tarea). Misma consulta que el listado de saul2. */
-  listarTareas(consulta: VisitaListadoConsulta): Observable<any> {
-    return this.http.get<VisitaDetalle>(`${this.baseUrl3}/visita/tarea`);    
+  /** Visitas Pendientes desde saul3 (GET /api/visita/tarea). Misma consulta que el listado de saul2. */
+  listarTareas(consulta: VisitaListadoConsulta): Observable<VisitaListadoRespuesta> {
+    return this.listar(consulta, {}, `${this.baseUrl3}/visita/tarea`);
   }
 
   /************************************************************************************** */
@@ -166,7 +166,7 @@ export class VisitaService {
       params = params.set(String(i), JSON.stringify({ name, value }));
     });
 
-    return this.http.get<VisitaListadoRespuesta>(`${this.baseUrl}/visita`, { params });
+    return this.http.get<VisitaListadoRespuesta>(url, { params });
   }
 }
 

@@ -168,15 +168,14 @@ export class Table implements OnChanges, AfterViewInit, OnDestroy {
   paginas: number[] = [];
 
   /**
-   * true cuando la tabla no cabe sin partir palabras: se muestra como tarjetas.
-   * Lo decide la medición real (ver `evaluarModo`), no un ancho fijo, así funciona
-   * con cualquier cantidad de columnas, con el menú abierto o con zoom.
+   * true en pantallas angostas (celular): cada fila se muestra como tarjeta.
+   * En computador siempre es tabla; si no cabe, se desplaza horizontalmente.
    */
   readonly modoTarjetas = signal(false);
+  /** Por debajo de este ancho (px) del contenedor, la tabla pasa a tarjetas. */
+  private static readonly ANCHO_TARJETAS = 768;
   private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
   private observadorTamano: ResizeObserver | null = null;
-  /** Ancho que necesitó la tabla la última vez que no cupo. */
-  private anchoNecesario = 0;
   private medicionPendiente: number | null = null;
   totalPaginas = 1;
   defaultFilter: FiltroTabla[] = [];
@@ -281,16 +280,11 @@ export class Table implements OnChanges, AfterViewInit, OnDestroy {
     }
   }
 
-  /**
-   * Muestra la tabla y la mide en el siguiente cuadro. Si su ancho real supera el espacio
-   * disponible, pasa a tarjetas; desde tarjetas vuelve a tabla cuando el espacio alcanza.
-   */
+  /** Vuelve a decidir el modo en el siguiente cuadro (cuando el DOM ya se dibujó). */
   private reevaluarModo(): void {
     if (!this.observadorTamano) {
       return;
     }
-    this.modoTarjetas.set(false);
-    this.anchoNecesario = 0;
     if (this.medicionPendiente !== null) {
       cancelAnimationFrame(this.medicionPendiente);
     }
@@ -300,24 +294,14 @@ export class Table implements OnChanges, AfterViewInit, OnDestroy {
     });
   }
 
+  /** Tarjetas solo si el espacio de la tabla es de celular (menos de ANCHO_TARJETAS). */
   private evaluarModo(): void {
-    const contenedor = this.host.nativeElement.querySelector<HTMLElement>('.table-scroll');
-    const tabla = contenedor?.querySelector('table');
-    if (!contenedor || !tabla) {
+    const raiz = this.host.nativeElement.querySelector<HTMLElement>('.tabla-ssj');
+    const ancho = raiz?.clientWidth ?? 0;
+    if (ancho === 0) {
       return;
     }
-    const disponible = contenedor.clientWidth;
-    if (!this.modoTarjetas()) {
-      const necesario = tabla.offsetWidth;
-      if (necesario > disponible + 1) {
-        this.anchoNecesario = necesario;
-        this.modoTarjetas.set(true);
-      }
-      return;
-    }
-    if (this.anchoNecesario > 0 && disponible >= this.anchoNecesario) {
-      this.modoTarjetas.set(false);
-    }
+    this.modoTarjetas.set(ancho < Table.ANCHO_TARJETAS);
   }
 
   /** Clave con la que se filtra y ordena en el backend: `campoConsulta` o, si no viene, `campo`. */

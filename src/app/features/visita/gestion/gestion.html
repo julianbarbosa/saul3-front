@@ -25,16 +25,6 @@
   </section>
 }
 
-<div class="gestion-toolbar">
-  <app-select
-    id="visualizacion"
-    label="Visualización"
-    [options]="visualizaciones"
-    [value]="visualizacionSeleccionada"
-    (valueChange)="onVisualizacionChange($event)"
-  />
-</div>
-
 <ng-template #contenidoMapa>
   <app-map
     [latitude]="centroMapa().latitud"
@@ -105,7 +95,7 @@
         class="table-responsive gestion-tabla__contenedor"
         [class.gestion-tabla__contenedor--compacta]="esTablaCompacta(tabla)"
       >
-        <table class="table table-bordered gestion-tabla">
+        <table class="table gestion-tabla">
           <thead>
             <tr>
               @for (encabezado of encabezadosVisibles(tabla); track encabezado + $index) {
