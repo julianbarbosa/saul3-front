@@ -7,19 +7,43 @@
     <h1 id="gestion-encabezado-titulo" class="gestion-encabezado__titulo">Registro de Visita</h1>
     <h2 class="gestion-encabezado__subtitulo">Datos generales de la solicitud</h2>
     <dl class="gestion-encabezado__datos">
-      <div><dt>Consecutivo</dt><dd>{{ visita.consecutivo }}</dd></div>
-      <div><dt>Estado</dt><dd>{{ visita.estado || 'Sin estado' }}</dd></div>
-      <div><dt>Visitador</dt><dd>{{ visita.visitador || 'Sin asignar' }}</dd></div>
-      <div><dt>Revisor</dt><dd>{{ visita.revisor || 'Sin asignar' }}</dd></div>
-      <div><dt>Tipo de Visita</dt><dd>{{ visita.tipoVisita || 'Sin tipo' }}</dd></div>
+      <div>
+        <dt>Consecutivo</dt>
+        <dd>{{ visita.consecutivo }}</dd>
+      </div>
+      <div>
+        <dt>Estado</dt>
+        <dd>{{ visita.estado || 'Sin estado' }}</dd>
+      </div>
+      <div>
+        <dt>Visitador</dt>
+        <dd>{{ visita.visitador || 'Sin asignar' }}</dd>
+      </div>
+      <div>
+        <dt>Revisor</dt>
+        <dd>{{ visita.revisor || 'Sin asignar' }}</dd>
+      </div>
+      <div>
+        <dt>Tipo de Visita</dt>
+        <dd>{{ visita.tipoVisita || 'Sin tipo' }}</dd>
+      </div>
       @if (visita.radicadoSolicitud) {
-        <div><dt>Radicado Solicitud</dt><dd>{{ visita.radicadoSolicitud }}</dd></div>
+        <div>
+          <dt>Radicado Solicitud</dt>
+          <dd>{{ visita.radicadoSolicitud }}</dd>
+        </div>
       }
       @if (visita.radicadoRespuesta) {
-        <div><dt>Radicado Respuesta</dt><dd>{{ visita.radicadoRespuesta }}</dd></div>
+        <div>
+          <dt>Radicado Respuesta</dt>
+          <dd>{{ visita.radicadoRespuesta }}</dd>
+        </div>
       }
       @if (visita.radicadoInspeccion) {
-        <div><dt>Radicado Remisión a Inspección</dt><dd>{{ visita.radicadoInspeccion }}</dd></div>
+        <div>
+          <dt>Radicado Remisión a Inspección</dt>
+          <dd>{{ visita.radicadoInspeccion }}</dd>
+        </div>
       }
     </dl>
   </section>
@@ -33,17 +57,36 @@
   />
 </ng-template>
 
-<ng-template #controlCampo let-campo="campo" let-etiqueta="etiqueta" let-ocultarEtiqueta="ocultarEtiqueta">
-  @if (esSelect(campo)) {
+<ng-template
+  #controlCampo
+  let-campo="campo"
+  let-etiqueta="etiqueta"
+  let-ocultarEtiqueta="ocultarEtiqueta"
+>
+  @if (esCampoBarrio(campo)) {
     <app-select
       [id]="'campo-' + campo.id"
       [label]="etiqueta"
-      [ocultarEtiqueta]="!!ocultarEtiqueta"
+      [class.select-sin-etiqueta]="!!ocultarEtiqueta"
+      [options]="opcionesBarrio(campo)"
+      [value]="valorCampo(campo)"
+      [readOnly]="soloLectura(campo)"
+      [required]="esRequerido(campo)"
+      [validar]="validarCampo(campo)"
+      (valueChange)="seleccionarBarrio(campo, $event)"
+    />
+  } @else if (esSelect(campo)) {
+    <app-select
+      [id]="'campo-' + campo.id"
+      [label]="etiqueta"
+      [class.select-sin-etiqueta]="!!ocultarEtiqueta"
       [options]="opcionesSelect(campo)"
       [value]="valorCampo(campo)"
       [readOnly]="soloLectura(campo)"
+      [required]="esRequerido(campo)"
+      [validar]="validarCampo(campo)"
       (valueChange)="actualizarValor(campo, $event)"
-      (blurred)="saveItem(campo)"
+      (focusout)="saveItem(campo)"
     />
   } @else if (esImagen(campo)) {
     <app-campo-imagen
@@ -67,6 +110,8 @@
       [ocultarEtiqueta]="!!ocultarEtiqueta"
       [value]="valorCampo(campo)"
       [readOnly]="soloLectura(campo)"
+      [required]="esRequerido(campo)"
+      [validar]="validarCampo(campo)"
       (valueChange)="actualizarValor(campo, $event)"
       (blurred)="saveItem(campo)"
     />
@@ -79,6 +124,8 @@
       [step]="tipoInput(campo) === 'number' ? '0.01' : null"
       [value]="valorInput(campo)"
       [readOnly]="soloLectura(campo)"
+      [required]="esRequerido(campo)"
+      [validar]="validarCampo(campo)"
       (valueChange)="actualizarValor(campo, $event)"
       (changed)="alCambiarInput(campo, $event)"
       (blurred)="alSalirInput(campo)"
@@ -99,7 +146,9 @@
           <thead>
             <tr>
               @for (encabezado of encabezadosVisibles(tabla); track encabezado + $index) {
-                <th scope="col" [ngClass]="titulo && $first ? claseTitulo : ''">{{ encabezado }}</th>
+                <th scope="col" [ngClass]="titulo && $first ? claseTitulo : ''">
+                  {{ encabezado }}
+                </th>
               }
             </tr>
           </thead>
@@ -144,11 +193,17 @@
             <div class="col-12">
               <div class="row gestion-registro">
                 @for (celda of fila; track celda.campo.id) {
-                  <div class="w-100 d-none order-md-2" [class.d-md-block]="celda.salto" aria-hidden="true"></div>
+                  <div
+                    class="w-100 d-none order-md-2"
+                    [class.d-md-block]="celda.salto"
+                    aria-hidden="true"
+                  ></div>
                   <div class="gestion-campo" [ngClass]="celda.clase">
                     <ng-container
                       [ngTemplateOutlet]="controlCampo"
-                      [ngTemplateOutletContext]="contextoCampo(celda.campo, labelCampo(celda.campo))"
+                      [ngTemplateOutletContext]="
+                        contextoCampo(celda.campo, labelCampo(celda.campo))
+                      "
                     />
                   </div>
                 }
@@ -248,7 +303,11 @@
                     }
                     @if (!ultimo) {
                       <div class="paso__acciones">
-                        <app-button label="Continuar" [relleno]="true" (clicked)="continuarPaso(i)" />
+                        <app-button
+                          label="Continuar"
+                          [relleno]="true"
+                          (clicked)="continuarPaso(i)"
+                        />
                       </div>
                     }
                   </div>

@@ -1,17 +1,19 @@
 import { Component, EventEmitter, Input, Output } from '@angular/core';
 
+import { ValidacionCampo } from '../validacion-campo';
+
+export { MENSAJE_CAMPO_REQUERIDO } from '../validacion-campo';
+
 @Component({
   selector: 'app-input-text, app-input',
   imports: [],
   templateUrl: './input-text.html',
-  styleUrl: './input-text.css',
+  styleUrls: ['../campo-formulario.css', './input-text.css'],
 })
-export class InputText {
+export class InputText extends ValidacionCampo {
   @Input({ required: true }) label = '';
-  @Input() id = 'input-text';
+  @Input() override id = 'input-text';
   @Input() placeholder = '';
-  @Input() value = '';
-  @Input() readOnly = false;
   /** Oculta la etiqueta visual. El vínculo con el control se conserva. */
   @Input() ocultarEtiqueta = false;
   /** Tipo nativo del input: fecha, hora y número usan el control del navegador, como en SAUL. */
@@ -23,7 +25,12 @@ export class InputText {
   /** Evento `change` nativo: en `type="time"` es cuando SAUL guarda (ng-change). */
   @Output() changed = new EventEmitter<string>();
 
+  onInput(event: Event): void {
+    this.registrarEntrada(event);
+  }
+
   onBlur(event: Event): void {
+    this.marcarTocado();
     if (this.readOnly) {
       return;
     }
@@ -35,6 +42,7 @@ export class InputText {
     if (this.readOnly) {
       return;
     }
+    this.registrarEntrada(event);
     this.changed.emit((event.target as HTMLInputElement).value);
   }
 }

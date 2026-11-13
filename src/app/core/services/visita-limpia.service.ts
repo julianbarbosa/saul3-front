@@ -1,4 +1,5 @@
 import { Injectable } from '@angular/core';
+import { esMarcaRequerido } from '../constants/visita-campos-obligatorios';
 import {
   BloquePresentacion,
   ItemVisitaCampoRaw,
@@ -53,7 +54,10 @@ export class VisitaLimpiaService {
    * Normaliza un formulario sin conservar el anterior. Dos llamadas, aunque
    * usen los mismos nombres de campo, no comparten objetos.
    */
-  limpiar(categorias: FormularioVisitaEntrada, configuracion?: ConfiguracionFormulario): VisitaCategoria[] {
+  limpiar(
+    categorias: FormularioVisitaEntrada,
+    configuracion?: ConfiguracionFormulario,
+  ): VisitaCategoria[] {
     if (categorias.length === 0) {
       return [];
     }
@@ -101,7 +105,9 @@ export class VisitaLimpiaService {
    * siguen en `campos`. Este índice solo puede señalar uno: la última aparición.
    */
   indexarPorCodigo(categorias: VisitaCategoria[]): Record<string, VisitaCampo> {
-    return Object.fromEntries(categorias.flatMap((c) => c.campos).map((campo) => [campo.codigo, campo]));
+    return Object.fromEntries(
+      categorias.flatMap((c) => c.campos).map((campo) => [campo.codigo, campo]),
+    );
   }
 
   private esFormularioLimpio(categorias: FormularioVisitaEntrada): categorias is VisitaCategoria[] {
@@ -136,7 +142,10 @@ export class VisitaLimpiaService {
     };
   }
 
-  private clonarCategoria(cat: VisitaCategoria, configuracion?: ConfiguracionFormulario): VisitaCategoria {
+  private clonarCategoria(
+    cat: VisitaCategoria,
+    configuracion?: ConfiguracionFormulario,
+  ): VisitaCategoria {
     const origenACopia = new Map<VisitaCampo, VisitaCampo>();
     const campos = cat.campos.map((campo) => {
       const copia = this.clonarCampo(campo, configuracion);
@@ -145,12 +154,14 @@ export class VisitaLimpiaService {
     });
 
     const tabla = this.copiarTabla(cat.tabla, origenACopia, configuracion);
-    const bloques = (cat.bloques ?? [{ tabla: cat.tabla, campos: this.camposSinTabla(cat.campos, cat.tabla) }]).map(
-      (bloque) => ({
-        tabla: this.copiarTabla(bloque.tabla, origenACopia, configuracion),
-        campos: bloque.campos.map((campo) => this.copiaDeCelda(campo, origenACopia, configuracion) ?? campo),
-      }),
-    );
+    const bloques = (
+      cat.bloques ?? [{ tabla: cat.tabla, campos: this.camposSinTabla(cat.campos, cat.tabla) }]
+    ).map((bloque) => ({
+      tabla: this.copiarTabla(bloque.tabla, origenACopia, configuracion),
+      campos: bloque.campos.map(
+        (campo) => this.copiaDeCelda(campo, origenACopia, configuracion) ?? campo,
+      ),
+    }));
 
     return {
       ...cat,
@@ -199,7 +210,8 @@ export class VisitaLimpiaService {
     };
 
     for (const fila of filas) {
-      const reconocida = this.filaSegunEncabezados(fila, encabezados) ?? this.filaSegunEstructura(fila);
+      const reconocida =
+        this.filaSegunEncabezados(fila, encabezados) ?? this.filaSegunEstructura(fila);
       if (!reconocida) {
         cerrarTabla();
         sueltos.push(...fila.celdas);
@@ -230,7 +242,10 @@ export class VisitaLimpiaService {
    * (lo que hace `getArrayDescripcion` en SAUL).
    * Un texto vacío ocupa su columna, como en SAUL: `,Norma,Aprobados` son tres.
    */
-  private encabezadosApi(arrayDescripcion: string[] | undefined, descripcion: string | null | undefined): string[] {
+  private encabezadosApi(
+    arrayDescripcion: string[] | undefined,
+    descripcion: string | null | undefined,
+  ): string[] {
     for (const lista of [arrayDescripcion, descripcion?.split(',')]) {
       const textos = (lista ?? []).map((texto) => texto.trim());
       if (textos.length > 1 && textos.some((texto) => texto.length > 0)) {
@@ -246,7 +261,10 @@ export class VisitaLimpiaService {
    * en todas las filas; si no, los configurados para la categoría; si no, `Ítem` y
    * columnas sin nombre.
    */
-  private encabezadosEstructura(filas: VisitaFilaTabla[], configurados: string[] | undefined): string[] {
+  private encabezadosEstructura(
+    filas: VisitaFilaTabla[],
+    configurados: string[] | undefined,
+  ): string[] {
     const cantidad = filas[0].celdas.length;
     const propios = Array.from({ length: cantidad }, (_, indice) => {
       const textos = filas.map((fila) => {
@@ -255,7 +273,9 @@ export class VisitaLimpiaService {
         return this.normalizar(texto) === this.normalizar(fila.titulo) ? '' : texto;
       });
       const primero = textos[0];
-      return primero && textos.every((texto) => this.normalizar(texto) === this.normalizar(primero)) ? primero : null;
+      return primero && textos.every((texto) => this.normalizar(texto) === this.normalizar(primero))
+        ? primero
+        : null;
     });
     if (propios.every((texto) => texto !== null)) {
       return ['Ítem', ...(propios as string[])];
@@ -312,7 +332,10 @@ export class VisitaLimpiaService {
   }
 
   /** `titulo`: sobra un encabezado para el nombre del grupo. `directo`: un encabezado por campo. */
-  private encajeTabla(cantidadCampos: number, cantidadEncabezados: number): 'titulo' | 'directo' | null {
+  private encajeTabla(
+    cantidadCampos: number,
+    cantidadEncabezados: number,
+  ): 'titulo' | 'directo' | null {
     if (cantidadCampos <= 1 || cantidadEncabezados <= 1) {
       return null;
     }
@@ -348,7 +371,10 @@ export class VisitaLimpiaService {
     return campos.filter((campo) => !enTabla.has(campo));
   }
 
-  private limpiarCampo(it: ItemVisitaCampoRaw, configuracion?: ConfiguracionFormulario): VisitaCampo {
+  private limpiarCampo(
+    it: ItemVisitaCampoRaw,
+    configuracion?: ConfiguracionFormulario,
+  ): VisitaCampo {
     const opciones = it.parametros?.opciones;
     return {
       id: it.idItemVisita,
@@ -357,9 +383,12 @@ export class VisitaLimpiaService {
       tipo: it.tipoItem,
       label: it.parametros?.label ?? null,
       dominio: it.parametros?.dominio ?? null,
-      opciones: Array.isArray(opciones) ? opciones.filter((opcion) => typeof opcion === 'string') : null,
+      opciones: Array.isArray(opciones)
+        ? opciones.filter((opcion) => typeof opcion === 'string')
+        : null,
       descripcion: it.descripcion?.trim() || null,
       soloLectura: it.soloLectura === 1,
+      requerido: esMarcaRequerido(it.parametros?.requerido),
       valor: it.valor ?? null,
       clase: this.resolverClase(it.tipoItem, it.soloLectura === 1, null, configuracion),
     };

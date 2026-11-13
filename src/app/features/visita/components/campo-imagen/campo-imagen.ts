@@ -1,6 +1,7 @@
 import { Component, EventEmitter, Input, Output } from '@angular/core';
 
 import { VisitaCampo } from '../../../../core/interfaces/visita.interface';
+import { IMAGEN_ACCEPT } from '../../../../core/services/validador-imagen.service';
 import { Button } from '../../../../shared/components/button/button';
 
 @Component({
@@ -19,6 +20,8 @@ export class CampoImagen {
   @Input() noDisponible = false;
   /** Modo observación: se ve la imagen guardada pero no se puede cambiar. */
   @Input() bloqueado = false;
+
+  readonly accept = IMAGEN_ACCEPT;
 
   get editable(): boolean {
     return !this.campo.soloLectura && !this.bloqueado;

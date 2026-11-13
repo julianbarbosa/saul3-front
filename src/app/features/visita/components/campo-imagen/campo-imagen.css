@@ -17,6 +17,7 @@
   overflow: hidden;
 }
 
+/* Cubre solo su botón (el label padre es relative): el toque abre ese selector. */
 .gestion-archivo__input {
   position: absolute;
   inset: 0;
@@ -41,9 +42,22 @@
   flex: 0 0 auto;
   align-items: center;
   padding: 0.375rem 0.75rem;
+  position: relative;
+  margin: 0;
   background: var(--ssj-azul, #0943b5);
   color: #fff;
-  pointer-events: none;
+  cursor: pointer;
+}
+
+.gestion-archivo__boton + .gestion-archivo__boton {
+  border-left: 1px solid #fff;
+}
+
+/* La cámara solo tiene sentido en pantallas táctiles; en escritorio queda «Seleccionar». */
+@media (hover: hover) and (pointer: fine) {
+  .gestion-archivo__boton--camara {
+    display: none;
+  }
 }
 
 .gestion-archivo:focus-within {

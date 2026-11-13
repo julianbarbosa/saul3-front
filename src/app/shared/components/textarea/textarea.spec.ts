@@ -28,7 +28,9 @@ describe('Textarea', () => {
     expect(cuadro().id).toBe('obs');
     expect(cuadro().rows).toBe(3);
     expect(cuadro().value).toBe('línea 1\nlínea 2');
-    expect(fixture.nativeElement.querySelector('label[for="obs"]')?.textContent).toContain('Observaciones');
+    expect(fixture.nativeElement.querySelector('label[for="obs"]')?.textContent).toContain(
+      'Observaciones',
+    );
   });
 
   it('emite el valor y blurred al perder el foco', () => {
@@ -84,6 +86,34 @@ describe('Textarea', () => {
   it('oculta la etiqueta solo visualmente', () => {
     fixture.componentRef.setInput('ocultarEtiqueta', true);
     fixture.detectChanges();
-    expect(fixture.nativeElement.querySelector('label')?.classList.contains('campo-etiqueta--oculta')).toBe(true);
+    expect(
+      fixture.nativeElement.querySelector('label')?.classList.contains('campo-etiqueta--oculta'),
+    ).toBe(true);
+  });
+
+  describe('estados KIT UI SAUL3', () => {
+    const error = (): HTMLElement | null =>
+      fixture.nativeElement.querySelector('.campo__mensaje-error');
+    const pintar = async (): Promise<void> => {
+      fixture.detectChanges();
+      await fixture.whenStable();
+    };
+
+    it('obligatorio vacío: error al salir; con texto: éxito', async () => {
+      fixture.componentRef.setInput('value', '');
+      fixture.componentRef.setInput('required', true);
+      await pintar();
+      expect(fixture.nativeElement.querySelector('.campo__requerido')).not.toBeNull();
+
+      cuadro().dispatchEvent(new Event('blur'));
+      await pintar();
+      expect(error()?.textContent?.trim()).toBe('Campo requerido*');
+
+      cuadro().value = 'Se observa obra en curso';
+      cuadro().dispatchEvent(new Event('input'));
+      await pintar();
+      expect(error()).toBeNull();
+      expect(fixture.nativeElement.querySelector('.campo--exito')).not.toBeNull();
+    });
   });
 });

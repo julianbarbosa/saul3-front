@@ -1,14 +1,31 @@
-<div class="form-group">
-  <label [for]="id" [class.campo-etiqueta--oculta]="ocultarEtiqueta">{{ label }}</label>
+<div
+  class="form-group campo"
+  [class.campo--error]="enError"
+  [class.campo--exito]="enExito"
+  [class.campo--deshabilitado]="readOnly"
+>
+  <label class="campo__label" [for]="id" [class.campo-etiqueta--oculta]="ocultarEtiqueta">
+    {{ label }}
+    @if (required) {
+      <span class="campo__requerido" aria-hidden="true">&nbsp;*</span>
+    }
+  </label>
   <textarea
     #cuadro
-    class="form-control campo-textarea"
+    class="form-control campo__control campo-textarea"
     rows="3"
     [id]="id"
     [placeholder]="placeholder"
-    [value]="value"
+    [value]="valorActual"
     [readOnly]="readOnly"
-    (input)="ajustarAlto()"
+    [required]="required"
+    [attr.aria-required]="required || null"
+    [attr.aria-invalid]="enError || null"
+    [attr.aria-describedby]="enError ? idError : null"
+    (input)="onInput($event)"
     (blur)="onBlur($event)"
   ></textarea>
+  @if (enError) {
+    <small class="campo__mensaje-error" [id]="idError" role="alert">{{ mensajeError }}</small>
+  }
 </div>

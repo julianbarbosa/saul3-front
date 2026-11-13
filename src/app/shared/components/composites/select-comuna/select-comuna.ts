@@ -1,5 +1,5 @@
 import { Component, inject, Input, signal } from '@angular/core';
-import { CatastroService } from 'src/app/core/services/catastro.service';
+import { CatastroService } from '../../../../core/services/catastro.service';
 import { Select, SelectOption } from '../../select/select';
 
 @Component({

@@ -1,7 +1,20 @@
-import { Component, computed, inject, OnDestroy, OnInit, signal } from '@angular/core';
+import {
+  ChangeDetectorRef,
+  Component,
+  computed,
+  inject,
+  OnDestroy,
+  OnInit,
+  signal,
+} from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 
+import {
+  normalizarNombreCampo,
+  resolverNombresObligatorios,
+  tipoControlDesdeTexto,
+} from '../../../core/constants/visita-campos-obligatorios';
 import {
   BloquePresentacion,
   VisitaCampo,
@@ -11,7 +24,9 @@ import {
   VisitaEncabezado,
   VisitaTabla,
 } from '../../../core/interfaces/visita.interface';
+import { Barrio, CatastroService } from '../../../core/services/catastro.service';
 import { FormatoTextoService } from '../../../core/services/formato-texto.service';
+import { ValidadorImagenService } from '../../../core/services/validador-imagen.service';
 import { VisitaLimpiaService } from '../../../core/services/visita-limpia.service';
 import { aEncabezadoVisita, VisitaService } from '../../../core/services/visita.service';
 import { Button } from '../../../shared/components/button/button';
@@ -85,10 +100,50 @@ export class Gestion implements OnInit, OnDestroy {
   /** Lo que se pinta en el mapa: la ubicación de la visita o, si no hay, Cali. */
   readonly centroMapa = computed<UbicacionVisita>(() => this.ubicacion() ?? UBICACION_POR_DEFECTO);
 
+  /**
+   * Campos obligatorios: los que marca el API o los de la lista del tipo de control
+   * (Control Preventivo / Control Posterior, ver `visita-campos-obligatorios.ts`).
+   * El tipo sale de `tipoVisita`; si no se reconoce, se infiere por los campos presentes.
+   */
+  readonly camposRequeridos = computed<ReadonlySet<VisitaCampo>>(() => {
+    const campos = this.dataForm().flatMap((categoria) => categoria.campos);
+    const nombresPorCampo = new Map(
+      campos.map((campo) => [campo, this.nombresNormalizados(campo)]),
+    );
+    const tipoVisita = this.visitaDetalle()?.tipoVisita;
+    const obligatorios = resolverNombresObligatorios(
+      new Set([...nombresPorCampo.values()].flat()),
+      tipoControlDesdeTexto(tipoVisita?.descripcion, tipoVisita?.codigo),
+    );
+    return new Set(
+      campos.filter(
+        (campo) =>
+          campo.requerido === true || nombresPorCampo.get(campo)!.some((n) => obligatorios.has(n)),
+      ),
+    );
+  });
+
+  /** Categoría a la que pertenece cada campo (para validar por paso). */
+  private readonly categoriaPorCampo = computed<ReadonlyMap<VisitaCampo, number>>(
+    () =>
+      new Map(
+        this.dataForm().flatMap((categoria) =>
+          categoria.campos.map((campo) => [campo, categoria.id]),
+        ),
+      ),
+  );
+
+  /** Categorías en las que ya se pidió validar: sus obligatorios vacíos se muestran en rojo. */
+  readonly categoriasValidadas = signal<ReadonlySet<number>>(new Set());
+
   /** Pasos del modo Normal: el Mapa primero y luego las categorías en su orden. */
   readonly pasos = computed<PasoFormulario[]>(() => [
     { id: this.categoriaMapaId, nombre: this.categoriaMapaNombre, categoria: null },
-    ...this.dataForm().map((categoria) => ({ id: categoria.id, nombre: categoria.nombre, categoria })),
+    ...this.dataForm().map((categoria) => ({
+      id: categoria.id,
+      nombre: categoria.nombre,
+      categoria,
+    })),
   ]);
   /** Paso abierto (índice en `pasos`). Solo uno a la vez, como en el KIT. */
   readonly pasoActual = signal(0);
@@ -119,6 +174,12 @@ export class Gestion implements OnInit, OnDestroy {
   private readonly visitaLimpiaService = inject(VisitaLimpiaService);
   private readonly formatoTextoService = inject(FormatoTextoService);
   private readonly route = inject(ActivatedRoute);
+  private readonly catastroService = inject(CatastroService);
+  private readonly validadorImagen = inject(ValidadorImagenService);
+  private readonly cdr = inject(ChangeDetectorRef);
+
+  /** Barrios de catastro para el campo «Barrio o Urbanización». */
+  readonly barrios = signal<Barrio[]>([]);
 
   idVisita: number | null = null;
   /** Signal: así Angular (zoneless) redibuja el aviso aunque se asigne desde una respuesta HTTP. */
@@ -132,6 +193,8 @@ export class Gestion implements OnInit, OnDestroy {
   private readonly versionCampo = new Map<string, number>();
   private readonly archivosPendientes = new Map<string, { file: File; vistaPrevia: string }>();
   private readonly archivoEnviado = new Map<string, File>();
+  /** Última selección por campo: si llega otra mientras se valida, la anterior se descarta. */
+  private readonly seleccionEnCurso = new Map<string, number>();
   private readonly bloquesPorCampos = new WeakMap<VisitaCampo[], BloqueCampos[]>();
   private readonly sueltosPorCategoria = new WeakMap<VisitaCategoria, VisitaCampo[]>();
   private readonly bloquesPorCategoria = new WeakMap<VisitaCategoria, BloquePresentacion[]>();
@@ -181,6 +244,7 @@ export class Gestion implements OnInit, OnDestroy {
   }
 
   ngOnInit(): void {
+    this.catastroService.getBarrios().subscribe((lista) => this.barrios.set(lista));
     this.modoObservacion = this.route.snapshot?.queryParamMap?.get('accion') === 'observar';
     const id = this.resolverIdVisita();
     if (!Number.isFinite(id) || id <= 0) {
@@ -211,6 +275,7 @@ export class Gestion implements OnInit, OnDestroy {
     // Otra visita: se empieza desde el primer paso.
     this.pasoActual.set(0);
     this.pasosHechos.set(new Set());
+    this.categoriasValidadas.set(new Set());
     this.liberarSelecciones();
     this.imagenesNoDisponibles.clear();
     this.idVisita = idVisita;
@@ -227,7 +292,9 @@ export class Gestion implements OnInit, OnDestroy {
       console.error('No se pudo generar el formulario de la visita', error);
       if (this.idVisita === idVisita) {
         this.dataForm.set([]);
-        this.mensajeError.set('No se pudo cargar el formulario de la visita. Intente recargar la página.');
+        this.mensajeError.set(
+          'No se pudo cargar el formulario de la visita. Intente recargar la página.',
+        );
       }
     }
     this.categoriaHorizontalIndice = 0;
@@ -274,7 +341,9 @@ export class Gestion implements OnInit, OnDestroy {
   }
 
   textoEstadoPaso(indice: number): string {
-    return { actual: 'paso actual', hecho: 'completado', pendiente: 'pendiente' }[this.estadoPaso(indice)];
+    return { actual: 'paso actual', hecho: 'completado', pendiente: 'pendiente' }[
+      this.estadoPaso(indice)
+    ];
   }
 
   idCuerpoPaso(paso: PasoFormulario): string {
@@ -291,8 +360,15 @@ export class Gestion implements OnInit, OnDestroy {
     this.llevarPasoALaVista(indice);
   }
 
-  /** «Continuar»: marca el paso como hecho y abre el siguiente. */
+  /**
+   * «Continuar»: si el paso tiene obligatorios vacíos, los marca en rojo, enfoca el primero
+   * y no avanza. Si está completo, lo marca como hecho y abre el siguiente.
+   */
   continuarPaso(indice: number): void {
+    const categoria = this.pasos()[indice]?.categoria;
+    if (categoria && !this.validarCategoria(categoria)) {
+      return;
+    }
     this.pasosHechos.update((hechos) => new Set(hechos).add(indice));
     this.abrirPaso(indice + 1);
   }
@@ -305,6 +381,82 @@ export class Gestion implements OnInit, OnDestroy {
         .getElementById(this.idSeccionCategoria(paso.id))
         ?.scrollIntoView({ behavior: 'smooth', block: 'start' });
     });
+  }
+
+  esRequerido(campo: VisitaCampo): boolean {
+    return this.camposRequeridos().has(campo);
+  }
+
+  /** Mostrar el estado de validación aunque el usuario no haya pasado por el campo. */
+  validarCampo(campo: VisitaCampo): boolean {
+    const idCategoria = this.categoriaPorCampo().get(campo);
+    return idCategoria !== undefined && this.categoriasValidadas().has(idCategoria);
+  }
+
+  /** Obligatorios editables y sin valor de una categoría, en orden de aparición. */
+  obligatoriosPendientes(categoria: VisitaCategoria): VisitaCampo[] {
+    return categoria.campos.filter(
+      (campo) => this.esRequerido(campo) && !this.soloLectura(campo) && !this.tieneValor(campo),
+    );
+  }
+
+  /** Valida una categoría: muestra sus errores y enfoca el primer pendiente. `true` si está completa. */
+  validarCategoria(categoria: VisitaCategoria): boolean {
+    this.categoriasValidadas.update((ids) => new Set(ids).add(categoria.id));
+    const primero = this.obligatoriosPendientes(categoria)[0];
+    if (primero) {
+      this.enfocarCampo(primero);
+    }
+    return !primero;
+  }
+
+  /**
+   * Valida todo el formulario (para cerrar o enviar la visita). Abre la categoría del
+   * primer obligatorio pendiente y lo enfoca. `true` solo si no falta ninguno.
+   */
+  validarFormulario(): boolean {
+    const categorias = this.dataForm();
+    this.categoriasValidadas.set(new Set(categorias.map((categoria) => categoria.id)));
+    const conPendientes = categorias.find(
+      (categoria) => this.obligatoriosPendientes(categoria).length > 0,
+    );
+    if (!conPendientes) {
+      return true;
+    }
+    if (this.visualizacion === 'normal') {
+      const indice = this.pasos().findIndex((paso) => paso.id === conPendientes.id);
+      this.pasoActual.set(indice);
+      this.categoriaActivaId = conPendientes.id;
+    } else {
+      this.irACategoria(conPendientes.id);
+    }
+    this.enfocarCampo(this.obligatoriosPendientes(conPendientes)[0]);
+    return false;
+  }
+
+  private tieneValor(campo: VisitaCampo): boolean {
+    if (this.esImagen(campo)) {
+      return (
+        this.archivoPendiente(campo.codigo) !== null || this.referenciaGuardada(campo) !== null
+      );
+    }
+    const texto = this.valorCampo(campo).trim();
+    return texto.length > 0 && texto !== 'null';
+  }
+
+  /** Después de dibujar: el paso o la categoría pudo haberse abierto en este mismo clic. */
+  private enfocarCampo(campo: VisitaCampo): void {
+    setTimeout(() => {
+      const control = document.getElementById(`campo-${campo.id}`);
+      control?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      control?.focus({ preventScroll: true });
+    });
+  }
+
+  private nombresNormalizados(campo: VisitaCampo): string[] {
+    return [campo.label, campo.nombre, campo.codigo]
+      .map(normalizarNombreCampo)
+      .filter((n) => n.length > 0);
   }
 
   esCategoriaMapa(id: number): boolean {
@@ -524,7 +676,9 @@ export class Gestion implements OnInit, OnDestroy {
    */
   private celdasRegistro(izquierda: ParRegistro, derecha?: ParRegistro): CeldaRegistro[] {
     const clase = 'col-12 col-md-6';
-    const celdas: CeldaRegistro[] = [{ campo: izquierda.imagen, clase: `${clase} order-md-1`, salto: false }];
+    const celdas: CeldaRegistro[] = [
+      { campo: izquierda.imagen, clase: `${clase} order-md-1`, salto: false },
+    ];
     if (izquierda.descripcion) {
       celdas.push({ campo: izquierda.descripcion, clase: `${clase} order-md-3`, salto: !derecha });
     }
@@ -534,7 +688,11 @@ export class Gestion implements OnInit, OnDestroy {
     celdas.push({ campo: derecha.imagen, clase: `${clase} order-md-2`, salto: false });
     if (derecha.descripcion) {
       const desplazamiento = izquierda.descripcion ? '' : ' offset-md-6';
-      celdas.push({ campo: derecha.descripcion, clase: `${clase} order-md-4${desplazamiento}`, salto: false });
+      celdas.push({
+        campo: derecha.descripcion,
+        clase: `${clase} order-md-4${desplazamiento}`,
+        salto: false,
+      });
     }
     return celdas;
   }
@@ -549,7 +707,8 @@ export class Gestion implements OnInit, OnDestroy {
       return guardada;
     }
     const columna =
-      tabla.tituloIndependiente && tabla.filas.some((fila) => this.normalizarTexto(fila.titulo).length > 0)
+      tabla.tituloIndependiente &&
+      tabla.filas.some((fila) => this.normalizarTexto(fila.titulo).length > 0)
         ? 'titulo'
         : null;
     this.columnaTituloPorTabla.set(tabla, columna);
@@ -578,7 +737,11 @@ export class Gestion implements OnInit, OnDestroy {
   }
 
   nombreArchivo(campo: VisitaCampo): string {
-    return this.archivoPendiente(campo.codigo)?.name || this.referenciaGuardada(campo) || 'Ningún archivo seleccionado';
+    return (
+      this.archivoPendiente(campo.codigo)?.name ||
+      this.referenciaGuardada(campo) ||
+      'Ningún archivo seleccionado'
+    );
   }
 
   archivoPendiente(codigo: string): File | null {
@@ -610,7 +773,8 @@ export class Gestion implements OnInit, OnDestroy {
     this.imagenesNoDisponibles.add(codigo);
   }
 
-  onArchivoSeleccionado(campo: VisitaCampo, event: Event): void {
+  /** Llega desde «Seleccionar» (galería/carpetas) o «Tomar foto» (cámara del celular). */
+  async onArchivoSeleccionado(campo: VisitaCampo, event: Event): Promise<void> {
     const input = event.target as HTMLInputElement;
     const archivo = input.files?.[0];
     input.value = '';
@@ -618,10 +782,16 @@ export class Gestion implements OnInit, OnDestroy {
       return;
     }
 
-    const partes = archivo.name.split('.');
-    const extension = partes.length > 1 ? (partes.pop()?.toLowerCase() ?? '') : '';
-    if (this.extensionesImagen.indexOf(extension) === -1) {
-      this.mensajeError.set('Solo se permiten archivos con extensión PNG, JPEG o JPG.');
+    const idVisita = this.idVisita;
+    const seleccion = (this.seleccionEnCurso.get(campo.codigo) ?? 0) + 1;
+    this.seleccionEnCurso.set(campo.codigo, seleccion);
+
+    const error = await this.validadorImagen.validar(archivo);
+    if (this.seleccionEnCurso.get(campo.codigo) !== seleccion || this.idVisita !== idVisita) {
+      return;
+    }
+    if (error) {
+      this.mensajeError.set(error);
       return;
     }
 
@@ -629,6 +799,8 @@ export class Gestion implements OnInit, OnDestroy {
     const vistaPrevia = URL.createObjectURL(archivo);
     this.archivosPendientes.set(campo.codigo, { file: archivo, vistaPrevia });
     this.mensajeError.set('');
+    // Zoneless: el Map no es signal y esto ocurre tras un await; se pide redibujar.
+    this.cdr.markForCheck();
     this.saveItem(campo);
   }
 
@@ -707,6 +879,57 @@ export class Gestion implements OnInit, OnDestroy {
     return texto.trim().toLocaleLowerCase('es').replace(/\s+/g, ' ');
   }
 
+  /** El campo «Barrio o Urbanización» se muestra como lista de barrios de catastro. */
+  esCampoBarrio(campo: VisitaCampo): boolean {
+    return this.sinTildes(this.labelCampo(campo)).includes('barrio o urbanizacion');
+  }
+
+  /** Nombres de barrio. Si el valor guardado no está en la lista, se conserva como opción. */
+  opcionesBarrio(campo: VisitaCampo): string[] {
+    const nombres = this.barrios().map((b) => b.nombre);
+    const valor = this.valorCampo(campo);
+    return valor && !nombres.includes(valor) ? [valor, ...nombres] : nombres;
+  }
+
+  /** Guarda el nombre del barrio y llena «Código de barrio» y «Comuna». */
+  seleccionarBarrio(campo: VisitaCampo, nombre: string): void {
+    if (this.soloLectura(campo)) {
+      return;
+    }
+    this.actualizarValor(campo, nombre);
+    this.saveItem(campo);
+
+    const barrio = this.barrios().find((b) => b.nombre === nombre);
+    if (!barrio) {
+      return;
+    }
+    const codigo = String(barrio.codigo ?? '').trim();
+    // En Cali el código de barrio es CCBB: los dos primeros dígitos son la comuna (0608 → 6).
+    const comuna = codigo.length >= 2 ? String(Number(codigo.slice(0, 2))) : '';
+
+    this.llenarCampo('codigo de barrio', codigo);
+    if (comuna && comuna !== 'NaN') {
+      this.llenarCampo('comuna', comuna);
+    }
+  }
+
+  private llenarCampo(etiqueta: string, valor: string): void {
+    const campo = this.dataForm()
+      .flatMap((categoria) => categoria.campos)
+      .find((c) => this.sinTildes(this.labelCampo(c)) === etiqueta);
+    if (!campo || !valor || this.soloLectura(campo)) {
+      return;
+    }
+    this.actualizarValor(campo, valor);
+    this.saveItem(campo);
+  }
+
+  private sinTildes(texto: string): string {
+    return this.normalizarTexto(texto)
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '');
+  }
+
   actualizarValor(campo: VisitaCampo, texto: string): void {
     if (this.soloLectura(campo)) {
       return;
@@ -761,7 +984,8 @@ export class Gestion implements OnInit, OnDestroy {
         if (!respuesta?.success || respuesta.success !== true) {
           this.archivoEnviado.delete(campo.codigo);
           this.mensajeError.set(
-            'Ha ocurrido un error en response informe al desarrollador. Gracias. ' + (respuesta?.msg ?? ''),
+            'Ha ocurrido un error en response informe al desarrollador. Gracias. ' +
+              (respuesta?.msg ?? ''),
           );
           return;
         }
@@ -802,5 +1026,4 @@ export class Gestion implements OnInit, OnDestroy {
     }
     return texto;
   }
-
 }

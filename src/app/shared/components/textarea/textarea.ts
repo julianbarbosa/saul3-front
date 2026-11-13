@@ -10,6 +10,8 @@ import {
   ViewChild,
 } from '@angular/core';
 
+import { ValidacionCampo } from '../validacion-campo';
+
 /** Alto máximo del cuadro; a partir de ahí hace scroll. Debe coincidir con `max-height` del CSS. */
 const ALTO_MAXIMO = 320;
 
@@ -17,14 +19,12 @@ const ALTO_MAXIMO = 320;
   selector: 'app-textarea',
   imports: [],
   templateUrl: './textarea.html',
-  styleUrl: './textarea.css',
+  styleUrls: ['../campo-formulario.css', './textarea.css'],
 })
-export class Textarea implements AfterViewInit, OnChanges {
+export class Textarea extends ValidacionCampo implements AfterViewInit, OnChanges {
   @Input({ required: true }) label = '';
-  @Input() id = 'textarea';
+  @Input() override id = 'textarea';
   @Input() placeholder = '';
-  @Input() value = '';
-  @Input() readOnly = false;
   /** Oculta la etiqueta visual. El vínculo con el control se conserva. */
   @Input() ocultarEtiqueta = false;
   @Output() valueChange = new EventEmitter<string>();
@@ -54,7 +54,13 @@ export class Textarea implements AfterViewInit, OnChanges {
     elemento.style.overflowY = alto > ALTO_MAXIMO ? 'auto' : 'hidden';
   }
 
+  onInput(event: Event): void {
+    this.registrarEntrada(event);
+    this.ajustarAlto();
+  }
+
   onBlur(event: Event): void {
+    this.marcarTocado();
     if (this.readOnly) {
       return;
     }

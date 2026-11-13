@@ -3,19 +3,33 @@
     {{ etiqueta }}
   </label>
   <div class="form-control gestion-archivo">
-    @if (editable) {
-      <input
-        class="gestion-archivo__input"
-        [id]="'campo-' + campo.id"
-        type="file"
-        accept=".png,.jpeg,.jpg,image/png,image/jpeg"
-        (change)="archivoChange.emit($event)"
-        (blur)="blurred.emit()"
-      />
-    }
     <span class="gestion-archivo__nombre">{{ nombre }}</span>
     @if (editable) {
-      <span class="gestion-archivo__boton" aria-hidden="true">Seleccionar</span>
+      <!-- capture="environment": en celular abre la cámara trasera. Oculto en escritorio. -->
+      <label class="gestion-archivo__boton gestion-archivo__boton--camara">
+        <input
+          class="gestion-archivo__input"
+          [id]="'campo-' + campo.id + '-camara'"
+          type="file"
+          [accept]="accept"
+          capture="environment"
+          [attr.aria-label]="'Tomar foto para ' + etiqueta"
+          (change)="archivoChange.emit($event)"
+          (blur)="blurred.emit()"
+        />
+        Tomar foto
+      </label>
+      <label class="gestion-archivo__boton">
+        <input
+          class="gestion-archivo__input"
+          [id]="'campo-' + campo.id"
+          type="file"
+          [accept]="accept"
+          (change)="archivoChange.emit($event)"
+          (blur)="blurred.emit()"
+        />
+        Seleccionar
+      </label>
     }
   </div>
   @if (vistaPrevia) {
@@ -31,7 +45,9 @@
         (error)="noDisponibleChange.emit()"
       />
     } @else {
-      <p class="gestion-imagen__aviso">No se pudo mostrar la imagen guardada. La referencia se conserva.</p>
+      <p class="gestion-imagen__aviso">
+        No se pudo mostrar la imagen guardada. La referencia se conserva.
+      </p>
     }
   }
 </div>

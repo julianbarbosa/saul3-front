@@ -5,7 +5,7 @@ import { of, throwError } from 'rxjs';
 import { VisitaCampo, VisitaDetalle } from '../../../core/interfaces/visita.interface';
 import { VisitaLimpiaService } from '../../../core/services/visita-limpia.service';
 import { VisitaService } from '../../../core/services/visita.service';
-import { Gestion } from './gestion';
+import { Gestion, ID_VISITA_GESTION_SESION } from './gestion';
 
 const visitaApi = {
   enviados: [] as { codigo: string; valor: string | number | null }[],
@@ -66,6 +66,8 @@ describe('Gestion', () => {
     visitaApi.llamadas = [];
     visitaApi.fallaDetalle = false;
     visitaApi.fallaFormulario = false;
+    // El id de la visita ya no va en la URL: el componente lo lee de history.state o de la sesión del tab.
+    sessionStorage.setItem(ID_VISITA_GESTION_SESION, '3931');
     await TestBed.configureTestingModule({
       imports: [Gestion],
       providers: [
@@ -101,18 +103,32 @@ describe('Gestion', () => {
     });
 
     it('arma un paso por categoría, con el Mapa primero, y abre solo el primero', () => {
-      expect(component.pasos().map((paso) => paso.nombre)).toEqual(['Mapa', 'Datos generales', 'Licencia']);
+      expect(component.pasos().map((paso) => paso.nombre)).toEqual([
+        'Mapa',
+        'Datos generales',
+        'Licencia',
+      ]);
       const raiz: HTMLElement = fixture.nativeElement;
       expect(raiz.querySelectorAll('.paso')).toHaveLength(3);
       expect(raiz.querySelector('.gestion-sidebar')).toBeNull();
-      const abiertos = [...raiz.querySelectorAll<HTMLElement>('.paso__cuerpo')].filter((cuerpo) => !cuerpo.hidden);
+      const abiertos = [...raiz.querySelectorAll<HTMLElement>('.paso__cuerpo')].filter(
+        (cuerpo) => !cuerpo.hidden,
+      );
       expect(abiertos).toHaveLength(1);
-      expect([0, 1, 2].map((i) => component.estadoPaso(i))).toEqual(['actual', 'pendiente', 'pendiente']);
+      expect([0, 1, 2].map((i) => component.estadoPaso(i))).toEqual([
+        'actual',
+        'pendiente',
+        'pendiente',
+      ]);
     });
 
     it('Continuar marca el paso como hecho y abre el siguiente', () => {
       component.continuarPaso(0);
-      expect([0, 1, 2].map((i) => component.estadoPaso(i))).toEqual(['hecho', 'actual', 'pendiente']);
+      expect([0, 1, 2].map((i) => component.estadoPaso(i))).toEqual([
+        'hecho',
+        'actual',
+        'pendiente',
+      ]);
       expect(component.categoriaActivaId).toBe(11);
     });
 
@@ -120,7 +136,11 @@ describe('Gestion', () => {
       component.continuarPaso(0);
       component.continuarPaso(1);
       component.abrirPaso(0);
-      expect([0, 1, 2].map((i) => component.estadoPaso(i))).toEqual(['actual', 'hecho', 'pendiente']);
+      expect([0, 1, 2].map((i) => component.estadoPaso(i))).toEqual([
+        'actual',
+        'hecho',
+        'pendiente',
+      ]);
     });
 
     it('el último paso no tiene Continuar', () => {
@@ -128,6 +148,79 @@ describe('Gestion', () => {
       fixture.detectChanges();
       const ultimo = (fixture.nativeElement as HTMLElement).querySelectorAll('.paso')[2];
       expect(ultimo.querySelector('.paso__acciones')).toBeNull();
+    });
+  });
+
+  describe('campos obligatorios (KIT UI SAUL3: Input / Select)', () => {
+    // La visita de prueba es «Control Posterior» (findById).
+    let titular: VisitaCampo;
+    let estrato: VisitaCampo;
+    let notas: VisitaCampo;
+
+    beforeEach(() => {
+      titular = campoTexto(31, 'v_titular', 'Nombre titular', '');
+      estrato = {
+        ...campoTexto(32, 'v_estrato', 'Estrato', ''),
+        tipo: 'select-one',
+        opciones: ['1', '2', '3'],
+      };
+      notas = campoTexto(33, 'v_notas', 'Notas internas', '');
+      component.dataForm.set([
+        { ...categoriaRegistro([titular, estrato, notas]), id: 21, nombre: 'Datos del proyecto' },
+        { ...categoriaRegistro([]), id: 22, nombre: 'Cierre' },
+      ]);
+      fixture.detectChanges();
+    });
+
+    const raiz = (): HTMLElement => fixture.nativeElement;
+
+    it('marca con * los campos de la lista del tipo de control y no los demás', () => {
+      expect(component.esRequerido(titular)).toBe(true);
+      expect(component.esRequerido(estrato)).toBe(true);
+      expect(component.esRequerido(notas)).toBe(false);
+      expect(raiz().querySelector('label[for="campo-31"] .campo__requerido')).not.toBeNull();
+      expect(raiz().querySelector('label[for="campo-33"] .campo__requerido')).toBeNull();
+    });
+
+    it('la marca requerido del API también cuenta', () => {
+      const conMarca = { ...notas, requerido: true };
+      component.dataForm.set([categoriaRegistro([conMarca])]);
+      expect(component.esRequerido(conMarca)).toBe(true);
+    });
+
+    it('Continuar no avanza si faltan obligatorios y muestra «Campo requerido*»', async () => {
+      component.abrirPaso(1);
+      component.continuarPaso(1);
+      fixture.detectChanges();
+      await fixture.whenStable();
+
+      expect(component.estadoPaso(1)).toBe('actual');
+      expect(raiz().querySelectorAll('.campo__mensaje-error')).toHaveLength(2);
+      expect(raiz().querySelector('#campo-31')?.getAttribute('aria-invalid')).toBe('true');
+    });
+
+    it('Continuar avanza cuando los obligatorios tienen valor', () => {
+      titular.valor = 'Constructora Ejemplo';
+      estrato.valor = '3';
+      component.continuarPaso(1);
+      expect([1, 2].map((i) => component.estadoPaso(i))).toEqual(['hecho', 'actual']);
+    });
+
+    it('un valor de solo espacios no cuenta como diligenciado', () => {
+      titular.valor = '   ';
+      estrato.valor = '3';
+      expect(component.obligatoriosPendientes(component.dataForm()[0])).toEqual([titular]);
+    });
+
+    it('en modo observación no exige obligatorios', () => {
+      component.modoObservacion = true;
+      expect(component.validarFormulario()).toBe(true);
+    });
+
+    it('validarFormulario abre el paso con pendientes', () => {
+      component.abrirPaso(2);
+      expect(component.validarFormulario()).toBe(false);
+      expect(component.pasoActual()).toBe(1);
     });
   });
 
@@ -158,8 +251,12 @@ describe('Gestion', () => {
       'No se pudo cargar el formulario de la visita. Intente recargar la página.',
     );
     const raiz: HTMLElement = otro.nativeElement;
-    expect(raiz.querySelector('.gestion-encabezado h1')?.textContent?.trim()).toBe('Registro de Visita');
-    expect(raiz.querySelector('.gestion-error')?.textContent).toContain('No se pudo cargar el formulario');
+    expect(raiz.querySelector('.gestion-encabezado h1')?.textContent?.trim()).toBe(
+      'Registro de Visita',
+    );
+    expect(raiz.querySelector('.gestion-error')?.textContent).toContain(
+      'No se pudo cargar el formulario',
+    );
     otro.destroy();
   });
 
@@ -197,7 +294,10 @@ describe('Gestion', () => {
     const encabezado = raiz.querySelector('.gestion-encabezado');
     expect(encabezado?.querySelector('h1')?.textContent?.trim()).toBe('Registro de Visita');
     const datos = [...(encabezado?.querySelectorAll('dl > div') ?? [])].map((fila) =>
-      [fila.querySelector('dt')?.textContent?.trim(), fila.querySelector('dd')?.textContent?.trim()].join(': '),
+      [
+        fila.querySelector('dt')?.textContent?.trim(),
+        fila.querySelector('dd')?.textContent?.trim(),
+      ].join(': '),
     );
     expect(datos).toEqual([
       'Consecutivo: 3931',
@@ -224,9 +324,15 @@ describe('Gestion', () => {
     };
 
     expect(component.etiquetaAdicional(campo, 'Valor', 'Impuesto predial')).toBe('');
-    expect(component.etiquetaAdicional({ ...campo, label: 'Valor' }, 'Valor', 'Impuesto predial')).toBe('');
     expect(
-      component.etiquetaAdicional({ ...campo, label: 'Valor en pesos' }, 'Valor', 'Impuesto predial'),
+      component.etiquetaAdicional({ ...campo, label: 'Valor' }, 'Valor', 'Impuesto predial'),
+    ).toBe('');
+    expect(
+      component.etiquetaAdicional(
+        { ...campo, label: 'Valor en pesos' },
+        'Valor',
+        'Impuesto predial',
+      ),
     ).toBe('Valor en pesos');
     expect(component.etiquetaAccesible('Impuesto predial', 'Valor', 'Valor en pesos')).toBe(
       'Impuesto predial, Valor, Valor en pesos',
@@ -303,14 +409,14 @@ describe('Gestion', () => {
     const raiz: HTMLElement = fixture.nativeElement;
     const etiquetasTabla = [...raiz.querySelectorAll('.gestion-tabla label')];
     expect(etiquetasTabla).toHaveLength(2);
-    expect(etiquetasTabla.every((etiqueta) => etiqueta.classList.contains('campo-etiqueta--oculta'))).toBe(
-      true,
-    );
+    expect(
+      etiquetasTabla.every((etiqueta) => etiqueta.classList.contains('campo-etiqueta--oculta')),
+    ).toBe(true);
     expect(etiquetasTabla[1].textContent).toContain('Impuesto predial, Estado, Estado del pago');
     expect(raiz.querySelectorAll('.gestion-celda__detalle')).toHaveLength(0);
-    expect(raiz.querySelector('.gestion-campo label')?.classList.contains('campo-etiqueta--oculta')).toBe(
-      false,
-    );
+    expect(
+      raiz.querySelector('.gestion-campo label')?.classList.contains('campo-etiqueta--oculta'),
+    ).toBe(false);
     expect(raiz.querySelector('.gestion-campo label')?.textContent).toContain('Dirección');
   });
 
@@ -388,20 +494,35 @@ describe('Gestion', () => {
     expect(visitaApi.enviados).toEqual([{ codigo: 'v_hora', valor: '1/1/1970, 2:30:00 PM' }]);
   });
 
-  it('no envía una imagen con extensión distinta de png, jpeg o jpg', () => {
+  it('no envía una imagen con extensión distinta de png, jpeg o jpg', async () => {
     const campo = campoImagen(30, 'v13_imagen_fachada', 'Foto fachada', null);
     const archivo = new File(['img'], 'fachada.gif', { type: 'image/gif' });
     const input = document.createElement('input');
     Object.defineProperty(input, 'files', { value: [archivo] });
 
-    component.onArchivoSeleccionado(campo, { target: input } as unknown as Event);
+    component.idVisita = 9;
+    await component.onArchivoSeleccionado(campo, { target: input } as unknown as Event);
 
     expect(visitaApi.imagenes).toBe(0);
     expect(component.mensajeError()).toContain('PNG, JPEG o JPG');
     expect(campo.valor).toBeNull();
   });
 
-  it('conserva la imagen guardada al quitar una selección pendiente', () => {
+  it('no envía un archivo renombrado a .jpg que no es una imagen', async () => {
+    const campo = campoImagen(30, 'v13_imagen_fachada', 'Foto fachada', null);
+    const archivo = new File(['<?php echo 1; ?>'], 'fachada.jpg', { type: 'image/jpeg' });
+    const input = document.createElement('input');
+    Object.defineProperty(input, 'files', { value: [archivo] });
+
+    component.idVisita = 9;
+    await component.onArchivoSeleccionado(campo, { target: input } as unknown as Event);
+
+    expect(visitaApi.imagenes).toBe(0);
+    expect(component.archivoPendiente(campo.codigo)).toBeNull();
+    expect(component.mensajeError()).toContain('no es una imagen válida');
+  });
+
+  it('conserva la imagen guardada al quitar una selección pendiente', async () => {
     const campo = {
       id: 30,
       codigo: 'v13_imagen_fachada',
@@ -414,12 +535,13 @@ describe('Gestion', () => {
       soloLectura: false,
       valor: 'fachada-guardada.png',
     };
-    const archivo = new File(['img'], 'fachada.png', { type: 'image/png' });
+    const png = new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
+    const archivo = new File([png], 'fachada.png', { type: 'image/png' });
     const input = document.createElement('input');
     Object.defineProperty(input, 'files', { value: [archivo] });
 
     component.idVisita = 9;
-    component.onArchivoSeleccionado(campo, { target: input } as unknown as Event);
+    await component.onArchivoSeleccionado(campo, { target: input } as unknown as Event);
 
     expect(component.archivoPendiente(campo.codigo)).toBe(archivo);
     expect(component.vistaPrevia(campo.codigo)).toContain('blob:');
@@ -444,7 +566,9 @@ describe('Gestion', () => {
     const bloques = component.bloquesCampos(campos);
 
     expect(bloques.map((bloque) => bloque.campos.map((campo) => campo.id))).toEqual([[7], []]);
-    expect(bloques[1].filas.map((fila) => fila.map((celda) => [celda.campo.id, celda.clase]))).toEqual([
+    expect(
+      bloques[1].filas.map((fila) => fila.map((celda) => [celda.campo.id, celda.clase])),
+    ).toEqual([
       [
         [1, 'col-12 col-md-6 order-md-1'],
         [2, 'col-12 col-md-6 order-md-2'],
@@ -461,7 +585,9 @@ describe('Gestion', () => {
 
   it('pone dos imágenes seguidas sin descripción en la misma fila', () => {
     component.idVisita = 9;
-    component.dataForm.set([categoriaRegistro([campoImagen(1, 'p', 'Uno', null), campoImagen(2, 'q', 'Dos', null)])]);
+    component.dataForm.set([
+      categoriaRegistro([campoImagen(1, 'p', 'Uno', null), campoImagen(2, 'q', 'Dos', null)]),
+    ]);
     fixture.detectChanges();
 
     const filas = [...fixture.nativeElement.querySelectorAll('.gestion-registro')] as HTMLElement[];
@@ -512,26 +638,26 @@ describe('Gestion', () => {
     fixture.detectChanges();
 
     const raiz: HTMLElement = fixture.nativeElement;
-    expect([...raiz.querySelectorAll('.gestion-tabla thead th')].map((th) => th.textContent?.trim())).toEqual([
-      'Ítem',
-      'Aprobado en planos',
-      'Verificado en obra',
-    ]);
-    expect([...raiz.querySelectorAll('.gestion-tabla tbody th')].map((th) => th.textContent?.trim())).toEqual([
-      'CESIÓN DE VÍAS',
-      'RED DE GAS',
-    ]);
+    expect(
+      [...raiz.querySelectorAll('.gestion-tabla thead th')].map((th) => th.textContent?.trim()),
+    ).toEqual(['Ítem', 'Aprobado en planos', 'Verificado en obra']);
+    expect(
+      [...raiz.querySelectorAll('.gestion-tabla tbody th')].map((th) => th.textContent?.trim()),
+    ).toEqual(['CESIÓN DE VÍAS', 'RED DE GAS']);
     const celdas = [...raiz.querySelectorAll('.gestion-tabla td')] as HTMLElement[];
     expect(celdas).toHaveLength(4);
     for (const td of celdas) {
       const visibles = [...td.querySelectorAll('label, p, span')].filter(
         (nodo) =>
-          !nodo.classList.contains('campo-etiqueta--oculta') && !nodo.classList.contains('gestion-celda__columna'),
+          !nodo.classList.contains('campo-etiqueta--oculta') &&
+          !nodo.classList.contains('gestion-celda__columna'),
       );
       expect(visibles).toEqual([]);
       expect(td.querySelector('.gestion-celda__columna')?.getAttribute('aria-hidden')).toBe('true');
     }
-    expect(raiz.querySelector('label[for="campo-2"]')?.textContent).toContain('CESIÓN DE VÍAS, Verificado en obra');
+    expect(raiz.querySelector('label[for="campo-2"]')?.textContent).toContain(
+      'CESIÓN DE VÍAS, Verificado en obra',
+    );
   });
 
   it('no pinta la columna del título si ninguna fila lo trae', () => {
@@ -540,17 +666,20 @@ describe('Gestion', () => {
     component.dataForm.set([
       {
         ...categoriaRegistro(filaA),
-        tabla: { encabezados: ['', 'Uno', 'Dos'], tituloIndependiente: true, filas: [{ titulo: '', celdas: filaA }] },
+        tabla: {
+          encabezados: ['', 'Uno', 'Dos'],
+          tituloIndependiente: true,
+          filas: [{ titulo: '', celdas: filaA }],
+        },
       },
     ]);
     fixture.detectChanges();
 
     const raiz: HTMLElement = fixture.nativeElement;
     expect(raiz.querySelectorAll('.gestion-tabla tbody th')).toHaveLength(0);
-    expect([...raiz.querySelectorAll('.gestion-tabla thead th')].map((th) => th.textContent?.trim())).toEqual([
-      'Uno',
-      'Dos',
-    ]);
+    expect(
+      [...raiz.querySelectorAll('.gestion-tabla thead th')].map((th) => th.textContent?.trim()),
+    ).toEqual(['Uno', 'Dos']);
   });
 
   it('no agrega columna de numeración "#" a una tabla ancha sin columna de título', () => {
@@ -610,10 +739,9 @@ describe('Gestion', () => {
       pintarTabla(tabla);
 
       const raiz: HTMLElement = fixture.nativeElement;
-      expect([...raiz.querySelectorAll('.gestion-tabla thead th')].map((th) => th.textContent?.trim())).toEqual([
-        'Uno',
-        'Dos',
-      ]);
+      expect(
+        [...raiz.querySelectorAll('.gestion-tabla thead th')].map((th) => th.textContent?.trim()),
+      ).toEqual(['Uno', 'Dos']);
       expect(raiz.querySelectorAll('.gestion-tabla tbody th')).toHaveLength(0);
       expect(raiz.querySelector('.gestion-tabla__numero')).toBeNull();
       expect(component.etiquetaColumna(tabla, 0)).toBe('Uno');
@@ -621,7 +749,12 @@ describe('Gestion', () => {
     }
   });
 
-  function tablaDePrueba(encabezados: string[], tituloIndependiente: boolean, titulos: string[], columnas: number) {
+  function tablaDePrueba(
+    encabezados: string[],
+    tituloIndependiente: boolean,
+    titulos: string[],
+    columnas: number,
+  ) {
     let id = 0;
     return {
       encabezados,
@@ -665,7 +798,9 @@ describe('Gestion', () => {
     component.idVisita = 9;
     component.dataForm.set([categoriaRegistro(campos)]);
     fixture.detectChanges();
-    const ultima = [...fixture.nativeElement.querySelectorAll('.gestion-registro')][1] as HTMLElement;
+    const ultima = [
+      ...fixture.nativeElement.querySelectorAll('.gestion-registro'),
+    ][1] as HTMLElement;
     const salto = ultima.querySelector('.w-100.d-md-block');
     expect(salto?.classList.contains('order-md-2')).toBe(true);
     expect(columna(ultima, 'campo-6').className).not.toContain('col-md-12');
@@ -673,8 +808,15 @@ describe('Gestion', () => {
 
   it('pone una fecha suelta en media fila y un texto largo a lo ancho con textarea que guarda al salir', () => {
     const fecha = { ...campoTexto(40, 'x1', 'Fecha', '2026-10-20'), tipo: 'fecha' };
-    const observaciones = { ...campoTexto(41, 'x2', 'Observaciones', 'texto previo'), tipo: 'texto-largo' };
-    const sinFila = { ...campoTexto(42, 'x3', 'Suelto', ''), tipo: 'select-one', opciones: ['Si', 'No'] };
+    const observaciones = {
+      ...campoTexto(41, 'x2', 'Observaciones', 'texto previo'),
+      tipo: 'texto-largo',
+    };
+    const sinFila = {
+      ...campoTexto(42, 'x3', 'Suelto', ''),
+      tipo: 'select-one',
+      opciones: ['Si', 'No'],
+    };
     component.idVisita = 9;
     component.dataForm.set([categoriaRegistro([fecha, observaciones, sinFila])]);
     fixture.detectChanges();
@@ -683,9 +825,9 @@ describe('Gestion', () => {
     const columnaFecha = raiz.querySelector('#campo-40')?.closest('.gestion-campo') as HTMLElement;
     expect(columnaFecha.className).toContain('col-12');
     expect(columnaFecha.className).toContain('col-md-6');
-    expect((raiz.querySelector('#campo-42')?.closest('.gestion-campo') as HTMLElement).className).toContain(
-      'col-md-6',
-    );
+    expect(
+      (raiz.querySelector('#campo-42')?.closest('.gestion-campo') as HTMLElement).className,
+    ).toContain('col-md-6');
 
     const cuadro = raiz.querySelector('#campo-41') as HTMLTextAreaElement;
     expect(cuadro.tagName).toBe('TEXTAREA');
@@ -763,12 +905,18 @@ describe('Gestion', () => {
   it('alinea cada imagen con la columna de su descripción', () => {
     const fachada = campoImagen(1, 'v13_imagen_fachada', 'Foto fachada', null);
     const foto1 = campoImagen(2, 'v13_imagen_registro1', 'FOTO No. 1', 'foto-1.png');
-    const desc1 = campoTexto(3, 'v13_descripcion_registro1', 'Descripción FOTO No. 1', 'Fachada norte');
+    const desc1 = campoTexto(
+      3,
+      'v13_descripcion_registro1',
+      'Descripción FOTO No. 1',
+      'Fachada norte',
+    );
     const foto2 = campoImagen(4, 'v13_imagen_registro2', 'FOTO No. 2', null);
     const desc2 = campoTexto(5, 'v13_descripcion_registro2', 'Descripción FOTO No. 2', '');
     const foto3 = campoImagen(6, 'v13_imagen_registro3', 'FOTO No. 3', null);
     const desc3 = campoTexto(7, 'v13_descripcion_registro3', 'Descripción FOTO No. 3', '');
-    const nombreLargo = 'plano-de-localizacion-con-un-nombre-extremadamente-largo-que-no-debe-desbordar.png';
+    const nombreLargo =
+      'plano-de-localizacion-con-un-nombre-extremadamente-largo-que-no-debe-desbordar.png';
     const foto4 = campoImagen(8, 'v13_imagen_registro4', 'FOTO No. 4', nombreLargo);
     const desc4 = campoTexto(9, 'v13_descripcion_registro4', 'Descripción FOTO No. 4', '');
     const foto5 = campoImagen(10, 'v13_imagen_registro5', 'FOTO No. 5', null);
@@ -810,14 +958,20 @@ describe('Gestion', () => {
     const selector = raiz.querySelector('#campo-2') as HTMLInputElement;
     expect(selector.type).toBe('file');
     expect(raiz.querySelector('label[for="campo-2"]')?.textContent).toContain('FOTO No. 1');
-    expect(columna(filas[0], 'campo-2').querySelector('.gestion-archivo')?.classList.contains('form-control')).toBe(
-      true,
+    expect(
+      columna(filas[0], 'campo-2')
+        .querySelector('.gestion-archivo')
+        ?.classList.contains('form-control'),
+    ).toBe(true);
+    expect(
+      columna(filas[0], 'campo-2').querySelector('.gestion-archivo__nombre')?.textContent,
+    ).toBe('foto-1.png');
+    expect(columna(filas[0], 'campo-2').querySelector('img')?.getAttribute('src')).toContain(
+      'foto-1.png',
     );
-    expect(columna(filas[0], 'campo-2').querySelector('.gestion-archivo__nombre')?.textContent).toBe('foto-1.png');
-    expect(columna(filas[0], 'campo-2').querySelector('img')?.getAttribute('src')).toContain('foto-1.png');
-    expect(columna(filas[1], 'campo-4').querySelector('.gestion-archivo__nombre')?.textContent).toBe(
-      'Ningún archivo seleccionado',
-    );
+    expect(
+      columna(filas[1], 'campo-4').querySelector('.gestion-archivo__nombre')?.textContent,
+    ).toBe('Ningún archivo seleccionado');
 
     const archivo = new File(['img'], nombreLargo, { type: 'image/png' });
     const input = document.createElement('input');

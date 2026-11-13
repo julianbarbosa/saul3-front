@@ -1,0 +1,8 @@
+/* Texto del placeholder mientras no hay opción seleccionada. */
+.campo__control--vacio {
+  color: var(--campo-placeholder);
+}
+
+.campo__control--vacio option {
+  color: var(--campo-texto);
+}

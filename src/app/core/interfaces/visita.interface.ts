@@ -61,7 +61,13 @@ export interface ItemVisitaCampoRaw {
   codigo: string;
   descripcion: string | null;
   tipoItem: string;
-  parametros: { dominio?: string; label?: string; opciones?: string[] } | null;
+  parametros: {
+    dominio?: string;
+    label?: string;
+    opciones?: string[];
+    /** Marca opcional de obligatoriedad (true | 1 | '1' | 'true'). Prevalece sobre la lista local. */
+    requerido?: boolean | number | string;
+  } | null;
   soloLectura: number;
   valor?: string | number | boolean | null;
 }
@@ -93,6 +99,8 @@ export interface VisitaCampo {
   opciones: string[] | null;
   descripcion: string | null;
   soloLectura: boolean;
+  /** Obligatorio según el API (`parametros.requerido`). La lista local se aplica en la pantalla. */
+  requerido?: boolean;
   valor: string | number | boolean | null;
   /** Clases Bootstrap u otras para el contenedor del campo (ej. col-md-6). */
   clase?: string | null;

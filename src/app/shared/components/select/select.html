@@ -1,16 +1,37 @@
-<div class="form-group">
-  <label [for]="id">{{ label }}</label>
-  <select class="form-control" [id]="id" [disabled]="readOnly" (change)="onChange($event)">
-    @if (!value) {
-      <option value="" disabled selected></option>
+<div
+  class="form-group campo"
+  [class.campo--error]="enError"
+  [class.campo--exito]="enExito"
+  [class.campo--deshabilitado]="readOnly"
+>
+  <label class="campo__label" [for]="id">
+    {{ label }}
+    @if (required) {
+      <span class="campo__requerido" aria-hidden="true">&nbsp;*</span>
+    }
+  </label>
+  <select
+    class="form-select campo__control"
+    [class.campo__control--vacio]="vacio"
+    [id]="id"
+    [disabled]="readOnly"
+    [required]="required"
+    [attr.aria-required]="required || null"
+    [attr.aria-invalid]="enError || null"
+    [attr.aria-describedby]="enError ? idError : null"
+    (change)="onChange($event)"
+    (blur)="onBlur()"
+  >
+    @if (vacio) {
+      <option value="" selected [disabled]="required">{{ placeholder }}</option>
     }
     @for (option of options; track trackOption(option)) {
-      <option
-        [value]="optionValue(option)"
-        [selected]="optionValue(option) === value"
-      >
+      <option [value]="optionValue(option)" [selected]="optionValue(option) === valorActual">
         {{ optionLabel(option) }}
       </option>
     }
   </select>
+  @if (enError) {
+    <small class="campo__mensaje-error" [id]="idError" role="alert">{{ mensajeError }}</small>
+  }
 </div>
