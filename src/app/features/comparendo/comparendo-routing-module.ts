@@ -4,6 +4,11 @@ import { Descargar } from './descargar/descargar';
 
 const routes: Routes = [
   {
+    path: 'gestion-ciudadano',
+    loadChildren: () =>
+      import('./gestion-ciudadano/codigo-policia.module').then((m) => m.CodigoPoliciaModule),
+  },
+  {
     path: 'descargar',
     component: Descargar,
   },

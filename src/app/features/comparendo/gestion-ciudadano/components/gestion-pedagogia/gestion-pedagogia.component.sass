@@ -1,0 +1,68 @@
+$lc-body:    #2d3a50
+$lc-tint1:   #e8f0fe
+
+.dc-pedagogia
+  padding-top: 0.25rem
+
+.dc-text
+  font-size: 0.88rem
+  color: $lc-body
+  line-height: 1.5
+
+.dc-btn
+  border-radius: 10px !important
+  padding: 10px 16px !important
+  font-size: 0.875rem !important
+
+.dc-pedagogia-icon
+  width: 32px
+  height: 32px
+  background-color: $lc-tint1
+  border-radius: 0.25rem
+
+.gp-detalle
+  display: grid
+  grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr))
+  gap: 0.35rem 1.25rem
+  margin-top: 0.15rem
+
+.gp-detalle-full
+  grid-column: 1 / -1
+
+.gp-modal-backdrop
+  position: fixed
+  inset: 0
+  background: rgba(10, 25, 50, 0.55)
+  z-index: 1070
+  backdrop-filter: blur(2px)
+
+.gp-modal-wrapper
+  position: fixed
+  inset: 0
+  z-index: 1080
+  display: flex
+  align-items: stretch
+  justify-content: stretch
+  padding: 0
+  pointer-events: none
+
+.gp-modal-panel
+  pointer-events: auto
+  width: 100%
+  height: 100%
+  max-width: 100%
+  max-height: 100%
+  border-radius: 0
+  background: #f5f7fb
+  display: flex
+  flex-direction: column
+  overflow: hidden
+
+.gp-modal-header
+  flex-shrink: 0
+  background: #fff
+
+.gp-modal-body
+  flex: 1
+  min-height: 0
+  overflow: auto

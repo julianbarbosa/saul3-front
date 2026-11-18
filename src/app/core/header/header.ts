@@ -1,4 +1,5 @@
-import { Component } from '@angular/core';
+import { Component, inject } from '@angular/core';
+import { AuthService } from '../services/auth.service';
 import { BarraGovCo } from './barra-gov-co/barra-gov-co';
 import { BloqueLogo } from './bloque-logo/bloque-logo';
 
@@ -8,4 +9,10 @@ import { BloqueLogo } from './bloque-logo/bloque-logo';
   templateUrl: './header.html',
   styleUrl: './header.css',
 })
-export class Header {}
+export class Header {
+  private readonly auth = inject(AuthService);
+
+  logout(): void {
+    this.auth.cerrarSesion();
+  }
+}

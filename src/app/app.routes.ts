@@ -2,12 +2,25 @@ import { Routes } from '@angular/router';
 import { authGuard } from './core/guards/auth.guard';
 import { Login } from './features/auth/login/login';
 import { Layout } from './features/main/layout/layout';
+import { Main } from './features/main/main/main';
 
 export const routes: Routes = [
   {
     path: '',
     component: Login,
     title: 'Iniciar sesión - Gestión Acceso Justicia',
+  },
+  {
+    path: 'main',
+    component: Layout,
+    canActivate: [authGuard],
+    children: [
+      {
+        path: '',
+        component: Main,
+        title: 'Inicio SAUL3',
+      },
+    ],
   },
   {
     path: 'gestion-acceso-justicia',
@@ -25,6 +38,14 @@ export const routes: Routes = [
         pathMatch: 'full',
       },
     ],
+  },
+  {
+    path: 'codigopolicia',
+    loadChildren: () =>
+      import('./features/comparendo/gestion-ciudadano/codigo-policia.module').then(
+        (m) => m.CodigoPoliciaModule,
+      ),
+    title: 'Código de Policía - Consulta de comparendos',
   },
   {
     path: 'visita',

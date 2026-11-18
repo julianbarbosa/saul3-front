@@ -1,0 +1,32 @@
+<section class="saul3-inicio" aria-labelledby="inicio-titulo">
+  <header class="saul3-inicio__hero card border-0 shadow-sm mb-4">
+    <div class="card-body p-4 p-md-5">
+      <p class="saul3-inicio__eyebrow mb-2">SAUL3</p>
+      <h1 id="inicio-titulo" class="saul3-inicio__titulo mb-3">
+        Bienvenido, {{ nombreUsuario() }}
+      </h1>
+      <p class="saul3-inicio__texto mb-0">
+        Sistema institucional de la Alcaldía de Santiago de Cali para la gestión de comparendos,
+        medidas correctivas y pedagogía. Seleccione un módulo para continuar o use el menú lateral.
+      </p>
+    </div>
+  </header>
+
+  <h2 class="h5 text-secondary mb-3">Accesos rápidos</h2>
+
+  <div class="row g-3 g-md-4">
+    @for (acceso of accesos; track acceso.ruta) {
+      <div class="col-md-6 col-xl-4">
+        <article class="card border-0 shadow-sm h-100 saul3-inicio__card">
+          <div class="card-body d-flex flex-column p-4">
+            <h3 class="h6 saul3-inicio__card-titulo">{{ acceso.titulo }}</h3>
+            <p class="text-muted flex-grow-1 mb-3">{{ acceso.descripcion }}</p>
+            <a [routerLink]="acceso.ruta" class="btn btn-primary align-self-start">
+              Ingresar
+            </a>
+          </div>
+        </article>
+      </div>
+    }
+  </div>
+</section>

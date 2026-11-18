@@ -1,4 +1,4 @@
-# SSJ Front
+# Gestión Front
 
 Frontend de **Gestión Acceso Justicia** para la Alcaldía de Santiago de Cali. Aplicación Angular 21 con diseño Gov.co / MinTIC, orientada a módulos funcionales (comparendos, medidas correctivas, pedagogía).
 
@@ -153,7 +153,7 @@ Al agregar una nueva pantalla:
 ## Estructura de carpetas
 
 ```
-ssj-front/
+gestion-front/
 ├── public/assets/          # Estáticos (/assets/...)
 ├── src/
 │   ├── app/
@@ -185,7 +185,7 @@ Abrir `http://localhost:4200/`.
 npm run build
 ```
 
-Artefactos en `dist/ssj-front/`.
+Artefactos en `dist/saul3-front/browser/`.
 
 ### Scaffolding
 
