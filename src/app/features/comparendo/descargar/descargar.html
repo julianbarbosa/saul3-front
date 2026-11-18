@@ -18,4 +18,50 @@
       <app-button label="Descargar" (clicked)="descargar()"></app-button>
     </div>
   </div>
+
+  <section class="descargar-editor" aria-labelledby="descargar-editor-title">
+    <h3 id="descargar-editor-title" class="descargar-editor-title">Editar imagen</h3>
+    <p class="descargar-editor-hint">
+      Seleccione una imagen y ábrala en el editor para recortar, anotar o ajustar antes de adjuntarla.
+    </p>
+
+    <input
+      #fileInput
+      type="file"
+      accept="image/*"
+      class="descargar-file-input"
+      (change)="onImagenSeleccionada($event)"
+    />
+
+    <div class="descargar-editor-toolbar">
+      <app-button label="Seleccionar imagen" (clicked)="fileInput.click()"></app-button>
+      @if (imagenOrigenUrl) {
+        <app-button
+          [label]="cargandoEditor ? 'Abriendo editor…' : 'Editar imagen'"
+          (clicked)="abrirEditor()"
+        ></app-button>
+        <app-button label="Quitar imagen" (clicked)="limpiarImagen()"></app-button>
+      }
+    </div>
+
+    @if (imagenOrigenUrl) {
+      <figure class="descargar-preview-block">
+        <figcaption class="descargar-preview-caption">Vista previa</figcaption>
+        <img class="descargar-preview-img" [src]="imagenEditadaUrl ?? imagenOrigenUrl" alt="Vista previa de la imagen" />
+      </figure>
+    }
+
+    @if (imagenEditadaUrl) {
+      <div class="descargar-editor-actions">
+        <app-button label="Descargar imagen editada" (clicked)="descargarImagenEditada()"></app-button>
+      </div>
+    }
+  </section>
+
+  <div
+    #editorHost
+    class="descargar-editor-host"
+    [class.descargar-editor-host--active]="editorAbierto"
+    aria-hidden="true"
+  ></div>
 </section>
