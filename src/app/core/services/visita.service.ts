@@ -28,8 +28,8 @@ export interface VisitaGuardadoRespuesta {
 })
 export class VisitaService {
   private readonly http = inject(HttpClient);
-  private readonly baseUrl = environment.SAUL2_API_URL;
-  private readonly baseUrl3 = environment.SAUL3_API_URL;
+  /** Todas las llamadas de Visitas van a saul3 (Laravel). */
+  private readonly baseUrl = environment.SAUL3_API_URL;
 
   constructor() {
     // Toda pantalla de Visitas usa este servicio: así la guía de estilos siempre queda aplicada.
@@ -55,8 +55,7 @@ export class VisitaService {
     if (!archivo || archivo.includes('/') || archivo.includes('\\') || archivo.includes('..')) {
       return null;
     }
-    const base = this.baseUrl.replace(/\/app_dev\.php\/?$/, '').replace(/\/app\.php\/?$/, '');
-    return `${base}/upload/documentos/${encodeURIComponent(archivo)}`;
+    return `${this.baseUrl}/visita/documento/${encodeURIComponent(archivo)}`;
   }
 
   /** POST `/visita` de SAUL: un campo por petición, con su `codigo` y `tipoItem`. 1. */
@@ -104,9 +103,9 @@ export class VisitaService {
     return this.listar(consulta, { type: 'all', nombreEstado: 'Emitido' });
   }
 
-  /** Visitas Pendientes desde saul3 (GET /api/visita/tarea). Misma consulta que el listado de saul2. */
+  /** Visitas Pendientes (GET /api/visita/tarea de saul3). */
   listarTareas(consulta: VisitaListadoConsulta): Observable<VisitaListadoRespuesta> {
-    return this.listar(consulta, {}, `${this.baseUrl3}/visita/tarea`);
+    return this.listar(consulta, {});
   }
 
   /************************************************************************************** */
@@ -138,15 +137,15 @@ export class VisitaService {
   }
 
   /**
-   * GET del listado. saul2 y saul3 esperan cada parámetro como JSON `{"name","value"}`
+   * GET del listado. saul3 espera cada parámetro como JSON `{"name","value"}`
    * (así los manda el $resource de AngularJS); la clave de la query no importa.
    * `fijos` son los filtros propios de cada pantalla y ganan sobre los de la tabla.
-   * `url` apunta a `/visita` de saul2, salvo el listado de tareas.
+   * Todos los listados usan `/visita/tarea` de saul3; cambian solo los filtros fijos.
    */
   private listar(
     consulta: VisitaListadoConsulta,
     fijos: Record<string, string>,
-    url = `${this.baseUrl}/visita`,
+    url = `${this.baseUrl}/visita/tarea`,
   ): Observable<VisitaListadoRespuesta> {
     const pares: [string, string | number][] = [
       ['currentPage', consulta.page],

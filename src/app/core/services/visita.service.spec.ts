@@ -10,7 +10,7 @@ import { aEncabezadoVisita, VisitaService } from './visita.service';
 describe('VisitaService', () => {
   let servicio: VisitaService;
   let http: HttpTestingController;
-  const base = environment.SAUL2_API_URL;
+  const base = environment.SAUL3_API_URL;
 
   beforeEach(() => {
     TestBed.configureTestingModule({
