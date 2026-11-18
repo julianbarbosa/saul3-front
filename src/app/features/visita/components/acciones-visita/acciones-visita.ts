@@ -166,6 +166,6 @@ export class AccionesVisita implements OnChanges {
   }
 
   private abrirEnSaul(rutaHash: string): void {
-    window.open(`${environment.SAUL1_URL}#!${rutaHash}`, '_blank', 'noopener');
+    // window.open(`${environment.SAUL1_URL}#!${rutaHash}`, '_blank', 'noopener');
   }
 }
