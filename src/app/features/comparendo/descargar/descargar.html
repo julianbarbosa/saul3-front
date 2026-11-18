@@ -1,21 +1,203 @@
 <section class="descargar-page">
+
   <header class="descargar-header">
+
     <h2 class="descargar-title">Descargar Comparendo</h2>
+
     <p class="descargar-description">
+
       Descargue el comparendo de la Ley 1801 o actualice toda la información de los comparendos de un
+
       ciudadano.
+
     </p>
+
   </header>
 
+
+
   <div class="descargar-form">
+
     <app-select label="Tipo de documento" [options]="['CC', 'TI', 'NIT']"></app-select>
+
     <app-input-text
+
       label="Número de documento"
+
       placeholder="Ingrese el número de comparendo"
+
     ></app-input-text>
 
+
+
     <div class="descargar-actions">
+
       <app-button label="Descargar" (clicked)="descargar()"></app-button>
+
     </div>
+
+
+
+    <section class="descargar-editor" aria-labelledby="descargar-editor-title">
+
+      <h3 id="descargar-editor-title" class="descargar-editor-title">Editar imagen</h3>
+
+      <p class="descargar-editor-hint">
+
+        Seleccione una imagen para editarla en el lienzo: formas, texto, rotación y anotaciones.
+
+      </p>
+
+
+
+      <input
+
+        #fileInput
+
+        type="file"
+
+        accept="image/*"
+
+        class="descargar-file-input"
+
+        (change)="onImagenSeleccionada($event)"
+
+      />
+
+
+
+      <div class="descargar-editor-toolbar">
+
+        <app-button label="Seleccionar imagen" (clicked)="fileInput.click()"></app-button>
+
+        @if (imagenOrigenUrl) {
+
+          <div
+            class="btn-group descargar-editor-btn-group"
+            role="group"
+            aria-label="Herramientas de anotación en imagen"
+          >
+            <button
+              type="button"
+              class="btn btn-outline-primary"
+              title="Agregar texto"
+              (click)="agregarTexto()"
+            >
+              <i class="bi bi-type" aria-hidden="true"></i>
+              <span class="visually-hidden">Agregar texto</span>
+            </button>
+            <button
+              type="button"
+              class="btn btn-outline-primary"
+              title="Agregar cuadro"
+              (click)="agregarCuadro()"
+            >
+              <i class="bi bi-square" aria-hidden="true"></i>
+              <span class="visually-hidden">Agregar cuadro</span>
+            </button>
+            <button
+              type="button"
+              class="btn btn-outline-primary"
+              title="Agregar círculo"
+              (click)="agregarCirculo()"
+            >
+              <i class="bi bi-circle" aria-hidden="true"></i>
+              <span class="visually-hidden">Agregar círculo</span>
+            </button>
+            <button
+              type="button"
+              class="btn btn-outline-primary"
+              title="Agregar línea"
+              (click)="agregarLinea()"
+            >
+              <i class="bi bi-dash-lg" aria-hidden="true"></i>
+              <span class="visually-hidden">Agregar línea</span>
+            </button>
+            <button
+              type="button"
+              class="btn btn-outline-primary"
+              title="Agregar flecha"
+              (click)="agregarFlecha()"
+            >
+              <i class="bi bi-arrow-right" aria-hidden="true"></i>
+              <span class="visually-hidden">Agregar flecha</span>
+            </button>
+            <button
+              type="button"
+              class="btn btn-outline-primary"
+              title="Rotar imagen 90°"
+              (click)="rotarImagen()"
+            >
+              <i class="bi bi-arrow-clockwise" aria-hidden="true"></i>
+              <span class="visually-hidden">Rotar 90 grados</span>
+            </button>
+            <button
+              type="button"
+              class="btn btn-outline-danger"
+              title="Eliminar selección"
+              (click)="eliminarSeleccion()"
+            >
+              <i class="bi bi-trash" aria-hidden="true"></i>
+              <span class="visually-hidden">Eliminar selección</span>
+            </button>
+          </div>
+
+          <app-button label="Guardar edición" (clicked)="guardarEdicion()"></app-button>
+
+          <app-button label="Quitar imagen" (clicked)="limpiarImagen()"></app-button>
+
+        }
+
+      </div>
+
+
+
+      @if (editorActivo) {
+
+        <div class="descargar-canvas-wrap">
+
+          <canvas #fabricCanvas aria-label="Lienzo de edición de imagen"></canvas>
+
+        </div>
+
+      }
+
+
+
+      @if (imagenOrigenUrl) {
+
+        <figure class="descargar-preview-block">
+
+          <figcaption class="descargar-preview-caption">Vista previa</figcaption>
+
+          <img
+
+            class="descargar-preview-img"
+
+            [src]="imagenEditadaUrl ?? imagenOrigenUrl"
+
+            alt="Vista previa de la imagen"
+
+          />
+
+        </figure>
+
+      }
+
+
+
+      @if (imagenEditadaUrl) {
+
+        <div class="descargar-editor-actions">
+
+          <app-button label="Descargar imagen editada" (clicked)="descargarImagenEditada()"></app-button>
+
+        </div>
+
+      }
+
+    </section>
+
   </div>
+
 </section>

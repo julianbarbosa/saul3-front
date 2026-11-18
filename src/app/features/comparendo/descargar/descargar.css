@@ -23,10 +23,93 @@
   display: flex;
   flex-direction: column;
   gap: 1.25rem;
-  max-width: 32rem;
+  max-width: 42rem;
 }
 
 .descargar-actions {
   margin-top: 0.5rem;
   padding-top: 0.25rem;
+}
+
+.descargar-editor {
+  margin-top: 0.5rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid #e5e5e5;
+}
+
+.descargar-editor-title {
+  margin: 0 0 0.5rem;
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: #004884;
+}
+
+.descargar-editor-hint {
+  margin: 0 0 1rem;
+  font-size: 0.9375rem;
+  line-height: 1.5;
+  color: #4b4b4b;
+}
+
+.descargar-file-input {
+  display: none;
+}
+
+.descargar-editor-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.descargar-editor-btn-group .btn {
+  min-width: 2.5rem;
+  padding: 0.375rem 0.625rem;
+  line-height: 1;
+}
+
+.descargar-editor-btn-group .btn .bi {
+  font-size: 1.125rem;
+  vertical-align: -0.1em;
+}
+
+.descargar-canvas-wrap {
+  margin-bottom: 1rem;
+  padding: 0.5rem;
+  border: 1px solid #d9d9d9;
+  border-radius: 4px;
+  background: #fff;
+  max-width: 100%;
+  overflow: auto;
+}
+
+.descargar-canvas-wrap canvas {
+  display: block;
+  max-width: 100%;
+  height: auto !important;
+}
+
+.descargar-preview-block {
+  margin: 0;
+}
+
+.descargar-preview-caption {
+  margin-bottom: 0.5rem;
+  font-size: 0.875rem;
+  color: #555;
+}
+
+.descargar-preview-img {
+  display: block;
+  max-width: 100%;
+  max-height: 280px;
+  border: 1px solid #d9d9d9;
+  border-radius: 4px;
+  object-fit: contain;
+  background: #f8f9fa;
+}
+
+.descargar-editor-actions {
+  margin-top: 0.75rem;
 }
