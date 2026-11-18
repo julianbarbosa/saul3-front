@@ -1,3 +1,14 @@
+/*
+ * Responsive por espacio disponible (container query), no por tamaño de ventana:
+ * así la pantalla se adapta igual con el menú lateral abierto o con zoom del navegador.
+ */
+:host {
+  display: block;
+  min-width: 0;
+  container-type: inline-size;
+  container-name: gestion;
+}
+
 .gestion-toolbar {
   max-width: 20rem;
   margin-bottom: 1.5rem;
@@ -21,14 +32,14 @@
   max-height: calc(100vh - 2rem);
   overflow-y: auto;
   padding: 0.75rem;
-  border: 1px solid #dee2e6;
-  border-radius: 0.375rem;
-  background: #f8f9fa;
+  border: 1px solid #e0e0e0;
+  border-radius: 0.75rem;
+  background: var(--ssj-blanco, #fff);
 }
 
 .gestion-sidebar__title {
   margin: 0 0 0.75rem;
-  color: #004884;
+  color: var(--ssj-negro, #000);
   font-size: 0.875rem;
   font-weight: 700;
   text-transform: uppercase;
@@ -49,7 +60,7 @@
   border: none;
   border-radius: 0.25rem;
   background: transparent;
-  color: #333;
+  color: var(--ssj-azul, #0943b5);
   font-size: 0.875rem;
   line-height: 1.35;
   text-align: left;
@@ -57,29 +68,35 @@
 }
 
 .gestion-sidebar__link:hover {
-  background: #e9ecef;
+  background: var(--ssj-azul-claro, #b5c7e9);
 }
 
-.gestion-sidebar__link--active {
-  background: #004884;
+.gestion-sidebar__link:focus-visible {
+  outline: 2px solid var(--ssj-negro, #000);
+  outline-offset: 1px;
+}
+
+.gestion-sidebar__link--active,
+.gestion-sidebar__link--active:hover {
+  background: var(--ssj-azul, #0943b5);
   color: #fff;
 }
 
-.gestion-sidebar__link--active:hover {
-  background: #003766;
-}
-
 .gestion-categoria {
+  min-width: 0;
   scroll-margin-top: 1rem;
 }
 
 .gestion-accordion__item {
+  min-width: 0;
   scroll-margin-top: 1rem;
 }
 
-@media (max-width: 768px) {
+/* Menos de 900px de contenido: las categorías pasan arriba y el formulario usa todo el ancho. */
+@container gestion (max-width: 899.98px) {
   .gestion-layout {
     flex-direction: column;
+    align-items: stretch;
   }
 
   .gestion-sidebar {
@@ -97,11 +114,9 @@
   padding: 0 0 2rem;
 }
 
+/* Tamaño y color: h2 de la guía (EstilosVisitaService). */
 .gestion-categoria__title {
   margin: 0 0 1rem;
-  color: #004884;
-  font-size: 1.25rem;
-  font-weight: 600;
 }
 
 .gestion-categoria__fields {
@@ -116,6 +131,215 @@
   min-width: 0;
 }
 
+.gestion-error {
+  margin: 0 0 1rem;
+  color: var(--ssj-rojo, #a80521);
+  font-weight: 600;
+}
+
+.gestion-tabla__contenedor {
+  container-type: inline-size;
+  container-name: gestion-tabla;
+  max-width: 100%;
+  overflow-x: auto;
+  border: 1px solid #e0e0e0;
+  border-radius: 0.75rem;
+  background: var(--ssj-blanco, #fff);
+  scrollbar-width: thin;
+  scrollbar-color: #b8c4d1 #f1f3f5;
+}
+
+.gestion-tabla__contenedor::-webkit-scrollbar {
+  height: 10px;
+}
+
+.gestion-tabla__contenedor::-webkit-scrollbar-track {
+  background: #f1f3f5;
+  border-radius: 5px;
+}
+
+.gestion-tabla__contenedor::-webkit-scrollbar-thumb {
+  background: #b8c4d1;
+  border-radius: 5px;
+}
+
+.gestion-tabla__contenedor--compacta {
+  max-width: 48rem;
+}
+
+/* Tabla del formulario según VIS_TABL (KIT UI SAUL3), igual que los listados (shared/table):
+   tarjeta redondeada, encabezado azul con texto blanco, filas blancas separadas por línea gris
+   y sin líneas verticales. */
+.gestion-tabla {
+  --bs-table-bg: var(--ssj-blanco, #fff);
+  --bs-table-color: var(--ssj-gris-texto, #4b4b4b);
+  --bs-table-border-color: #e0e0e0;
+  width: 100%;
+  margin-bottom: 0;
+  table-layout: auto;
+}
+
+.gestion-tabla th,
+.gestion-tabla td {
+  padding: 0.625rem 0.75rem;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.gestion-tabla tbody tr:last-child > * {
+  border-bottom: 0;
+}
+
+.gestion-tabla th {
+  color: var(--ssj-negro, #000);
+  background: var(--ssj-blanco, #fff);
+  vertical-align: middle;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.gestion-tabla thead th {
+  padding: 0.875rem 0.75rem;
+  border-bottom: 0;
+  background: var(--ssj-azul, #0943b5);
+  color: var(--ssj-blanco, #fff);
+  font-size: 0.875rem;
+  font-weight: 700;
+}
+
+.gestion-tabla th[scope='col'] {
+  white-space: normal;
+  text-align: center;
+}
+
+.gestion-tabla td,
+.gestion-tabla th[scope='col']:not(.gestion-tabla__titulo) {
+  min-width: 7rem;
+}
+
+.gestion-tabla td {
+  vertical-align: middle;
+}
+
+.gestion-tabla__titulo {
+  min-width: 12rem;
+  max-width: 20rem;
+  font-weight: 700;
+  white-space: normal;
+}
+
+.gestion-tabla__contenedor:not(.gestion-tabla__contenedor--compacta) .gestion-tabla__titulo {
+  position: sticky;
+  left: 0;
+  z-index: 1;
+  box-shadow: inset -1px 0 0 #e0e0e0;
+}
+
+.gestion-tabla__contenedor:not(.gestion-tabla__contenedor--compacta) thead .gestion-tabla__titulo {
+  z-index: 2;
+}
+
+/* La etiqueta oculta (.gestion-celda__columna) queda fuera: con width 100% y position absolute
+   medía lo mismo que la ventana y ensanchaba toda la página. */
+.gestion-celda,
+.gestion-celda > :not(.gestion-celda__columna) {
+  display: block;
+  width: 100%;
+  min-width: 0;
+}
+
+.gestion-registro.row {
+  --bs-gutter-y: 1rem;
+  min-width: 0;
+}
+
+.gestion-celda__columna {
+  display: block;
+  margin-bottom: 0.35rem;
+  color: var(--ssj-negro, #000);
+  font-size: 0.8125rem;
+  font-weight: 700;
+}
+
+.gestion-celda__columna {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* Tabla del formulario en menos de 640px: cada fila es una tarjeta. */
+@container gestion-tabla (max-width: 639.98px) {
+  .gestion-tabla__contenedor {
+    overflow-x: visible;
+  }
+
+  .gestion-tabla thead {
+    display: none;
+  }
+
+  .gestion-tabla,
+  .gestion-tabla tbody,
+  .gestion-tabla tr,
+  .gestion-tabla th,
+  .gestion-tabla td,
+  .gestion-tabla th[scope='col']:not(.gestion-tabla__titulo),
+  .gestion-tabla__titulo {
+    display: block;
+    width: 100%;
+    min-width: 0;
+    max-width: none;
+  }
+
+  .gestion-tabla__contenedor:not(.gestion-tabla__contenedor--compacta) .gestion-tabla__titulo {
+    position: static;
+    box-shadow: none;
+  }
+
+  /* En tarjetas el contenedor ya no hace de tarjeta: cada fila tiene la suya. */
+  .gestion-tabla__contenedor {
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+  }
+
+  .gestion-tabla tr {
+    margin-bottom: 1rem;
+    overflow: hidden;
+    border: 1px solid #e0e0e0;
+    border-radius: 0.75rem;
+    background: var(--ssj-blanco, #fff);
+  }
+
+  .gestion-tabla tbody tr > * {
+    border-bottom: 0;
+  }
+
+  /* Título de la fila como encabezado de la tarjeta, en azul como el encabezado de la tabla. */
+  .gestion-tabla th[scope='row'] {
+    background: var(--ssj-azul, #0943b5);
+    color: var(--ssj-blanco, #fff);
+  }
+
+  .gestion-tabla th[scope='row']:empty,
+  .gestion-celda__columna:empty {
+    display: none;
+  }
+
+  .gestion-celda__columna {
+    position: static;
+    width: auto;
+    height: auto;
+    margin: 0 0 0.35rem;
+    overflow: visible;
+    clip: auto;
+  }
+}
+
 .gestion-horizontal-nav {
   display: flex;
   flex-wrap: wrap;
@@ -127,7 +351,7 @@
 .gestion-horizontal-nav__contador {
   min-width: 4.5rem;
   text-align: center;
-  color: #4b4b4b;
+  color: var(--ssj-gris-texto, #4b4b4b);
   font-weight: 600;
 }
 
@@ -143,14 +367,14 @@
 }
 
 .gestion-accordion__item {
-  border: 1px solid #dee2e6;
-  border-radius: 0.375rem;
+  border: 1px solid #e0e0e0;
+  border-radius: 0.75rem;
   background: #fff;
 }
 
 .gestion-accordion__summary {
   padding: 0.875rem 1rem;
-  color: #004884;
+  color: var(--ssj-negro, #000);
   font-size: 1.125rem;
   font-weight: 600;
   cursor: pointer;
@@ -175,4 +399,222 @@
 .gestion-accordion__body {
   padding: 0 1rem 1rem;
   border-top: 1px solid #eee;
+}
+
+/* Encabezado según VIS_TABL: H1 «Registro de visita», H2 y la lista dato / valor. */
+.gestion-encabezado {
+  margin-bottom: 2rem;
+}
+
+/* Tamaño y color de h1 y h2: EstilosVisitaService. */
+.gestion-encabezado__titulo {
+  margin: 0 0 1.5rem;
+}
+
+.gestion-encabezado__subtitulo {
+  margin: 0 0 1rem;
+}
+
+.gestion-encabezado__datos {
+  display: grid;
+  gap: 0.5rem;
+  max-width: 44rem;
+  margin: 0;
+}
+
+.gestion-encabezado__datos > div {
+  display: grid;
+  grid-template-columns: minmax(8rem, 13.5rem) minmax(0, 1fr);
+  gap: 0.25rem 1.5rem;
+}
+
+.gestion-encabezado__datos dt {
+  color: var(--ssj-negro, #000);
+  font-weight: 700;
+}
+
+.gestion-encabezado__datos dd {
+  margin: 0;
+  color: var(--ssj-gris-texto, #4b4b4b);
+  overflow-wrap: anywhere;
+}
+
+/* Contenido muy angosto (celular): el dato encima del valor. */
+@container gestion (max-width: 419.98px) {
+  .gestion-encabezado__datos > div {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0;
+  }
+}
+
+/* ---------- Modo Normal: pasos numerados (KIT UI SAUL3, pág. 12) ---------- */
+
+.gestion-layout--pasos {
+  display: block;
+}
+
+.gestion-pasos {
+  max-width: 60rem;
+}
+
+/* Tamaño y color del h2: EstilosVisitaService. */
+.gestion-pasos__titulo {
+  margin: 0 0 1.25rem;
+}
+
+.pasos {
+  --paso-circulo: 2.25rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.paso {
+  position: relative;
+  padding-bottom: 1.75rem;
+  scroll-margin-top: 1rem;
+}
+
+/* Línea vertical que une un círculo con el siguiente (azul claro). */
+.paso:not(:last-child)::before {
+  content: '';
+  position: absolute;
+  top: var(--paso-circulo);
+  bottom: 0;
+  left: calc(var(--paso-circulo) / 2 - 1px);
+  width: 2px;
+  background: var(--ssj-azul-claro, #b5c7e9);
+}
+
+/* Paso abierto: el primer tramo de la línea en amarillo, como en el KIT. */
+.paso--actual:not(:last-child)::before {
+  background: linear-gradient(
+    to bottom,
+    var(--ssj-amarillo, #fecc2f) 0 3.5rem,
+    var(--ssj-azul-claro, #b5c7e9) 3.5rem
+  );
+}
+
+/* Gana a la regla global de h3 del servicio de estilos: aquí el h3 es solo la etiqueta del paso. */
+.paso .paso__titulo {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 700;
+  line-height: 1.3;
+}
+
+.paso__encabezado {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  width: 100%;
+  min-height: var(--paso-circulo);
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--ssj-gris-borde, #737373);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.paso__encabezado:focus-visible {
+  outline: none;
+}
+
+.paso__encabezado:focus-visible .paso__numero {
+  box-shadow: 0 0 0 2px #fff, 0 0 0 4px #000;
+}
+
+.paso__numero {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  z-index: 1;
+  width: var(--paso-circulo);
+  height: var(--paso-circulo);
+  border: 2px solid var(--ssj-azul-claro, #b5c7e9);
+  border-radius: 50%;
+  background: #fff;
+  color: var(--ssj-azul, #0943b5);
+  font-size: 1.125rem;
+  font-weight: 700;
+}
+
+.paso__nombre {
+  font-weight: 400;
+  overflow-wrap: anywhere;
+}
+
+/* Actual y hecho: círculo azul relleno y nombre azul en negrita. */
+.paso--actual .paso__numero,
+.paso--hecho .paso__numero {
+  border-color: var(--ssj-azul, #0943b5);
+  background: var(--ssj-azul, #0943b5);
+  color: #fff;
+}
+
+.paso--actual .paso__encabezado,
+.paso--hecho .paso__encabezado {
+  color: var(--ssj-azul, #0943b5);
+}
+
+.paso--actual .paso__nombre,
+.paso--hecho .paso__nombre {
+  font-weight: 700;
+}
+
+.paso__encabezado:hover .paso__nombre {
+  text-decoration: underline;
+}
+
+/* Contenido del paso abierto: tarjeta a la derecha de la línea. */
+.paso__cuerpo {
+  margin: 1rem 0 0 calc(var(--paso-circulo) + 1rem);
+  min-width: 0;
+}
+
+.paso__tarjeta {
+  padding: 1.5rem;
+  border: 1px solid #e0e0e0;
+  border-radius: 0.5rem;
+  background: #fff;
+}
+
+.paso__tarjeta .gestion-categoria__fields {
+  max-width: none;
+}
+
+.paso__acciones {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 1.5rem;
+}
+
+/* Celular: la tarjeta usa casi todo el ancho; la línea sigue a la izquierda. */
+@container gestion (max-width: 575.98px) {
+  .pasos {
+    --paso-circulo: 2rem;
+  }
+
+  .paso__cuerpo {
+    margin-left: calc(var(--paso-circulo) / 2 + 0.75rem);
+  }
+
+  .paso__tarjeta {
+    padding: 1rem;
+  }
+}
+:host ::ng-deep .select-sin-etiqueta label {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
 }

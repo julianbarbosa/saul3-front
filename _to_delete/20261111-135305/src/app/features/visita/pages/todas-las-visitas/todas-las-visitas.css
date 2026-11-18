@@ -1,0 +1,10 @@
+.titulo-listado {
+  color: #014782;
+  font-weight: 600;
+  margin: 1rem 0;
+}
+
+.contenedor-tabla.cargando {
+  opacity: 0.5;
+  pointer-events: none;
+}

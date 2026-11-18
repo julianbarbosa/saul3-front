@@ -1,0 +1,50 @@
+/* El tamaño y el color del título los pone EstilosVisitaService (h1 de la guía). */
+.titulo-listado {
+  margin: 0.5rem 0 1rem;
+}
+
+.contenedor-tabla {
+  min-width: 0;
+}
+
+.contenedor-tabla.cargando {
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+/* Un radicado (17 dígitos) no se parte: se ve completo o pasa entero a la línea siguiente. */
+.radicado {
+  white-space: nowrap;
+}
+
+.radicado-respuesta {
+  display: block;
+  margin-top: 0.25rem;
+}
+
+/* Leyenda de la marca de color de cada fila (no se depende solo del color). */
+.leyenda-alertas {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.375rem 0.75rem;
+  margin: 0 0 1rem;
+  color: var(--ssj-gris-texto, #4b4b4b);
+  font-size: 0.875rem;
+}
+
+.leyenda-alertas__marca {
+  display: inline-block;
+  width: 0.375rem;
+  height: 1.125rem;
+  border-radius: 2px;
+}
+
+.leyenda-alertas__marca--alta {
+  background: var(--ssj-rojo, #a80521);
+}
+
+.leyenda-alertas__marca--media {
+  margin-left: 0.5rem;
+  background: var(--ssj-amarillo, #fecc2f);
+}

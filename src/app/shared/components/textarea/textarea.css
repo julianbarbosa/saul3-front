@@ -1,0 +1,10 @@
+.campo-textarea {
+  width: 100%;
+  min-height: 80px;
+  max-height: 320px;
+  overflow-y: auto;
+  resize: vertical;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  field-sizing: content;
+}

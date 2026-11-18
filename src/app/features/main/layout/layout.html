@@ -3,10 +3,22 @@
 <div class="container-fluid">
   <div class="row custom-row-padding">
     <div class="custom-col-md-2">
-      <app-menu></app-menu>
+      <!-- Solo se ve en el celular (< 768px). -->
+      <button
+        type="button"
+        class="btn btn-outline-primary w-100 my-2 boton-menu"
+        [attr.aria-expanded]="menuAbierto()"
+        aria-controls="menu-lateral"
+        (click)="alternarMenu()"
+      >
+        {{ menuAbierto() ? '✕ Cerrar menú' : '☰ Menú' }}
+      </button>
+      <div id="menu-lateral" class="menu-lateral" [class.menu-lateral--abierto]="menuAbierto()">
+        <app-menu></app-menu>
+      </div>
     </div>
 
-    <div class="custom-col-md-10" style="min-height: 70vh;">
+    <div class="custom-col-md-10 contenido-principal">
       <router-outlet></router-outlet>
     </div>
   </div>

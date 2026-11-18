@@ -1,1 +1,13 @@
-<button class="btn btn-primary" [type]="type" [disabled]="disabled" (click)="onClick()">{{ label }}</button>
+<!-- `btn btn-primary` queda como respaldo fuera de Visitas; en Visitas manda `ssj-boton` (guía de estilos). -->
+<button
+  class="btn btn-primary ssj-boton"
+  [class.ssj-boton--relleno]="relleno"
+  [class.ssj-boton--exito]="variante === 'exito'"
+  [class.ssj-boton--peligro]="variante === 'peligro'"
+  [class.ssj-boton--bloque]="bloque"
+  [type]="type"
+  [disabled]="disabled"
+  (click)="onClick()"
+>
+  {{ label }}
+</button>
