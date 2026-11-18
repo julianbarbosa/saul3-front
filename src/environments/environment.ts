@@ -10,7 +10,6 @@ export const environment = {
    */
   SAUL2_API_URL: 'https://saul-dev.cali.gov.co:1443/saul2/app_dev.php',
   /** Front de SAUL (AngularJS): para abrir historial y observaciones que aún no existen en ssjfront. */
-  SAUL1_URL: 'http://localhost/saul/v2/',
   /** Opcional: clave de API de ArcGIS (https://developers.arcgis.com/) */
   ARCGIS_API_KEY: '',
 };
