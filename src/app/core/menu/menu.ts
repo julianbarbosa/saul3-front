@@ -29,7 +29,7 @@ export class Menu {
       return;
     }
 
-    const url = [this.menuConfig.basePath, module.path, child.path]
+    const url = [module.basePath ?? this.menuConfig.basePath, module.path, child.path]
       .join('/')
       .replace(/\/+/g, '/');
 
