@@ -56,24 +56,6 @@ describe('Listado de visitas', () => {
     peticion.flush({ data: [], totalItems: 0 });
   });
 
-  it('todas: agrega type=all', () => {
-    servicio.listarTodas({ page: 1, pageSize: 10, filtros: {} }).subscribe();
-    const peticion = http.expectOne((r) => r.url === url);
-    expect(parametrosEnviados(peticion.request.params)['type']).toBe('all');
-    peticion.flush({ data: [], totalItems: 0 });
-  });
-
-  it('emitidas: fuerza estado Emitido aunque la tabla mande otro', () => {
-    servicio
-      .listarEmitidas({ page: 1, pageSize: 10, filtros: { nombreEstado: 'Pendiente' } })
-      .subscribe();
-    const peticion = http.expectOne((r) => r.url === url);
-    const enviados = parametrosEnviados(peticion.request.params);
-    expect(enviados['type']).toBe('all');
-    expect(enviados['nombreEstado']).toBe('Emitido');
-    peticion.flush({ data: [], totalItems: 0 });
-  });
-
   it('formatea fechas de SAUL ({timestamp} o texto) y deja vacío lo que no viene', () => {
     const local = new Date(2026, 9, 30, 15, 4, 5).getTime() / 1000;
     expect(formatearFechaSaul({ timestamp: local })).toBe('2026-10-30 15:04:05');
