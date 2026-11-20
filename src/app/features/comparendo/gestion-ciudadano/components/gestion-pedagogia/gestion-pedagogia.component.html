@@ -8,7 +8,9 @@
   </div>
 
   <div class="d-flex align-items-start justify-content-between gap-3 flex-wrap">
-    <div class="d-flex align-items-start gap-2 flex-grow-1 min-w-0" *ngIf="pedagogiaId">
+
+    <!--  Visualización de inscripción de pedagogía -->
+    <div class="d-flex align-items-start gap-2 flex-grow-1 min-w-0" *ngIf="pedagogiaId && pedagogiaEstado !== 1">
       <div class="dc-pedagogia-icon d-inline-flex align-items-center justify-content-center flex-shrink-0">
         <i class="bi bi-mortarboard text-primary" aria-hidden="true"></i>
       </div>
@@ -42,7 +44,7 @@
     </div>
 
     <div class="d-flex flex-column gap-2 flex-shrink-0 ms-auto">
-      <button *ngIf="puedeInscribirsePedagogia" type="button"
+      <button *ngIf="puedeInscribirsePedagogia || pedagogiaEstado === 4" type="button"
         class="btn btn-primary d-flex align-items-center gap-2 fw-semibold dc-btn"
         (click)="inscribirsePedagogia()">
         <i class="bi bi-book" aria-hidden="true"></i> Inscribirse a pedagogía
