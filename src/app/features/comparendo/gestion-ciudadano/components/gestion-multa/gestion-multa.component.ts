@@ -92,41 +92,73 @@ export class GestionMultaComponent {
   }
 
   generarRecibo(): void {
-    if (!this.comparendoId) return;
-    const numeroIdentificacion = this.numeroIdentificacion?.trim();
-    if (!numeroIdentificacion) {
-      alert('No se encontró el número de identificación para generar el recibo.');
-      return;
-    }
+    const params = this.parametrosRecibo();
+    if (!params) return;
+
     this.crearReciboService
-      .crearReciboPago(this.comparendoId, numeroIdentificacion)
+      .crearReciboPago(params.comparendoId, params.numeroIdentificacion)
       .subscribe({
         next: (blob) => {
           const url = URL.createObjectURL(blob);
           const a = document.createElement('a');
           a.href = url;
-          a.download = `recibo-pago-${this.comparendoId}.pdf`;
+          a.download = `recibo-pago-${params.comparendoId}.pdf`;
           a.click();
           URL.revokeObjectURL(url);
         },
-        error: (err: unknown) => {
-          const httpErr = err as { status?: number; error?: Blob };
-          if (httpErr?.error instanceof Blob) {
-            httpErr.error.text().then((msg) => {
-              alert(
-                `No se pudo generar el recibo de pago (${httpErr.status}): ${msg}`,
-              );
-            });
-          } else {
-            const status = httpErr?.status;
-            const mensaje =
-              status === 404
-                ? 'El recibo de pago no fue encontrado.'
-                : `Ocurrió un error al generar el recibo de pago (código ${status ?? 'desconocido'}).`;
-            alert(mensaje);
-          }
-        },
+        error: (err: unknown) => this.manejarErrorReciboPago(err),
       });
+  }
+
+  verRecibo(): void {
+    const params = this.parametrosRecibo();
+    if (!params) return;
+
+    this.crearReciboService
+      .crearReciboPago(params.comparendoId, params.numeroIdentificacion)
+      .subscribe({
+        next: (blob) => {
+          const pdfBlob =
+            blob.type === 'application/pdf'
+              ? blob
+              : new Blob([blob], { type: 'application/pdf' });
+          const url = URL.createObjectURL(pdfBlob);
+          window.open(url, '_blank', 'noopener,noreferrer');
+          setTimeout(() => URL.revokeObjectURL(url), 60_000);
+        },
+        error: (err: unknown) => this.manejarErrorReciboPago(err),
+      });
+  }
+
+  private parametrosRecibo(): {
+    comparendoId: number;
+    numeroIdentificacion: string;
+  } | null {
+    if (!this.comparendoId) return null;
+    const numeroIdentificacion = this.numeroIdentificacion?.trim();
+    if (!numeroIdentificacion) {
+      alert('No se encontró el número de identificación para generar el recibo.');
+      return null;
+    }
+    return { comparendoId: this.comparendoId, numeroIdentificacion };
+  }
+
+  private manejarErrorReciboPago(err: unknown): void {
+    const httpErr = err as { status?: number; error?: Blob };
+    if (httpErr?.error instanceof Blob) {
+      httpErr.error.text().then((msg) => {
+        alert(
+          `No se pudo generar el recibo de pago (${httpErr.status}): ${msg}`,
+        );
+      });
+      return;
+    }
+    const status = httpErr?.status;
+    const mensaje =
+      status === 404
+        ? 'El recibo de pago no fue encontrado.'
+        : `Ocurrió un error al generar el recibo de pago (código ${status ?? 'desconocido'}).`;
+    alert(mensaje);
   }
 
   descargarCertificadoObjecion(): void {

@@ -39,7 +39,13 @@
       class="btn btn-primary d-flex align-items-center justify-content-center gap-2 fw-semibold dc-btn flex-shrink-0"
       (click)="generarRecibo()">
       <i class="bi bi-receipt" aria-hidden="true"></i>
-      Generar Recibo
+      Descargar Recibo
+    </button>
+    <button *ngIf="!tieneFechaPago && puedePagar" type="button"
+      class="btn btn-outline-primary d-flex align-items-center justify-content-center gap-2 fw-semibold dc-btn flex-shrink-0"
+      (click)="verRecibo()">
+      <i class="bi bi-eye" aria-hidden="true"></i>
+      Ver recibo
     </button>
   </div>
 
