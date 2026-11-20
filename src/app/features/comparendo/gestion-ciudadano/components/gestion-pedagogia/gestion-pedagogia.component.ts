@@ -53,10 +53,13 @@ export class GestionPedagogiaComponent {
         return 'Inscrito';
       case 3:
         return 'Asistió';
+      case 4:
+        return 'No asistió';
       default:
         return 'Pendiente';
     }
   }
+  
 
   get clasePedagogiaEstado(): string {
     switch (this.pedagogiaEstado) {
@@ -64,6 +67,8 @@ export class GestionPedagogiaComponent {
         return 'bg-warning';
       case 3:
         return 'bg-success';
+      case 4:
+        return 'bg-danger';
       default:
         return 'bg-secondary';
     }
