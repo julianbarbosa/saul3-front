@@ -11,6 +11,7 @@ import {
 } from '../interfaces/auth.interface';
 import {
   ACCESS_TOKEN_TTL_MS,
+  REFRESH_TOKEN_TTL_MS,
   AUTH_COOKIE_KEY,
   AUTH_REFRESH_COOKIE_KEY,
   AUTH_TOKEN_COOKIE_KEY,
@@ -19,15 +20,18 @@ import {
   AUTH_TOKEN_TYPE_COOKIE_KEY,
   MARGEN_RENOVACION_ACCESS_SEG,
   MARGEN_RENOVACION_REFRESH_SEG,
+  AUTH_MENSAJE_CIERRE_SESSION_KEY,
+  AUTH_ROLES_SESSION_KEY,
+  AUTH_ROLES_SESSION_KEY_LEGACY,
+  MENSAJE_SESION_CERRADA_INACTIVIDAD,
 } from '../constants/auth-cookie-keys';
 import {
-  cookieFits,
   deleteAuthCookie,
   getAuthCookie,
   setAuthCookie,
 } from '../utils/auth-cookie.util';
+import { PermisosService } from './permisos.service';
 
-const ROLES_OVERFLOW_KEY = `${AUTH_COOKIE_KEY}-roles`;
 const INTERVAL_CONTROL_INACTIVIDAD_MS = 10_000;
 
 interface RefreshTokensPayload {
@@ -35,8 +39,15 @@ interface RefreshTokensPayload {
   refresh_token: string;
   token_type?: string;
   token_expires_at?: string;
+  token_expires_in?: number;
   refresh_token_expires_at?: string;
+  refresh_token_expires_in?: number;
 }
+
+type ExpiracionTokenPar = Pick<
+  TokenParData,
+  'token_expires_at' | 'token_expires_in' | 'refresh_token_expires_at' | 'refresh_token_expires_in'
+>;
 
 export interface UsuarioAuth {
   id?: number;
@@ -52,6 +63,7 @@ export interface UsuarioAuth {
 export class AuthService {
   private readonly http = inject(HttpClient);
   private readonly router = inject(Router);
+  private readonly permisos = inject(PermisosService);
 
   private refresh$: Observable<string> | null = null;
   private controlInactividadIntervalId: ReturnType<typeof setInterval> | null = null;
@@ -91,9 +103,31 @@ export class AuthService {
 
   cerrarSessionPorInactividad(): void {
     if (this.refreshTokenExpirado()) {
-      this.limpiarSesionLocal();
-      this.irAlInicio();
+      this.cerrarSesionPorExpiracion();
     }
+  }
+
+  /** Cierre local y aviso en login (inactividad o 401 sin refresh válido). */
+  cerrarSesionPorExpiracion(
+    mensaje: string = MENSAJE_SESION_CERRADA_INACTIVIDAD,
+  ): void {
+    this.redirigirLoginTrasCierre(mensaje);
+  }
+
+  consumirMensajeCierreSesion(): string | null {
+    const mensaje = sessionStorage.getItem(AUTH_MENSAJE_CIERRE_SESSION_KEY);
+    if (mensaje) {
+      sessionStorage.removeItem(AUTH_MENSAJE_CIERRE_SESSION_KEY);
+    }
+    return mensaje;
+  }
+
+  private redirigirLoginTrasCierre(mensaje?: string): void {
+    this.limpiarSesionLocal();
+    if (mensaje?.trim()) {
+      sessionStorage.setItem(AUTH_MENSAJE_CIERRE_SESSION_KEY, mensaje.trim());
+    }
+    void this.router.navigate(['/']);
   }
 
   private iniciarControlInactividad(): void {
@@ -111,7 +145,7 @@ export class AuthService {
     }
   }
 
-  /** true si no hay access o está vencido (`token_expires_at` en cookie), con margen anticipado. */
+  /** true si no hay access o está vencido (expiración desde `token_expires_in` al guardar), con margen anticipado. */
   tokenDeAccesoVencido(margenSegundos = MARGEN_RENOVACION_ACCESS_SEG): boolean {
     const token = this.obtenerToken();
     if (!token) {
@@ -120,7 +154,7 @@ export class AuthService {
     return this.estaVencido(token, margenSegundos);
   }
 
-  /** true si el refresh token no existe o ya expiró (`refresh_token_expires_at` en cookie). */
+  /** true si el refresh no existe o venció (`refresh_token_expires_in` al guardar). */
   refreshTokenVencido(margenSegundos = 0): boolean {
     const refresh = this.obtenerRefreshToken();
     if (!refresh) {
@@ -165,7 +199,9 @@ export class AuthService {
               refresh_token: response.data.refresh_token,
               token_type: response.data.token_type,
               token_expires_at: response.data.token_expires_at,
+              token_expires_in: response.data.token_expires_in,
               refresh_token_expires_at: response.data.refresh_token_expires_at,
+              refresh_token_expires_in: response.data.refresh_token_expires_in,
             };
           }),
           tap((res) => this.guardarTokens(res)),
@@ -201,7 +237,7 @@ export class AuthService {
   }
 
   /**
-   * true si ya pasó `token_expires_at` o faltan ≤ `margenSegundos` para vencer (renovación anticipada).
+   * true si ya pasó la expiración del access o faltan ≤ `margenSegundos` (renovación anticipada).
    */
   public tokenExpirado(margenSegundos = MARGEN_RENOVACION_ACCESS_SEG): boolean {
     const expiraEnMs = this.obtenerExpiracionTokenMs();
@@ -212,7 +248,7 @@ export class AuthService {
   }
 
   /**
-   * true si ya pasó `refresh_token_expires_at` o faltan ≤ `margenSegundos` (p. ej. margen 0 en interceptor).
+   * true si ya pasó la expiración del refresh o faltan ≤ `margenSegundos`.
    */
   public refreshTokenExpirado(margenSegundos = MARGEN_RENOVACION_REFRESH_SEG): boolean {
     const expiraEnMs = this.obtenerExpiracionRefreshTokenMs();
@@ -258,7 +294,9 @@ export class AuthService {
       token_type: res.token_type ?? 'Bearer',
       refresh_token_type: 'Bearer',
       token_expires_at: res.token_expires_at,
+      token_expires_in: res.token_expires_in,
       refresh_token_expires_at: res.refresh_token_expires_at,
+      refresh_token_expires_in: res.refresh_token_expires_in,
     });
   }
 
@@ -270,17 +308,7 @@ export class AuthService {
     }
 
     try {
-      const usuario = JSON.parse(raw) as UsuarioAuth;
-      const rolesCookie = getAuthCookie(`${AUTH_COOKIE_KEY}-roles`);
-      if (rolesCookie) {
-        usuario.roles = JSON.parse(rolesCookie) as string[];
-      } else {
-        const rolesOverflow = sessionStorage.getItem(ROLES_OVERFLOW_KEY);
-        if (rolesOverflow) {
-          usuario.roles = JSON.parse(rolesOverflow) as string[];
-        }
-      }
-      return usuario;
+      return JSON.parse(raw) as UsuarioAuth;
     } catch {
       return null;
     }
@@ -290,24 +318,15 @@ export class AuthService {
     setAuthCookie(AUTH_COOKIE_KEY, 'true');
     this.guardarParTokens(tokens);
 
-    const { roles, ...perfil } = usuario;
+    const { roles: _roles, ...perfil } = usuario;
     setAuthCookie(`${AUTH_COOKIE_KEY}-user`, JSON.stringify(perfil));
 
-    if (roles?.length) {
-      const rolesJson = JSON.stringify(roles);
-      if (cookieFits(rolesJson)) {
-        setAuthCookie(`${AUTH_COOKIE_KEY}-roles`, rolesJson);
-        sessionStorage.removeItem(ROLES_OVERFLOW_KEY);
-      } else {
-        sessionStorage.setItem(ROLES_OVERFLOW_KEY, rolesJson);
-        deleteAuthCookie(`${AUTH_COOKIE_KEY}-roles`);
-      }
-    } else {
-      deleteAuthCookie(`${AUTH_COOKIE_KEY}-roles`);
-      sessionStorage.removeItem(ROLES_OVERFLOW_KEY);
-    }
+    deleteAuthCookie(`${AUTH_COOKIE_KEY}-roles`);
+    sessionStorage.removeItem(AUTH_ROLES_SESSION_KEY);
+    sessionStorage.removeItem(AUTH_ROLES_SESSION_KEY_LEGACY);
 
     this.iniciarControlInactividad();
+    this.permisos.cargar().subscribe();
   }
 
   guardarParTokens(tokens: TokenParData): void {
@@ -315,16 +334,44 @@ export class AuthService {
     setAuthCookie(AUTH_TOKEN_TYPE_COOKIE_KEY, tokens.token_type ?? 'Bearer');
     setAuthCookie(AUTH_REFRESH_COOKIE_KEY, tokens.refresh_token);
 
-    const accessExpiresMs = this.milisegundosDesdeIso(tokens.token_expires_at);
     setAuthCookie(
       AUTH_TOKEN_EXPIRES_COOKIE_KEY,
-      String(accessExpiresMs ?? Date.now() + ACCESS_TOKEN_TTL_MS),
+      String(this.milisegundosExpiracionAcceso(tokens)),
     );
 
-    const refreshExpiresMs = this.milisegundosDesdeIso(tokens.refresh_token_expires_at);
-    if (refreshExpiresMs !== null) {
-      setAuthCookie(AUTH_REFRESH_EXPIRES_COOKIE_KEY, String(refreshExpiresMs));
+    setAuthCookie(
+      AUTH_REFRESH_EXPIRES_COOKIE_KEY,
+      String(this.milisegundosExpiracionRefresh(tokens)),
+    );
+  }
+
+  /**
+   * Expiración absoluta del access: prioriza `token_expires_in` desde la respuesta (p. ej. 20 s),
+   * luego `token_expires_at`, y por último el TTL por defecto.
+   */
+  private milisegundosExpiracionAcceso(tokens: ExpiracionTokenPar): number {
+    const inSec = tokens.token_expires_in;
+    if (inSec != null && inSec > 0) {
+      return Date.now() + inSec * 1000;
     }
+    const fromIso = this.milisegundosDesdeIso(tokens.token_expires_at);
+    if (fromIso !== null) {
+      return fromIso;
+    }
+    return Date.now() + ACCESS_TOKEN_TTL_MS;
+  }
+
+  /** Igual que access, con `refresh_token_expires_in` (p. ej. 60 s). */
+  private milisegundosExpiracionRefresh(tokens: ExpiracionTokenPar): number {
+    const inSec = tokens.refresh_token_expires_in;
+    if (inSec != null && inSec > 0) {
+      return Date.now() + inSec * 1000;
+    }
+    const fromIso = this.milisegundosDesdeIso(tokens.refresh_token_expires_at);
+    if (fromIso !== null) {
+      return fromIso;
+    }
+    return Date.now() + REFRESH_TOKEN_TTL_MS;
   }
 
   private milisegundosDesdeIso(iso?: string): number | null {
@@ -379,6 +426,7 @@ export class AuthService {
 
   limpiarSesionLocal(): void {
     this.detenerControlInactividad();
+    this.permisos.limpiar();
     deleteAuthCookie(AUTH_COOKIE_KEY);
     deleteAuthCookie(AUTH_TOKEN_COOKIE_KEY);
     deleteAuthCookie(AUTH_TOKEN_TYPE_COOKIE_KEY);
@@ -387,7 +435,9 @@ export class AuthService {
     deleteAuthCookie(AUTH_REFRESH_EXPIRES_COOKIE_KEY);
     deleteAuthCookie(`${AUTH_COOKIE_KEY}-user`);
     deleteAuthCookie(`${AUTH_COOKIE_KEY}-roles`);
-    sessionStorage.removeItem(ROLES_OVERFLOW_KEY);
+    sessionStorage.removeItem(AUTH_ROLES_SESSION_KEY);
+    sessionStorage.removeItem(AUTH_ROLES_SESSION_KEY_LEGACY);
+    sessionStorage.removeItem('auth-permisos-cache');
   }
 
   /** Cierra sesión en servidor (si hay token) y limpia cookies locales. */

@@ -4,5 +4,7 @@ import { Component } from '@angular/core';
   selector: 'app-bloque-logo',
   imports: [],
   templateUrl: './bloque-logo.html',
+  styleUrl: './bloque-logo.css',
+  host: { class: 'd-block' },
 })
 export class BloqueLogo {}

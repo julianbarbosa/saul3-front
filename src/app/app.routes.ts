@@ -1,5 +1,6 @@
 import { Routes } from '@angular/router';
 import { authGuard } from './core/guards/auth.guard';
+import { Forbidden } from './features/auth/forbidden/forbidden';
 import { Login } from './features/auth/login/login';
 import { Layout } from './features/main/layout/layout';
 import { Main } from './features/main/main/main';
@@ -8,7 +9,7 @@ export const routes: Routes = [
   {
     path: '',
     component: Login,
-    title: 'Iniciar sesión - Gestión Acceso Justicia',
+    title: 'Iniciar sesión - Sistema Gestión de Procesos Administrativos',
   },
   {
     path: 'main',
@@ -58,6 +59,25 @@ export const routes: Routes = [
           import('./features/visita/visita-module').then((m) => m.VisitaModule),
       }
     ],
+  },
+  {
+    path: 'control-sanciones',
+    component: Layout,
+    canActivate: [authGuard],
+    children: [
+      {
+        path: '',
+        loadChildren: () =>
+          import('./features/control-sanciones/control-sanciones-module').then(
+            (m) => m.ControlSancionesModule,
+          ),
+      },
+    ],
+  },
+  {
+    path: '403',
+    component: Forbidden,
+    title: 'Acceso no permitido',
   },
   {
     path: '**',

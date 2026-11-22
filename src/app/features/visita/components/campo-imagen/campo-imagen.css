@@ -1,0 +1,103 @@
+.gestion-imagen {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.gestion-archivo {
+  display: flex;
+  align-items: stretch;
+  position: relative;
+  width: 100%;
+  min-width: 0;
+  height: auto;
+  padding: 0;
+  overflow: hidden;
+}
+
+/* Cubre solo su botón (el label padre es relative): el toque abre ese selector. */
+.gestion-archivo__input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.gestion-archivo__nombre {
+  flex: 1 1 auto;
+  min-width: 0;
+  padding: 0.375rem 0.75rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.gestion-archivo__boton {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  padding: 0.375rem 0.75rem;
+  position: relative;
+  margin: 0;
+  background: var(--ssj-azul, #0943b5);
+  color: #fff;
+  cursor: pointer;
+}
+
+.gestion-archivo__boton + .gestion-archivo__boton {
+  border-left: 1px solid #fff;
+}
+
+/* La cámara solo tiene sentido en pantallas táctiles; en escritorio queda «Seleccionar». */
+@media (hover: hover) and (pointer: fine) {
+  .gestion-archivo__boton--camara {
+    display: none;
+  }
+}
+
+.gestion-archivo:focus-within {
+  border-color: var(--ssj-azul, #0943b5);
+  box-shadow:
+    0 0 0 2px #fff,
+    0 0 0 4px #000;
+}
+
+.gestion-imagen__vista {
+  display: block;
+  width: 100%;
+  max-width: 320px;
+  height: 180px;
+  margin: 0;
+  object-fit: contain;
+  background: #f4f6f8;
+  border: 1px solid #dee2e6;
+  border-radius: 4px;
+}
+
+.gestion-imagen__aviso {
+  margin: 0;
+  color: #9b1b30;
+  font-size: 0.875rem;
+}
+
+.gestion-imagen .btn {
+  align-self: flex-start;
+  max-width: 100%;
+}
+
+.gestion-imagen__etiqueta--oculta {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}

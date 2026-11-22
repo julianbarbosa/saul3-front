@@ -53,6 +53,8 @@
               "path": ":comparendoId/segunda-instancia",
               "loadComponent": "@modules/medida-multa/pages/segunda-instancia/segunda-instancia.component#SegundaInstanciaComponent"
             }
+
+            
           ]
         },
         {
@@ -60,6 +62,7 @@
           "label": "Medida Correctiva Pedagogía",
           "path": "pedagogia",
           "loadChildren": "@modules/pedagogia/pedagogia.module#PedagogiaModule",
+          "permissions": ["pedagogia_programar"],
           "children": [
             {
               "id": "pedagogia-tipo",
@@ -83,7 +86,8 @@
               "id": "pedagogia-programar",
               "label": "Programar Pedagogía",
               "path": "programar",
-              "loadComponent": "@modules/pedagogia/pages/programar/programar-pedagogia.component#ProgramarPedagogiaComponent"
+              "loadComponent": "@modules/pedagogia/pages/programar/programar-pedagogia.component#ProgramarPedagogiaComponent",
+              "permissions": ["pedagogia_programar"]
             },
             {
               "id": "pedagogia-calendario",
@@ -91,6 +95,55 @@
               "path": "calendario",
               "loadComponent": "@modules/pedagogia/pages/calendario/calendario-pedagogia.component#CalendarioPedagogiaComponent"
             }
+          ]
+        },
+        {
+          "id": "control-sanciones",
+          "label": "Control a Sanciones",
+          "basePath": "/control-sanciones",
+          "path": "",
+          "permissions": [
+            "controlsanciones_ingresar_expediente",
+            "controlsanciones_movimiento_expediente_oficina",
+            "controlsanciones_movimiento_expediente_tesoreria",
+            "controlsanciones_movimiento_expediente_inspeccion",
+            "controlsanciones_cerrar_expediente",
+            "tesoreria_cargar_expediente"
+          ],
+          "children": [
+            {
+              "id": "cs-registrar-movimiento",
+              "label": "Registrar movimiento expediente",
+              "path": "registrar-movimiento",
+              "permissions": [
+                "controlsanciones_ingresar_expediente",
+                "controlsanciones_movimiento_expediente_oficina",
+                "controlsanciones_movimiento_expediente_tesoreria",
+                "controlsanciones_movimiento_expediente_inspeccion",
+                "controlsanciones_cerrar_expediente"
+              ]
+            },
+            {
+              "id": "cs-registrar-movimiento-multiple",
+              "label": "Movimiento múltiple expediente",
+              "path": "registrar-movimiento-multiple",
+              "permissions": [
+                "controlsanciones_movimiento_expediente_tesoreria",
+                "controlsanciones_movimiento_expediente_inspeccion",
+                "controlsanciones_cerrar_expediente",
+                "controlsanciones_movimiento_expediente_oficina",
+                "tesoreria_cargar_expediente"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "control-construcciones",
+          "label": "Control a Construcciones",
+          "basePath": "/visita",
+          "path": "",
+          "children": [
+            { "id": "cc-visitas-pendientes", "label": "Visitas Pendientes", "path": "listar-visita" }
           ]
         }
       ]

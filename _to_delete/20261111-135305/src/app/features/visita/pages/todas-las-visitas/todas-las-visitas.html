@@ -1,0 +1,48 @@
+<h4 class="titulo-listado">{{ titulo }}</h4>
+
+@if (error()) {
+  <div class="alert alert-danger">{{ error() }}</div>
+}
+
+<div class="contenedor-tabla" [class.cargando]="cargando()">
+  <app-table
+    [columns]="columnas()"
+    [data]="filas()"
+    [total]="total()"
+    [page]="page"
+    [pageSize]="pageSize"
+    rowIdField="idvisita"
+    textoRegistros="visitas"
+    (filtersChange)="onFiltersChange($event)"
+  />
+</div>
+
+<ng-template #celdaAcciones let-fila>
+  <button
+    type="button"
+    class="btn btn-sm btn-outline-primary"
+    (click)="abrirAcciones(fila)"
+    title="Ver acciones"
+  >
+    Acciones
+  </button>
+</ng-template>
+
+<ng-template #celdaRadicado let-fila>
+  @if (urlRadicado(fila.radicado, fila.identificacionDocumento); as url) {
+    <a [href]="url" target="_blank" rel="noopener">{{ fila.radicado }}</a>
+  }
+  @if (urlRadicado(fila.radicadoInspeccion, fila.numIdentificacionRevisor); as urlRpta) {
+    <br />
+    <small
+      >Rpta:
+      <a [href]="urlRpta" target="_blank" rel="noopener">{{ fila.radicadoInspeccion }}</a></small
+    >
+  }
+</ng-template>
+
+<app-acciones-visita
+  [visita]="visitaSeleccionada()"
+  (cerrar)="visitaSeleccionada.set(null)"
+  (actualizado)="cargar()"
+/>

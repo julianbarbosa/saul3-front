@@ -1,43 +1,227 @@
-<div class="gestion-toolbar">
-  <app-select
-    id="visualizacion"
-    label="Visualización"
-    [options]="visualizaciones"
-    [value]="visualizacionSeleccionada"
-    (valueChange)="onVisualizacionChange($event)"
-  />
-</div>
+@if (mensajeError()) {
+  <p class="gestion-error" role="alert">{{ mensajeError() }}</p>
+}
+
+@if (encabezado(); as visita) {
+  <section class="gestion-encabezado" aria-labelledby="gestion-encabezado-titulo">
+    <h1 id="gestion-encabezado-titulo" class="gestion-encabezado__titulo">Registro de Visita</h1>
+    <h2 class="gestion-encabezado__subtitulo">Datos generales de la solicitud</h2>
+    <dl class="gestion-encabezado__datos">
+      <div>
+        <dt>Consecutivo</dt>
+        <dd>{{ visita.consecutivo }}</dd>
+      </div>
+      <div>
+        <dt>Estado</dt>
+        <dd>{{ visita.estado || 'Sin estado' }}</dd>
+      </div>
+      <div>
+        <dt>Visitador</dt>
+        <dd>{{ visita.visitador || 'Sin asignar' }}</dd>
+      </div>
+      <div>
+        <dt>Revisor</dt>
+        <dd>{{ visita.revisor || 'Sin asignar' }}</dd>
+      </div>
+      <div>
+        <dt>Tipo de Visita</dt>
+        <dd>{{ visita.tipoVisita || 'Sin tipo' }}</dd>
+      </div>
+      @if (visita.radicadoSolicitud) {
+        <div>
+          <dt>Radicado Solicitud</dt>
+          <dd>{{ visita.radicadoSolicitud }}</dd>
+        </div>
+      }
+      @if (visita.radicadoRespuesta) {
+        <div>
+          <dt>Radicado Respuesta</dt>
+          <dd>{{ visita.radicadoRespuesta }}</dd>
+        </div>
+      }
+      @if (visita.radicadoInspeccion) {
+        <div>
+          <dt>Radicado Remisión a Inspección</dt>
+          <dd>{{ visita.radicadoInspeccion }}</dd>
+        </div>
+      }
+    </dl>
+  </section>
+}
 
 <ng-template #contenidoMapa>
-  <app-map markerTitle="Ubicación de la visita" />
+  <app-map
+    [latitude]="centroMapa().latitud"
+    [longitude]="centroMapa().longitud"
+    [markerTitle]="ubicacion() ? 'Ubicación de la visita' : 'Visita sin ubicación registrada'"
+  />
 </ng-template>
 
-<ng-template #camposCategoria let-campos="campos" let-layout="layout">
-  <div
-    class="gestion-categoria__fields row"
-    [class.gestion-categoria__fields--horizontal]="layout === 'horizontal'"
-  >
-    @for (campo of campos; track campo.id) {
-      <div class="gestion-campo" [ngClass]="campo.clase ?? 'col-12'">
-        @if (esSelect(campo)) {
-          <app-select
-            [id]="'campo-' + campo.id"
-            [label]="labelCampo(campo)"
-            [options]="opcionesSelect(campo)"
-            [value]="valorCampo(campo)"
-            [readOnly]="campo.soloLectura"
-          />
-        } @else if (esInput(campo)) {
-          <app-input
-            [id]="'campo-' + campo.id"
-            [label]="labelCampo(campo)"
-            [value]="valorCampo(campo)"
-            [readOnly]="campo.soloLectura"
-          />
+<ng-template
+  #controlCampo
+  let-campo="campo"
+  let-etiqueta="etiqueta"
+  let-ocultarEtiqueta="ocultarEtiqueta"
+>
+  @if (esCampoBarrio(campo)) {
+    <app-select
+      [id]="'campo-' + campo.id"
+      [label]="etiqueta"
+      [class.select-sin-etiqueta]="!!ocultarEtiqueta"
+      [options]="opcionesBarrio(campo)"
+      [value]="valorCampo(campo)"
+      [readOnly]="soloLectura(campo)"
+      [required]="esRequerido(campo)"
+      [validar]="validarCampo(campo)"
+      (valueChange)="seleccionarBarrio(campo, $event)"
+    />
+  } @else if (esSelect(campo)) {
+    <app-select
+      [id]="'campo-' + campo.id"
+      [label]="etiqueta"
+      [class.select-sin-etiqueta]="!!ocultarEtiqueta"
+      [options]="opcionesSelect(campo)"
+      [value]="valorCampo(campo)"
+      [readOnly]="soloLectura(campo)"
+      [required]="esRequerido(campo)"
+      [validar]="validarCampo(campo)"
+      (valueChange)="actualizarValor(campo, $event)"
+      (focusout)="saveItem(campo)"
+    />
+  } @else if (esImagen(campo)) {
+    <app-campo-imagen
+      [campo]="campo"
+      [etiqueta]="etiqueta"
+      [ocultarEtiqueta]="!!ocultarEtiqueta"
+      [nombre]="nombreArchivo(campo)"
+      [vistaPrevia]="vistaPrevia(campo.codigo)"
+      [urlGuardada]="urlImagenGuardada(campo)"
+      [noDisponible]="imagenNoDisponible(campo.codigo)"
+      [bloqueado]="modoObservacion"
+      (archivoChange)="onArchivoSeleccionado(campo, $event)"
+      (blurred)="saveItem(campo)"
+      (quitar)="limpiarSeleccion(campo)"
+      (noDisponibleChange)="marcarImagenNoDisponible(campo.codigo)"
+    />
+  } @else if (esTextoLargo(campo)) {
+    <app-textarea
+      [id]="'campo-' + campo.id"
+      [label]="etiqueta"
+      [ocultarEtiqueta]="!!ocultarEtiqueta"
+      [value]="valorCampo(campo)"
+      [readOnly]="soloLectura(campo)"
+      [required]="esRequerido(campo)"
+      [validar]="validarCampo(campo)"
+      (valueChange)="actualizarValor(campo, $event)"
+      (blurred)="saveItem(campo)"
+    />
+  } @else if (esInput(campo)) {
+    <app-input
+      [id]="'campo-' + campo.id"
+      [label]="etiqueta"
+      [ocultarEtiqueta]="!!ocultarEtiqueta"
+      [type]="tipoInput(campo)"
+      [step]="tipoInput(campo) === 'number' ? '0.01' : null"
+      [value]="valorInput(campo)"
+      [readOnly]="soloLectura(campo)"
+      [required]="esRequerido(campo)"
+      [validar]="validarCampo(campo)"
+      (valueChange)="actualizarValor(campo, $event)"
+      (changed)="alCambiarInput(campo, $event)"
+      (blurred)="alSalirInput(campo)"
+    />
+  }
+</ng-template>
+
+<ng-template #camposCategoria let-categoria="categoria" let-layout="layout">
+  @for (bloque of bloquesCategoria(categoria); track $index) {
+    @if (bloque.tabla; as tabla) {
+      @let titulo = columnaTitulo(tabla);
+      @let claseTitulo = 'gestion-tabla__titulo';
+      <div
+        class="table-responsive gestion-tabla__contenedor"
+        [class.gestion-tabla__contenedor--compacta]="esTablaCompacta(tabla)"
+      >
+        <table class="table gestion-tabla">
+          <thead>
+            <tr>
+              @for (encabezado of encabezadosVisibles(tabla); track encabezado + $index) {
+                <th scope="col" [ngClass]="titulo && $first ? claseTitulo : ''">
+                  {{ encabezado }}
+                </th>
+              }
+            </tr>
+          </thead>
+          <tbody>
+            @for (fila of tabla.filas; track fila.titulo + $index) {
+              <tr>
+                @if (titulo) {
+                  <th scope="row" [ngClass]="claseTitulo">{{ fila.titulo }}</th>
+                }
+                @for (celda of fila.celdas; track $index) {
+                  <td>
+                    @if (celda) {
+                      @let columna = etiquetaColumna(tabla, $index);
+                      @let detalle = etiquetaAdicional(celda, columna, fila.titulo);
+                      <div class="gestion-celda">
+                        <span class="gestion-celda__columna" aria-hidden="true">{{ columna }}</span>
+                        <ng-container
+                          [ngTemplateOutlet]="controlCampo"
+                          [ngTemplateOutletContext]="{
+                            campo: celda,
+                            etiqueta: etiquetaAccesible(fila.titulo, columna, detalle),
+                            ocultarEtiqueta: true,
+                          }"
+                        />
+                      </div>
+                    }
+                  </td>
+                }
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+    @if (bloque.campos.length > 0) {
+      <div
+        class="gestion-categoria__fields row"
+        [class.gestion-categoria__fields--horizontal]="layout === 'horizontal'"
+      >
+        @for (grupo of bloquesCampos(bloque.campos); track grupo.id) {
+          @for (fila of grupo.filas; track fila[0].campo.id) {
+            <div class="col-12">
+              <div class="row gestion-registro">
+                @for (celda of fila; track celda.campo.id) {
+                  <div
+                    class="w-100 d-none order-md-2"
+                    [class.d-md-block]="celda.salto"
+                    aria-hidden="true"
+                  ></div>
+                  <div class="gestion-campo" [ngClass]="celda.clase">
+                    <ng-container
+                      [ngTemplateOutlet]="controlCampo"
+                      [ngTemplateOutletContext]="
+                        contextoCampo(celda.campo, labelCampo(celda.campo))
+                      "
+                    />
+                  </div>
+                }
+              </div>
+            </div>
+          }
+          @for (campo of grupo.campos; track campo.id) {
+            <div class="gestion-campo" [ngClass]="claseColumna(campo)">
+              <ng-container
+                [ngTemplateOutlet]="controlCampo"
+                [ngTemplateOutletContext]="contextoCampo(campo, labelCampo(campo))"
+              />
+            </div>
+          }
         }
       </div>
     }
-  </div>
+  }
 </ng-template>
 
 <ng-template #menuCategorias>
@@ -71,26 +255,66 @@
 </ng-template>
 
 @if (idVisita !== null) {
-  <div class="gestion-layout">
-    <ng-container [ngTemplateOutlet]="menuCategorias" />
+  <div class="gestion-layout" [class.gestion-layout--pasos]="visualizacion === 'normal'">
+    <!-- En Normal los pasos hacen de menú; el menú lateral queda para Acordeón y Horizontal. -->
+    @if (visualizacion !== 'normal') {
+      <ng-container [ngTemplateOutlet]="menuCategorias" />
+    }
 
     <div class="gestion-layout__content">
       @if (visualizacion === 'normal') {
-        <section class="gestion-page">
-          <section class="gestion-categoria" [id]="idSeccionCategoria(categoriaMapaId)">
-            <h2 class="gestion-categoria__title">{{ categoriaMapaNombre }}</h2>
-            <ng-container [ngTemplateOutlet]="contenidoMapa" />
-          </section>
-
-          @for (categoria of dataForm(); track categoria.id) {
-            <section class="gestion-categoria" [id]="idSeccionCategoria(categoria.id)">
-              <h2 class="gestion-categoria__title">{{ categoria.nombre }}</h2>
-              <ng-container
-                [ngTemplateOutlet]="camposCategoria"
-                [ngTemplateOutletContext]="{ campos: categoria.campos, layout: 'normal' }"
-              />
-            </section>
-          }
+        <!-- Pasos numerados (KIT UI SAUL3, pág. 12): un paso por categoría, solo uno abierto. -->
+        <section class="gestion-pasos" aria-labelledby="gestion-pasos-titulo">
+          <h2 id="gestion-pasos-titulo" class="gestion-pasos__titulo">Categorías</h2>
+          <ol class="pasos">
+            @for (paso of pasos(); track paso.id; let i = $index, ultimo = $last) {
+              @let estado = estadoPaso(i);
+              <li
+                class="paso"
+                [class.paso--actual]="estado === 'actual'"
+                [class.paso--hecho]="estado === 'hecho'"
+                [class.paso--pendiente]="estado === 'pendiente'"
+                [id]="idSeccionCategoria(paso.id)"
+              >
+                <h3 class="paso__titulo">
+                  <button
+                    type="button"
+                    class="paso__encabezado"
+                    [attr.aria-expanded]="estado === 'actual'"
+                    [attr.aria-controls]="idCuerpoPaso(paso)"
+                    [attr.aria-current]="estado === 'actual' ? 'step' : null"
+                    (click)="abrirPaso(i)"
+                  >
+                    <span class="paso__numero" aria-hidden="true">{{ i + 1 }}</span>
+                    <span class="paso__nombre">{{ paso.nombre }}</span>
+                    <span class="visually-hidden">, {{ textoEstadoPaso(i) }}</span>
+                  </button>
+                </h3>
+                <!-- [hidden] y no @if: los campos, sus valores y el mapa se conservan al cambiar de paso. -->
+                <div class="paso__cuerpo" [id]="idCuerpoPaso(paso)" [hidden]="estado !== 'actual'">
+                  <div class="paso__tarjeta">
+                    @if (paso.categoria; as categoria) {
+                      <ng-container
+                        [ngTemplateOutlet]="camposCategoria"
+                        [ngTemplateOutletContext]="{ categoria: categoria, layout: 'normal' }"
+                      />
+                    } @else {
+                      <ng-container [ngTemplateOutlet]="contenidoMapa" />
+                    }
+                    @if (!ultimo) {
+                      <div class="paso__acciones">
+                        <app-button
+                          label="Continuar"
+                          [relleno]="true"
+                          (clicked)="continuarPaso(i)"
+                        />
+                      </div>
+                    }
+                  </div>
+                </div>
+              </li>
+            }
+          </ol>
         </section>
       }
 
@@ -109,7 +333,7 @@
               <div class="gestion-accordion__body">
                 <ng-container
                   [ngTemplateOutlet]="camposCategoria"
-                  [ngTemplateOutletContext]="{ campos: categoria.campos, layout: 'normal' }"
+                  [ngTemplateOutletContext]="{ categoria: categoria, layout: 'normal' }"
                 />
               </div>
             </details>
@@ -145,7 +369,7 @@
               <h2 class="gestion-categoria__title">{{ categoria.nombre }}</h2>
               <ng-container
                 [ngTemplateOutlet]="camposCategoria"
-                [ngTemplateOutletContext]="{ campos: categoria.campos, layout: 'normal' }"
+                [ngTemplateOutletContext]="{ categoria: categoria, layout: 'normal' }"
               />
             </section>
           }
