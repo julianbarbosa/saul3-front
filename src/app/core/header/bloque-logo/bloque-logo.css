@@ -1,0 +1,12 @@
+:host {
+  display: block;
+  max-width: 100%;
+}
+
+.logo_horizontal {
+  display: block;
+  max-width: 100%;
+  max-height: 4.5rem;
+  width: auto;
+  height: auto;
+}

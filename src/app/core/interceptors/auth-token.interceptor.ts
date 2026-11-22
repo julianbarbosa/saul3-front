@@ -37,21 +37,21 @@ export const authTokenInterceptor: HttpInterceptorFn = (req, next) => {
   const auth = inject(AuthService);
   const token = auth.obtenerToken();
 
-  const cerrarSesion = (error: unknown) =>
-    auth.cerrarSesion$().pipe(switchMap(() => throwError(() => error)));
+  const cerrarPorExpiracion = (error: unknown) => {
+    auth.cerrarSesionPorExpiracion();
+    return throwError(() => error);
+  };
 
   /** Refresca (una sola llamada compartida) y reintenta la petición con el token nuevo. */
   const refrescarYReintentar = () => {
     if (auth.refreshTokenExpirado()) {
-      alert("se venció el refresh token, cerrando sesión");
-      auth.cerrarSesion();
-      return cerrarSesion(
+      return cerrarPorExpiracion(
         new HttpErrorResponse({ status: 401, statusText: 'Sesión expirada' }),
       );
     }
 
     return auth.refrescarToken().pipe(
-      catchError((error: unknown) => cerrarSesion(error)),
+      catchError((error: unknown) => cerrarPorExpiracion(error)),
       switchMap((nuevoToken) => next(conToken(req, nuevoToken))),
     );
   };

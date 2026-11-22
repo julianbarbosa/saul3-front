@@ -1,0 +1,146 @@
+<div class="container-fluid py-3">
+  <h1 class="h4 mb-3">
+    <i class="bi bi-collection me-2" aria-hidden="true"></i>
+    Control a sanciones — Movimiento múltiple
+  </h1>
+
+  @if (mensaje) {
+    <div class="alert alert-info">{{ mensaje }}</div>
+  }
+
+  <div class="row g-2 align-items-end mb-3">
+    <div class="col-md-5">
+      <label class="form-label" for="estado">Estado</label>
+      <select id="estado" class="form-select" [(ngModel)]="busqueda.estado">
+        <option [ngValue]="undefined">Seleccione…</option>
+        @for (e of estados; track e.value) {
+          <option [ngValue]="e.value">{{ e.label }}</option>
+        }
+      </select>
+    </div>
+    @if (requiereInspeccion()) {
+      <div class="col-md-5">
+        <label class="form-label" for="inspeccion">Inspección</label>
+        <select id="inspeccion" class="form-select" [(ngModel)]="busqueda.inspeccion">
+          <option [ngValue]="null">Seleccione…</option>
+          @for (ins of inspecciones; track ins.id) {
+            <option [ngValue]="ins.id">{{ ins.nombre }}</option>
+          }
+        </select>
+      </div>
+    }
+    <div class="col-md-2">
+      <button type="button" class="btn btn-success w-100" (click)="buscar()" [disabled]="cargando || !busqueda.estado">
+        Buscar
+      </button>
+    </div>
+  </div>
+
+  @if (data.length) {
+    <div class="card">
+      <div class="card-header">Listado — estado {{ busqueda.estado }} ({{ data.length }})</div>
+      <div class="card-body row g-2">
+        <div class="col-md-4">
+          <label class="form-label">Filtrar por id interno</label>
+          <input class="form-control" [(ngModel)]="filterId" />
+        </div>
+        <div class="col-md-4">
+          <label class="form-label">Filtrar por comparendo</label>
+          <input class="form-control" [(ngModel)]="filterFormato" />
+        </div>
+      </div>
+      <div class="table-responsive">
+        <table class="table table-sm table-hover mb-0">
+          <thead>
+            <tr>
+              <th>Id</th>
+              <th>Comparendo</th>
+              <th>Nombre infractor</th>
+              <th>Actualización</th>
+              <th>Acción</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (item of expedientesFiltrados(); track item.id) {
+              <tr>
+                <td>{{ item.id }}</td>
+                <td>{{ item.formato }}</td>
+                <td>{{ item.nombre }}</td>
+                <td>{{ fmt(item.updatedAt) }}</td>
+                <td>
+                  @if (busqueda.estado === 'pendiente') {
+                    <a [routerLink]="['/control-sanciones/registrar-movimiento', item.id]" title="Gestionar">
+                      <i class="bi bi-check-circle"></i>
+                    </a>
+                  } @else {
+                    <input type="checkbox" [(ngModel)]="item.isChecked" (ngModelChange)="actualizarCantidad()" />
+                  }
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <p class="mt-2">Cantidad seleccionados: {{ cantidadCheckeado }}</p>
+
+    <div class="d-flex flex-wrap gap-2 justify-content-end">
+      @if (permisos.tiene('controlsanciones_movimiento_expediente_tesoreria') && busqueda.estado === 'aprobada') {
+        <button type="button" class="btn btn-primary" (click)="registrarMovimiento('enviadotesoreria')">Enviar a tesorería</button>
+        <button type="button" class="btn btn-info" (click)="generarDocumento('informeSecretarial')">Informe secretarial</button>
+        <button type="button" class="btn btn-info" (click)="abrirUrl(api.urlGenerarBase())">Base</button>
+        <button type="button" class="btn btn-info" (click)="abrirUrl(api.urlGenerarFuid('aprobada', 0))">FUID</button>
+      }
+      @if (permisos.tiene('controlsanciones_movimiento_expediente_inspeccion') && busqueda.estado === 'rechazado') {
+        <button type="button" class="btn btn-primary" (click)="registrarMovimiento('devuelto')">Devolver a inspección</button>
+        @if (busqueda.inspeccion != null) {
+          <button
+            type="button"
+            class="btn btn-info"
+            (click)="abrirUrl(api.urlGenerarDevolucion(busqueda.inspeccion!))"
+          >
+            Oficio devolución
+          </button>
+          <button
+            type="button"
+            class="btn btn-info"
+            (click)="abrirUrl(api.urlGenerarFuid('rechazado', busqueda.inspeccion!))"
+          >
+            FUID devolución
+          </button>
+        }
+      }
+      @if (permisos.tiene('tesoreria_cargar_expediente') && busqueda.estado === 'devueltoportesoreria') {
+        <button type="button" class="btn btn-primary" (click)="registrarMovimiento('cerrado')">Devolver a control sanciones</button>
+        <button
+          type="button"
+          class="btn btn-info"
+          (click)="abrirUrl(api.urlGenerarDevolucionCsv('devueltoportesoreria', 0))"
+        >
+          Oficio devolución
+        </button>
+      }
+      @if (permisos.tiene('controlsanciones_cerrar_expediente') && busqueda.estado === 'enviadotesoreria') {
+        <button type="button" class="btn btn-primary" (click)="registrarMovimiento('cerrado')">Envío custodia</button>
+      }
+      @if (permisos.tiene('controlsanciones_movimiento_expediente_oficina') && busqueda.estado === 'cerrarporpago' && busqueda.inspeccion != null) {
+        <button
+          type="button"
+          class="btn btn-info"
+          (click)="abrirUrl(api.urlGenerarFuid('cerrarporpago', busqueda.inspeccion!))"
+        >
+          FUID cerrado por pago
+        </button>
+        <button
+          type="button"
+          class="btn btn-info"
+          (click)="abrirUrl(api.urlGenerarEnvioCerradoPorPago(busqueda.inspeccion!))"
+        >
+          Informe envío cerrado por pago
+        </button>
+      }
+      <button type="button" class="btn btn-outline-secondary" (click)="limpiar()">Limpiar</button>
+    </div>
+  }
+</div>

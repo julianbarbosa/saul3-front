@@ -1,4 +1,4 @@
-import { Component, inject } from '@angular/core';
+import { Component, computed, inject } from '@angular/core';
 import { Router } from '@angular/router';
 import {
   MenuChildItem,
@@ -6,6 +6,7 @@ import {
   MenuData,
   MenuModuleItem,
 } from '../interfaces/menu.interface';
+import { PermisosService } from '../services/permisos.service';
 import menuData from './menu.json';
 
 @Component({
@@ -16,9 +17,26 @@ import menuData from './menu.json';
 })
 export class Menu {
   private readonly router = inject(Router);
+  private readonly permisos = inject(PermisosService);
 
   readonly menuConfig: MenuConfig = (menuData as MenuData).menu;
-  readonly modules: MenuModuleItem[] = this.menuConfig.modules;
+
+  readonly modules = computed(() =>
+    this.menuConfig.modules
+      .filter((module) => this.mostrarPorPermiso(module.permissions))
+      .map((module) => ({
+        ...module,
+        children: module.children.filter((child) => this.mostrarPorPermiso(child.permissions)),
+      }))
+      .filter((module) => module.children.length > 0),
+  );
+
+  private mostrarPorPermiso(codigos: string[] | undefined): boolean {
+    if (!codigos?.length) {
+      return true;
+    }
+    return this.permisos.tieneAlguno(codigos);
+  }
 
   isNavigable(path: string): boolean {
     return !path.includes(':');

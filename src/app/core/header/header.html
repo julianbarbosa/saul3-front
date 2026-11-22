@@ -5,14 +5,15 @@
         <app-barra-gov-co></app-barra-gov-co>
 
         <div class="container">
-          <div class="row d-flex justify-content-center">
-            <div class="row d-flex align-items-center">
-              <div class="col-xl-3 col-4 logo-header">
-                <div class="row d-flex align-items-center">
-                  <app-bloque-logo></app-bloque-logo>
-                  <button class="btn btn-primary" (click)="logout()">Cerrar sesión</button>
-                </div>
-              </div>
+          <div class="row align-items-center py-2 g-2">
+            <div class="col-7 col-sm-6 col-md-5 col-xl-3 logo-header">
+              <app-bloque-logo></app-bloque-logo>
+            </div>
+            <div class="col-5 col-sm-6 col-md-7 col-xl-9 d-flex justify-content-end align-items-center">
+              <button type="button" class="btn btn-primary d-inline-flex align-items-center gap-1" (click)="logout()">
+                <i class="bi bi-door-open" aria-hidden="true"></i>
+                Cerrar sesión
+              </button>
             </div>
           </div>
         </div>
