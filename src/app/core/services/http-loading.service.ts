@@ -8,10 +8,10 @@ export class HttpLoadingService {
   readonly visible = computed(() => this.pending() > 0);
 
   begin(): void {
-    this.pending.update((n) => n + 1);
+    queueMicrotask(() => this.pending.update((n) => n + 1));
   }
 
   end(): void {
-    this.pending.update((n) => Math.max(0, n - 1));
+    queueMicrotask(() => this.pending.update((n) => Math.max(0, n - 1)));
   }
 }
