@@ -18,20 +18,6 @@ export const TIPOS_SOLICITUD_PENDIENTES: OpcionFiltro[] = [
   { label: 'Control Posterior', value: 'Control Posterior' },
 ];
 
-/**
- * Tipos de solicitud en «Todas» y «Emitidas» (SAUL: listarVisitaTodo).
- * En SAUL esta lista no es igual a la de pendientes (LIOEP vs. Telecomunicaciones); se deja igual que allá.
- */
-export const TIPOS_SOLICITUD_TODAS: OpcionFiltro[] = [
-  { label: 'Control Preventivo', value: 'Control Preventivo' },
-  {
-    label: 'Visita Infraestructura Telecomunicaciones',
-    value: 'Visita Infraestructura Telecomunicaciones',
-  },
-  { label: 'Visita Control Ornato', value: 'Visita Control Ornato' },
-  { label: 'Control Posterior', value: 'Control Posterior' },
-];
-
 /** Enlace al documento del radicado en Orfeo, igual que en SAUL. */
 export function urlRadicado(
   radicado: string | null | undefined,

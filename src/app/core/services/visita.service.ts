@@ -93,16 +93,6 @@ export class VisitaService {
     return this.listar(consulta, {});
   }
 
-  /** Todas las Visitas (SAUL: listarVisitaTodo). */
-  listarTodas(consulta: VisitaListadoConsulta): Observable<VisitaListadoRespuesta> {
-    return this.listar(consulta, { type: 'all' });
-  }
-
-  /** Visitas Emitidas (SAUL: listarVisitaTodo?emitir). */
-  listarEmitidas(consulta: VisitaListadoConsulta): Observable<VisitaListadoRespuesta> {
-    return this.listar(consulta, { type: 'all', nombreEstado: 'Emitido' });
-  }
-
   /** Visitas Pendientes (GET /api/visita/tarea de saul3). */
   listarTareas(consulta: VisitaListadoConsulta): Observable<VisitaListadoRespuesta> {
     return this.listar(consulta, {});
@@ -140,7 +130,7 @@ export class VisitaService {
    * GET del listado. saul3 espera cada parámetro como JSON `{"name","value"}`
    * (así los manda el $resource de AngularJS); la clave de la query no importa.
    * `fijos` son los filtros propios de cada pantalla y ganan sobre los de la tabla.
-   * Todos los listados usan `/visita/tarea` de saul3; cambian solo los filtros fijos.
+   * Usa `/visita/tarea` de saul3.
    */
   private listar(
     consulta: VisitaListadoConsulta,
