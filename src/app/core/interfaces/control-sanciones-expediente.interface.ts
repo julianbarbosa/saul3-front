@@ -16,15 +16,38 @@ export interface ComparendoExpedienteBusqueda {
   data?: ComparendoResumen;
 }
 
+export interface MedidaCorrectivaComparendoResumen {
+  id?: number;
+  nombre?: string;
+  esEconomica?: boolean;
+  cantidadSmdlv?: number | null;
+  conmutablePorPedagogia?: boolean;
+  actores?: string | null;
+}
+
+export interface ComparendoXMedidaCorrectivaResumen {
+  id: number;
+  idcomparendo: number;
+  idmedidacorrectiva: number;
+  idhechosmedida?: number | null;
+  idatribucion?: number | null;
+  idestadornmc?: number | null;
+  entidadremitido?: string | null;
+  medidaCorrectiva?: MedidaCorrectivaComparendoResumen | null;
+}
+
 export interface ComparendoResumen {
   id: number;
   numeroformato?: string;
   numeroFormato?: string;
   identificacioninfractor?: string;
+  tipoidentificacioninfractor?: string | null;
   expediente?: string;
   fechacomparendo?: FechaLegacy | string;
-  porcentajeIncremento?: number;
+  porcentajeIncremento?: number | null;
   nombreInfractor?: string;
+  comparendoxmedidacorrectiva?: ComparendoXMedidaCorrectivaResumen[];
+  medidasCorrectivas?: ComparendoXMedidaCorrectivaResumen[];
 }
 
 export interface FechaLegacy {
