@@ -1,6 +1,10 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
-import { map, Observable } from 'rxjs';
+import { map, Observable, of } from 'rxjs';
+import {
+  esNumeroExpedienteFormatoCompleto,
+  mensajeFormatoNumeroExpedienteInvalido,
+} from '../../features/control-sanciones/utils/numero-expediente-formato.util';
 import { environment } from '../../../environments/environment';
 import {
   ComparendoExpedienteBusqueda,
@@ -21,10 +25,17 @@ export class ControlSancionesExpedienteService {
   private readonly http = inject(HttpClient);
   private readonly base = environment.SAUL3_API_URL.replace(/\/$/, '');
 
-  /** 2 — por número de comparendo o expediente (p. ej. 76-001-6-2026-212456). */
+  /** 2 — comparendo/expediente: 76-001-6-2026-… o 76-001-1-2-2026-…. */
   buscarComparendo(numeroFormato: string): Observable<ComparendoExpedienteBusqueda> {
+    const numero = numeroFormato.trim();
+    if (!esNumeroExpedienteFormatoCompleto(numero)) {
+      return of({
+        success: false,
+        msg: mensajeFormatoNumeroExpedienteInvalido(),
+      });
+    }
     return this.http.get<ComparendoExpedienteBusqueda>(
-      `${this.base}/control-sanciones/comparendo/get/${encodeURIComponent(numeroFormato)}`,
+      `${this.base}/control-sanciones/comparendo/get/${encodeURIComponent(numero)}`,
     );
   }
 

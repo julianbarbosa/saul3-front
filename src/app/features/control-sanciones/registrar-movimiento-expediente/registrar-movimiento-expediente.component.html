@@ -37,7 +37,7 @@
           class="form-control"
           [(ngModel)]="busqueda.comparendo"
           appMascaraExpediente
-          placeholder="76-001-6-2026-212456"
+          [placeholder]="ejemploNumeroExpediente"
           autocomplete="off"
           inputmode="numeric"
           spellcheck="false"
@@ -190,12 +190,62 @@
         </div>
       }
       @if (expediente) {
-        @if (idPedagogia) {
-        <div class="col-12 alert alert-danger">Se encontró conmutación por pedagogía.</div>
-      }
+        @if (ultimaPedagogia; as ped) {
+          <div class="col-12">
+            <div
+              class="alert mb-0"
+              [class.alert-danger]="idPedagogia || ped.esConmutacion"
+              [class.alert-info]="!idPedagogia && !ped.esConmutacion"
+              role="status"
+            >
+              @if (idPedagogia || ped.esConmutacion) {
+                <p class="mb-2 fw-semibold">Conmutación por pedagogía</p>
+              } @else {
+                <p class="mb-2 fw-semibold">Última pedagogía</p>
+              }
+              <p class="mb-0">
+                <strong>Fecha y hora:</strong>
+                {{ textoCampoComparendo(ped.fecha) }}
+                @if (ped.hora) {
+                  {{ ped.hora }}
+                }<br />
+                <strong>Lugar:</strong>
+                {{ textoCampoComparendo(ped.lugar ?? ped.salonVirtual) }}
+                @if (ped.casaJusticia) {
+                  ({{ ped.casaJusticia }})
+                }<br />
+                <strong>Estado:</strong>
+                {{ textoCampoComparendo(ped.estado?.nombre ?? ped.estado?.codigo) }}
+              </p>
+            </div>
+          </div>
+        } @else if (idPedagogia) {
+          <div class="col-12 alert alert-danger mb-0" role="status">
+            Se encontró conmutación por pedagogía.
+          </div>
+        }
 
       @if (pago) {
-        <div class="col-12 alert alert-danger">Se encontró un pago. {{ pago.msg }}</div>
+        <div class="col-12">
+          <div class="alert alert-danger mb-0" role="status">
+            <p class="mb-2 fw-semibold">Se encontró un pago</p>
+            <p class="mb-0">
+              @if (pago.msg) {
+                <span class="d-block mb-2">{{ pago.msg }}</span>
+              }
+              <strong>Fecha de pago:</strong> {{ fechaPagoTexto(pago.fechapago) }}<br />
+              <strong>Número de recibo:</strong> {{ textoCampoComparendo(pago.numerorecibo) }}<br />
+              @if (pago.valorincremento != null) {
+                <strong>Incremento:</strong> {{ textoMonedaPago(pago.valorincremento) }}<br />
+              }
+              <strong>Valor neto:</strong> {{ textoMonedaPago(pago.valorneto) }}<br />
+              <strong>Número de cuenta:</strong> {{ textoCampoComparendo(pago.numerocuenta) }}
+              @if (pago.comentario) {
+                <br /><strong>Comentario:</strong> {{ textoCampoComparendo(pago.comentario) }}
+              }
+            </p>
+          </div>
+        </div>
       }
 
       @if (
