@@ -1,7 +1,5 @@
-/** Respuesta legacy SAUL2 (a veces `sucess` en lugar de `success`). */
 export interface RespuestaSaul2 {
   success?: boolean;
-  sucess?: boolean;
   msg?: string;
   data?: unknown;
 }

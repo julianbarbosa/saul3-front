@@ -8,6 +8,14 @@
     <div class="alert alert-info" role="status">{{ mensaje }}</div>
   }
 
+  <app-modal-mensaje
+    [visible]="modalMensajeVisible"
+    titulo="Registro de movimiento"
+    [mensaje]="modalMensajeTexto"
+    [variante]="modalMensajeVariante"
+    (cerrar)="cerrarModalMensajeRegistro()"
+  />
+
   @if (cargando) {
     <p class="text-muted mb-2" role="status">Buscando comparendo…</p>
   }
@@ -19,8 +27,17 @@
   @if (!comparendo) {
     <div class="row g-2 align-items-end">
       <div class="col-md-10">
-        <label class="form-label" for="numComparendo">Número comparendo o expediente</label>
-        <input id="numComparendo" class="form-control" [(ngModel)]="busqueda.comparendo" />
+        <label class="form-label" for="numComparendo">Número expediente</label>
+        <input
+          id="numComparendo"
+          class="form-control"
+          [(ngModel)]="busqueda.comparendo"
+          appMascaraExpediente
+          placeholder="76-001-6-2026-212456"
+          autocomplete="off"
+          inputmode="numeric"
+          spellcheck="false"
+        />
       </div>
       <div class="col-md-2">
         <button type="button" class="btn btn-success w-100" (click)="buscar()" [disabled]="cargando">Buscar</button>
@@ -112,11 +129,6 @@
                     <strong>Estado:</strong> {{ estadoNombre }}
                   }
                 </p>
-                @if (expedienteFisico === 0 && urlDescargaExpediente(); as url) {
-                  <a class="btn btn-sm btn-outline-primary mt-2" [href]="url" target="_blank" rel="noopener">
-                    Descargar expediente electrónico
-                  </a>
-                }
               </div>
               <div class="col-md-6">
                 <p class="mb-0">
@@ -140,17 +152,11 @@
       </div>
 
       @if (idPedagogia) {
-        <div class="col-12 alert alert-danger">
-          Se encontró conmutación por pedagogía.
-          <a [href]="api.urlCertificadoPedagogia(idPedagogia)" target="_blank" rel="noopener">Ver comprobante</a>
-        </div>
+        <div class="col-12 alert alert-danger">Se encontró conmutación por pedagogía.</div>
       }
 
       @if (pago) {
-        <div class="col-12 alert alert-danger">
-          Se encontró un pago. {{ pago.msg }}
-          <a [href]="api.urlComprobantePago(comparendo.id)" target="_blank" rel="noopener">Ver comprobante</a>
-        </div>
+        <div class="col-12 alert alert-danger">Se encontró un pago. {{ pago.msg }}</div>
       }
 
       @if (
@@ -311,6 +317,7 @@
         }
         <button type="button" class="btn btn-outline-secondary" (click)="limpiar()">Limpiar</button>
       </div>
+  }
 
       <div class="col-12">
         <div class="card">
@@ -336,6 +343,10 @@
                       <td>{{ item.comentario }}</td>
                       <td>{{ fmt(item.createdAt) }}</td>
                     </tr>
+                  } @empty {
+                    <tr>
+                      <td colspan="5" class="text-muted px-3 py-2">No hay traslados registrados.</td>
+                    </tr>
                   }
                 </tbody>
               </table>
@@ -343,7 +354,6 @@
           </div>
         </div>
       </div>
-  }
     </div>
   }
 </div>

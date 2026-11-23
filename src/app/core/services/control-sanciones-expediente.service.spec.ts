@@ -23,7 +23,7 @@ describe('ControlSancionesExpedienteService', () => {
 
   it('listarExpedientesPorEstado desempaqueta data[] del JSON SAUL3', async () => {
     const filas = firstValueFrom(servicio.listarExpedientesPorEstado('pendiente'));
-    const req = http.expectOne(`${base}/controlsanciones/expediente/get?estado=pendiente`);
+    const req = http.expectOne(`${base}/control-sanciones/expediente/get?estado=pendiente`);
     expect(req.request.method).toBe('GET');
     req.flush({
       success: true,
@@ -38,14 +38,14 @@ describe('ControlSancionesExpedienteService', () => {
   it('listarExpedientesPorEstado incluye inspeccion si se envía', () => {
     servicio.listarExpedientesPorEstado('rechazado', 3).subscribe();
     const req = http.expectOne(
-      `${base}/controlsanciones/expediente/get?estado=rechazado&inspeccion=3`,
+      `${base}/control-sanciones/expediente/get?estado=rechazado&inspeccion=3`,
     );
     req.flush({ success: true, data: [] });
   });
 
   it('listarExpedientesPorEstado devuelve [] si data no es arreglo', async () => {
     const filas = firstValueFrom(servicio.listarExpedientesPorEstado('aprobada'));
-    http.expectOne(`${base}/controlsanciones/expediente/get?estado=aprobada`).flush({
+    http.expectOne(`${base}/control-sanciones/expediente/get?estado=aprobada`).flush({
       success: true,
       data: null,
     });
@@ -54,15 +54,11 @@ describe('ControlSancionesExpedienteService', () => {
 
   it('listarInspecciones devuelve data del envoltorio { success, data }', async () => {
     const filas = firstValueFrom(servicio.listarInspecciones());
-    http.expectOne(`${base}/controlpolicivo/inspector/getall`).flush({
+    http.expectOne(`${base}/control-sanciones/inspector/getall`).flush({
       success: true,
       data: [{ id: 1, nombre: 'Inspección 1' }],
     });
     expect(await filas).toEqual([{ id: 1, nombre: 'Inspección 1' }]);
   });
 
-  it('obtenerPermisosUsuario llama GET /usuario/permisos', () => {
-    servicio.obtenerPermisosUsuario().subscribe();
-    http.expectOne(`${base}/usuario/permisos`).flush({ success: true, id: 1, permisos: [] });
-  });
 });

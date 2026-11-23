@@ -5,6 +5,7 @@ import { RouterLink } from '@angular/router';
 import { ControlSancionesExpedienteService } from '../../../core/services/control-sanciones-expediente.service';
 import { ExpedienteListadoItem, InspeccionItem } from '../../../core/interfaces/control-sanciones-expediente.interface';
 import { PermisosService } from '../../../core/services/permisos.service';
+import { ModalMensajeComponent } from '../../../shared/components/modal-mensaje/modal-mensaje';
 import { esRespuestaExitosaSaul2, fechaDesdeLegacy } from '../utils/fecha-saul2.util';
 
 const ESTADOS_EXPEDIENTE = [
@@ -19,7 +20,7 @@ const ESTADOS_EXPEDIENTE = [
 @Component({
   selector: 'app-registrar-movimiento-expediente-multiple',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink],
+  imports: [CommonModule, FormsModule, RouterLink, ModalMensajeComponent],
   templateUrl: './registrar-movimiento-expediente-multiple.component.html',
   styleUrl: './registrar-movimiento-expediente-multiple.component.css',
 })
@@ -38,6 +39,10 @@ export class RegistrarMovimientoExpedienteMultipleComponent implements OnInit {
   cantidadCheckeado = 0;
   cargando = false;
   mensaje = '';
+  modalMensajeVisible = false;
+  modalMensajeTexto = '';
+  modalMensajeVariante: 'info' | 'exito' | 'error' = 'info';
+  private modalTrasRegistroExitoso = false;
   /** True tras pulsar Buscar (para mensaje sin resultados). */
   busquedaRealizada = false;
 
@@ -125,28 +130,36 @@ export class RegistrarMovimientoExpedienteMultipleComponent implements OnInit {
       .subscribe({
         next: (r) => {
           this.actualizarVista(() => {
-            this.mensaje = r.msg ?? '';
             this.cargando = false;
-            if (esRespuestaExitosaSaul2(r)) {
-              this.limpiar();
-            }
+            const exito = esRespuestaExitosaSaul2(r);
+            this.mostrarModalResultadoRegistro(
+              r.msg ?? (exito ? 'Se registró el movimiento.' : 'No se pudo registrar el movimiento.'),
+              exito,
+            );
           });
         },
         error: () => {
           this.actualizarVista(() => {
-            this.mensaje = 'Error al registrar movimiento.';
             this.cargando = false;
+            this.mostrarModalResultadoRegistro('Error al registrar movimiento.', false);
           });
         },
       });
   }
 
-  generarDocumento(codigo: string): void {
-    const ids = this.idsSeleccionados();
-    if (!ids.length) {
-      return;
+  mostrarModalResultadoRegistro(texto: string, exito: boolean): void {
+    this.modalMensajeTexto = texto;
+    this.modalMensajeVariante = exito ? 'exito' : 'error';
+    this.modalTrasRegistroExitoso = exito;
+    this.modalMensajeVisible = true;
+  }
+
+  cerrarModalMensajeRegistro(): void {
+    this.modalMensajeVisible = false;
+    if (this.modalTrasRegistroExitoso) {
+      this.modalTrasRegistroExitoso = false;
+      this.limpiar();
     }
-    window.open(this.api.urlGenerarDocumento(codigo, ids), '_blank', 'noopener,noreferrer');
   }
 
   limpiar(): void {
@@ -164,7 +177,4 @@ export class RegistrarMovimientoExpedienteMultipleComponent implements OnInit {
     return d ? d.toLocaleString('es-CO') : '';
   }
 
-  abrirUrl(url: string): void {
-    window.open(url, '_blank', 'noopener,noreferrer');
-  }
 }
