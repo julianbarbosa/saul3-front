@@ -1,6 +1,6 @@
 <div class="mb-3">
   <div class="accordion" id="accordionSideMenu">
-    @for (module of modules; track module.id; let first = $first) {
+    @for (module of modules(); track module.id; let first = $first) {
       <div class="accordion-item">
         <h6 class="accordion-header">
           <button

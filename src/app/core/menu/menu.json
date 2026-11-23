@@ -62,6 +62,7 @@
           "label": "Medida Correctiva Pedagogía",
           "path": "pedagogia",
           "loadChildren": "@modules/pedagogia/pedagogia.module#PedagogiaModule",
+          "permissions": ["pedagogia_programar"],
           "children": [
             {
               "id": "pedagogia-tipo",
@@ -85,13 +86,42 @@
               "id": "pedagogia-programar",
               "label": "Programar Pedagogía",
               "path": "programar",
-              "loadComponent": "@modules/pedagogia/pages/programar/programar-pedagogia.component#ProgramarPedagogiaComponent"
+              "loadComponent": "@modules/pedagogia/pages/programar/programar-pedagogia.component#ProgramarPedagogiaComponent",
+              "permissions": ["pedagogia_programar"]
             },
             {
               "id": "pedagogia-calendario",
               "label": "Calendario de Programaciones",
               "path": "calendario",
               "loadComponent": "@modules/pedagogia/pages/calendario/calendario-pedagogia.component#CalendarioPedagogiaComponent"
+            }
+          ]
+        },
+        {
+          "id": "control-sanciones",
+          "label": "Control a Sanciones",
+          "basePath": "/control-sanciones",
+          "path": "",
+          "permissions": [
+            "controlsanciones_ingresar_expediente",
+            "controlsanciones_movimiento_expediente_oficina",
+            "controlsanciones_movimiento_expediente_tesoreria",
+            "controlsanciones_movimiento_expediente_inspeccion",
+            "controlsanciones_cerrar_expediente",
+            "tesoreria_cargar_expediente"
+          ],
+          "children": [
+            {
+              "id": "cs-registrar-movimiento",
+              "label": "Registrar movimiento expediente",
+              "path": "registrar-movimiento",
+              "permissions": [
+                "controlsanciones_ingresar_expediente",
+                "controlsanciones_movimiento_expediente_oficina",
+                "controlsanciones_movimiento_expediente_tesoreria",
+                "controlsanciones_movimiento_expediente_inspeccion",
+                "controlsanciones_cerrar_expediente"
+              ]
             }
           ]
         },
