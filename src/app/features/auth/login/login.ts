@@ -36,7 +36,7 @@ export class Login implements OnInit {
     }
     if (this.auth.isAuthenticated()) {
       queueMicrotask(() => {
-        void this.router.navigate(['/gestion-acceso-justicia/comparendo/descargar']);
+        void this.router.navigate(['/main']);
       });
     }
   }
@@ -62,7 +62,7 @@ export class Login implements OnInit {
         queueMicrotask(() => {
           this.cargando = false;
           if (result.success) {
-            void this.router.navigate(['/gestion-acceso-justicia/comparendo/descargar']);
+            void this.router.navigate(['/main']);
             return;
           }
           this.error = result.message ?? 'Usuario o contraseña incorrectos.';

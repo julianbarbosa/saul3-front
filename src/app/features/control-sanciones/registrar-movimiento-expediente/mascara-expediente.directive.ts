@@ -1,50 +1,40 @@
 import { AfterViewInit, Directive, ElementRef, HostListener, Injector, inject } from '@angular/core';
 import { NgControl } from '@angular/forms';
+import {
+  esDigitoFamiliaExpedientePermitido,
+  formatearNumeroExpediente,
+  PREFIJO_EXPEDIENTE,
+  quitarPrefijoExpedientePegado,
+} from '../utils/numero-expediente-formato.util';
 
-/** Prefijo fijo. El 6 forma parte del inicio y no se vuelve a escribir. */
-export const PREFIJO_EXPEDIENTE = '76-001-6-';
+export {
+  EJEMPLO_NUMERO_EXPEDIENTE,
+  EJEMPLO_NUMERO_EXPEDIENTE_CORTO,
+  EJEMPLO_NUMERO_EXPEDIENTE_LARGO,
+  formatearNumeroExpediente,
+  PREFIJO_EXPEDIENTE,
+  quitarPrefijoExpedientePegado,
+} from '../utils/numero-expediente-formato.util';
 
-const MAX_DIGITOS_CUERPO = 14;
-
-/**
- * Quita un inicio `76-001-6-` repetido (típico al pegar el número completo
- * sobre el prefijo que ya muestra el campo).
- */
-export function quitarPrefijoExpedientePegado(valor: string): string {
-  let texto = (valor ?? '').trim();
-  while (texto.startsWith(PREFIJO_EXPEDIENTE)) {
-    texto = texto.slice(PREFIJO_EXPEDIENTE.length);
-  }
-  return texto;
+function digitosTrasPrefijo(valor: string): string {
+  return quitarPrefijoExpedientePegado(valor).replace(/\D/g, '');
 }
 
-/**
- * Formato `76-001-6-2026-212456`: prefijo fijo, año y consecutivo.
- * El consecutivo admite longitud variable.
- */
-export function formatearNumeroExpediente(valor: string): string {
-  const digitos = quitarPrefijoExpedientePegado(valor).replace(/\D/g, '').slice(0, MAX_DIGITOS_CUERPO);
-
-  if (digitos.length === 0) {
-    return PREFIJO_EXPEDIENTE;
-  }
-
-  if (digitos.length <= 4) {
-    return PREFIJO_EXPEDIENTE + digitos;
-  }
-
-  return PREFIJO_EXPEDIENTE + digitos.slice(0, 4) + '-' + digitos.slice(4);
-}
-
-function posicionTrasDigitos(formateado: string, digitosDeseados: number): number {
-  if (digitosDeseados <= 0) {
+function posicionTrasDigitosCuerpo(formateado: string, digitosCuerpoDeseados: number): number {
+  if (digitosCuerpoDeseados <= 0) {
     return PREFIJO_EXPEDIENTE.length;
   }
-  let vistos = 0;
+  const prefijoDigitos = PREFIJO_EXPEDIENTE.replace(/\D/g, '').length;
+  let vistosCuerpo = 0;
+  let vistosTotal = 0;
   for (let i = 0; i < formateado.length; i++) {
-    if (/\d/.test(formateado[i])) {
-      vistos++;
-      if (vistos === digitosDeseados) {
+    if (!/\d/.test(formateado[i])) {
+      continue;
+    }
+    vistosTotal++;
+    if (vistosTotal > prefijoDigitos) {
+      vistosCuerpo++;
+      if (vistosCuerpo === digitosCuerpoDeseados) {
         return i + 1;
       }
     }
@@ -110,6 +100,18 @@ export class MascaraExpedienteDirective implements AfterViewInit {
       return;
     }
 
+    if (event.key === 'Backspace' && start === end && input.value[start - 1] === '-') {
+      event.preventDefault();
+      this.aplicar(input.value.slice(0, start - 2) + input.value.slice(start), start - 2);
+      return;
+    }
+
+    if (event.key === 'Delete' && start === end && input.value[start] === '-') {
+      event.preventDefault();
+      this.aplicar(input.value.slice(0, start) + input.value.slice(start + 2), start);
+      return;
+    }
+
     if ((event.key === 'Backspace' || event.key === 'Delete') && start < limite) {
       event.preventDefault();
       if (end > limite) {
@@ -127,6 +129,14 @@ export class MascaraExpedienteDirective implements AfterViewInit {
     if (event.key.length === 1 && !/^\d$/.test(event.key)) {
       event.preventDefault();
       return;
+    }
+
+    if (/^\d$/.test(event.key)) {
+      const digitosAntesDelCursor = digitosTrasPrefijo(input.value.slice(0, Math.max(start, limite))).length;
+      if (digitosAntesDelCursor === 0 && !esDigitoFamiliaExpedientePermitido(event.key)) {
+        event.preventDefault();
+        return;
+      }
     }
 
     if (start < limite && /^\d$/.test(event.key)) {
@@ -153,10 +163,10 @@ export class MascaraExpedienteDirective implements AfterViewInit {
   private aplicar(valor: string, cursorOrigen: number | null): void {
     const input = this.el.nativeElement;
     const formateado = formatearNumeroExpediente(valor);
-    const digitosAntes =
+    const digitosCuerpoAntes =
       cursorOrigen == null
         ? Number.POSITIVE_INFINITY
-        : valor.slice(0, cursorOrigen).replace(/\D/g, '').length;
+        : digitosTrasPrefijo(valor.slice(0, cursorOrigen)).length;
 
     const control = this.ngControl?.control;
     if (control && control.value !== formateado) {
@@ -166,10 +176,13 @@ export class MascaraExpedienteDirective implements AfterViewInit {
       input.value = formateado;
     }
 
-    const pos =
+    let pos =
       cursorOrigen == null
         ? formateado.length
-        : Math.max(PREFIJO_EXPEDIENTE.length, posicionTrasDigitos(formateado, digitosAntes));
+        : Math.max(PREFIJO_EXPEDIENTE.length, posicionTrasDigitosCuerpo(formateado, digitosCuerpoAntes));
+    if (pos === formateado.length - 1 && formateado.endsWith('-')) {
+      pos = formateado.length;
+    }
     input.setSelectionRange(pos, pos);
   }
 }
