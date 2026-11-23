@@ -10,7 +10,9 @@ import {
   DatosMovimientoExpediente,
   ExpedienteGestion,
   MovimientoExpediente,
+  PagoComparendoResumen,
   ResponsableExpediente,
+  UltimaPedagogiaComparendo,
 } from '../../../core/interfaces/control-sanciones-expediente.interface';
 import {
   CRITERIOS_VERIFICACION_EXPEDIENTE,
@@ -19,11 +21,14 @@ import {
 import { HasPermissionDirective } from '../../../core/directives/has-permission.directive';
 import { PermisosService } from '../../../core/services/permisos.service';
 import { ModalMensajeComponent } from '../../../shared/components/modal-mensaje/modal-mensaje';
+import { MascaraExpedienteDirective } from './mascara-expediente.directive';
 import {
+  EJEMPLO_NUMERO_EXPEDIENTE,
+  esNumeroExpedienteFormatoCompleto,
   formatearNumeroExpediente,
-  MascaraExpedienteDirective,
+  mensajeFormatoNumeroExpedienteInvalido,
   PREFIJO_EXPEDIENTE,
-} from './mascara-expediente.directive';
+} from '../utils/numero-expediente-formato.util';
 import {
   esRespuestaExitosaSaul2,
   fechaDesdeLegacy,
@@ -44,6 +49,8 @@ export class RegistrarMovimientoExpedienteComponent implements OnInit {
   readonly api = inject(ControlSancionesExpedienteService);
   readonly permisos = inject(PermisosService);
 
+  readonly ejemploNumeroExpediente = EJEMPLO_NUMERO_EXPEDIENTE;
+
   busqueda = { comparendo: PREFIJO_EXPEDIENTE };
   comparendo: ComparendoResumen | null = null;
   expediente: ExpedienteGestion | null = null;
@@ -55,7 +62,8 @@ export class RegistrarMovimientoExpedienteComponent implements OnInit {
   esMultaEspecial = false;
   expedienteFisico = 1;
   idPedagogia: number | null = null;
-  pago: { success?: boolean; msg?: string } | null = null;
+  ultimaPedagogia: UltimaPedagogiaComparendo | null = null;
+  pago: PagoComparendoResumen | null = null;
   cargando = false;
   cargandoDetalle = false;
   registrandoMovimiento = false;
@@ -85,6 +93,11 @@ export class RegistrarMovimientoExpedienteComponent implements OnInit {
     const numero = formatearNumeroExpediente(this.busqueda.comparendo ?? '');
     this.busqueda.comparendo = numero;
     if (numero === PREFIJO_EXPEDIENTE) {
+      this.mensaje = 'Indique el número de expediente completo.';
+      return;
+    }
+    if (!esNumeroExpedienteFormatoCompleto(numero)) {
+      this.mensaje = mensajeFormatoNumeroExpedienteInvalido();
       return;
     }
     this.data = { asignadoa: null };
@@ -160,8 +173,9 @@ export class RegistrarMovimientoExpedienteComponent implements OnInit {
           this.historial = historial ?? [];
           this.pago = pago?.dataPago ?? null;
           this.idPedagogia = pago?.idComparendoXProgramacionPedagogia ?? null;
+          this.ultimaPedagogia = pago?.ultimaPedagogia ?? null;
           this.expedienteFisico = fisico?.expedientefisico ?? 1;
-          this.esMultaEspecial = (comparendoResumen.expediente ?? '').startsWith('76-001-');
+          this.esMultaEspecial = (comparendoResumen.expediente ?? '').startsWith('76-001-1');
           this.mensaje = '';
         });
       },
@@ -215,7 +229,7 @@ export class RegistrarMovimientoExpedienteComponent implements OnInit {
   }
 
   hayPagoExitoso(): boolean {
-    return this.pago?.success === true;
+    return this.pago != null && (this.pago.id != null || this.pago.success === true);
   }
 
   actualizarEstadoRevision(): void {
@@ -307,6 +321,7 @@ export class RegistrarMovimientoExpedienteComponent implements OnInit {
   limpiarDatos(): void {
     this.comparendo = null;
     this.expediente = null;
+    this.ultimaPedagogia = null;
   }
 
   fechaMinComparendo(): string {
@@ -376,6 +391,27 @@ export class RegistrarMovimientoExpedienteComponent implements OnInit {
       this.comparendo?.comparendoxmedidacorrectiva ??
       []
     );
+  }
+
+  textoMonedaPago(val: number | null | undefined): string {
+    if (val == null || !Number.isFinite(val)) {
+      return '—';
+    }
+    return new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(
+      val,
+    );
+  }
+
+  fechaPagoTexto(fechapago: string | null | undefined): string {
+    if (!fechapago?.trim()) {
+      return '—';
+    }
+    const soloFecha = fechapago.trim().slice(0, 10);
+    const partes = soloFecha.split('-');
+    if (partes.length === 3) {
+      return `${partes[2]}/${partes[1]}/${partes[0]}`;
+    }
+    return this.textoCampoComparendo(fechapago);
   }
 
   textoCampoComparendo(val: string | number | null | undefined): string {
