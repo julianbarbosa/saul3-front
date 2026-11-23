@@ -24,6 +24,10 @@
     <p class="text-muted mb-2" role="status">Cargando expediente y datos relacionados…</p>
   }
 
+  @if (registrandoMovimiento) {
+    <p class="text-muted mb-2" role="status">Registrando movimiento…</p>
+  }
+
   @if (!comparendo) {
     <div class="row g-2 align-items-end">
       <div class="col-md-10">
@@ -51,107 +55,142 @@
         <div class="card">
           <div class="card-header">Comparendo</div>
           <div class="card-body">
-            <p class="mb-0">
-              <strong>Número:</strong> {{ comparendo.numeroformato ?? comparendo.numeroFormato }}<br />
-              <strong>Expediente:</strong> {{ comparendo.expediente }}<br />
-              <strong>Identificación:</strong> {{ comparendo.identificacioninfractor }}<br />
-              @if (comparendo.nombreInfractor) {
-                <strong>Infractor:</strong> {{ comparendo.nombreInfractor }}
-              }
-            </p>
+            <div class="row g-3">
+              <div class="col-md-6">
+                <p class="mb-0">
+                  <strong>Id:</strong> {{ comparendo.id }}<br />
+                  <strong>Número formato:</strong>
+                  {{ textoCampoComparendo(comparendo.numeroformato ?? comparendo.numeroFormato) }}<br />
+                  <strong>Expediente:</strong> {{ textoCampoComparendo(comparendo.expediente) }}<br />
+                  <strong>Fecha comparendo:</strong>
+                  {{ fechaHoraComparendo(comparendo.fechacomparendo) || '—' }}<br />
+                  <strong>Porcentaje incremento:</strong> {{ textoIncrementoComparendo() }}
+                </p>
+              </div>
+              <div class="col-md-6">
+                <p class="mb-0">
+                  <strong>Tipo identificación:</strong>
+                  {{ textoCampoComparendo(comparendo.tipoidentificacioninfractor) }}<br />
+                  <strong>Identificación infractor:</strong>
+                  {{ textoCampoComparendo(comparendo.identificacioninfractor) }}<br />
+                  <strong>Nombre infractor:</strong> {{ textoCampoComparendo(comparendo.nombreInfractor) }}
+                </p>
+              </div>
+            </div>
+            @if (medidasCorrectivasComparendo().length > 0) {
+              <hr class="my-3" />
+              <h2 class="h6 mb-2">Medidas correctivas</h2>
+              <div class="table-responsive">
+                <table class="table table-sm table-bordered mb-0">
+                  <thead>
+                    <tr>
+                      <th>Entidad remitido</th>
+                      <th>Nombre medida</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    @for (item of medidasCorrectivasComparendo(); track item.id) {
+                      <tr>
+                        <td>{{ textoCampoComparendo(item.entidadremitido) }}</td>
+                        <td>{{ item.medidaCorrectiva?.nombre ?? '—' }}</td>
+                      </tr>
+                    }
+                  </tbody>
+                </table>
+              </div>
+            }
           </div>
         </div>
       </div>
-
-      @if (
-        permisos.tiene('controlsanciones_ingresar_expediente') &&
-        (!expediente ||
-          codigoEstadoExpediente() === 'cerrado' ||
-          codigoEstadoExpediente() === 'devuelto' ||
-          !codigoEstadoExpediente())
-      ) {
+      @if (expediente) {
         <div class="col-12">
           <div class="card">
-            <div class="card-header">Ingreso de expediente físico</div>
+            <div class="card-header">Expediente en Control Sanciones</div>
             <div class="card-body">
-              <div class="row g-2">
-                <div class="col-md-5">
-                  <label class="form-label" for="asignadoa">Asignar a</label>
-                  <select id="asignadoa" class="form-select" [(ngModel)]="data.asignadoa">
-                    <option [ngValue]="null">Seleccione…</option>
-                    @for (r of responsables; track r.id) {
-                      <option [ngValue]="r.id">{{ r.nombre }}</option>
+              <div class="row g-3">
+                <div class="col-md-6">
+                  <p class="mb-0">
+                    @if (expediente.id != null) {
+                      <strong>Id:</strong> {{ expediente.id }}<br />
                     }
-                  </select>
-                  @if (responsables.length === 0 && !cargandoDetalle) {
-                    <span class="form-text text-muted">No hay responsables disponibles.</span>
-                  }
-                  @if (expediente?.estado?.nombre) {
-                    <p class="mt-2 mb-0"><strong>Estado:</strong> {{ expediente?.estado?.nombre }}</p>
-                  }
+                    @if (nombreResponsableExpediente(); as responsable) {
+                      <strong>Responsable:</strong> {{ responsable }}<br />
+                    }
+                    @if (expediente.estado?.nombre; as estadoNombre) {
+                      <strong>Estado:</strong> {{ estadoNombre }}
+                    }
+                  </p>
+                </div>
+                <div class="col-md-6">
+                  <p class="mb-0">
+                    @if (textoCampoExpediente(expediente.numeroDecision); as numeroDecision) {
+                      <strong>Número decisión:</strong> {{ numeroDecision }}<br />
+                    }
+                    @if (textoCampoExpediente(expediente.numeroFolios); as folios) {
+                      <strong>Folios:</strong> {{ folios }}<br />
+                    }
+                    @if (fechaExpedienteTexto(expediente.fechaDecision); as fechaDecision) {
+                      <strong>Fecha decisión:</strong> {{ fechaDecision }}<br />
+                    }
+                    @if (fechaExpedienteTexto(expediente.fechaEjecutoria); as fechaEjecutoria) {
+                      <strong>Fecha ejecutoria:</strong> {{ fechaEjecutoria }}
+                    }
+                  </p>
                 </div>
               </div>
             </div>
           </div>
         </div>
-        @if (permisos.tiene('controlsanciones_ingresar_expediente') && !expediente) {
-          <div class="col-12 d-flex flex-wrap gap-2 justify-content-end">
-            <button
-              type="button"
-              class="btn btn-primary"
-              [disabled]="!data.asignadoa"
-              (click)="registrarMovimiento('pendiente')"
-            >
-              Ingresar
-            </button>
-            <button type="button" class="btn btn-outline-secondary" (click)="limpiar()">Limpiar</button>
-          </div>
-        }
       }
-  @if (expediente) {
-
-      
-
+      @if (permisos.tiene('controlsanciones_ingresar_expediente') && (!expediente || codigoEstadoExpediente() === 'cerrado' || codigoEstadoExpediente() === 'devuelto')) {
       <div class="col-12">
         <div class="card">
-          <div class="card-header">Expediente en Control Sanciones</div>
+          <div class="card-header">Ingreso de expediente físico</div>
           <div class="card-body">
-            <div class="row g-3">
-              <div class="col-md-6">
-                <p class="mb-0">
-                  @if (expediente.id != null) {
-                    <strong>Id:</strong> {{ expediente.id }}<br />
+            <div class="row g-2">
+              <div class="col-md-5">
+                @if (permisos.tiene('controlsanciones_ingresar_expediente')) {
+                  @if (cargandoDetalle) {
+                    <span class="text-muted">Cargando responsables…</span>
+                  } @else {
+                    <label class="form-label" for="asignadoa">Asignar a</label>
+                    <select
+                      id="asignadoa"
+                      class="form-select"
+                      [(ngModel)]="data.asignadoa"
+                      [compareWith]="compararValorNumerico"
+                    >
+                      <option [ngValue]="null">Seleccione…</option>
+                      @for (r of responsables; track r.id) {
+                        <option [ngValue]="r.id">{{ r.nombre }}</option>
+                      }
+                    </select>
+                    @if (responsables.length === 0) {
+                      <span class="form-text text-muted">No hay responsables disponibles.</span>
+                    }
                   }
-                  @if (nombreResponsableExpediente(); as responsable) {
-                    <strong>Responsable:</strong> {{ responsable }}<br />
-                  }
-                  @if (expediente.estado?.nombre; as estadoNombre) {
-                    <strong>Estado:</strong> {{ estadoNombre }}
-                  }
-                </p>
-              </div>
-              <div class="col-md-6">
-                <p class="mb-0">
-                  @if (textoCampoExpediente(expediente.numeroDecision); as numeroDecision) {
-                    <strong>Número decisión:</strong> {{ numeroDecision }}<br />
-                  }
-                  @if (textoCampoExpediente(expediente.numeroFolios); as folios) {
-                    <strong>Folios:</strong> {{ folios }}<br />
-                  }
-                  @if (fechaExpedienteTexto(expediente.fechaDecision); as fechaDecision) {
-                    <strong>Fecha decisión:</strong> {{ fechaDecision }}<br />
-                  }
-                  @if (fechaExpedienteTexto(expediente.fechaEjecutoria); as fechaEjecutoria) {
-                    <strong>Fecha ejecutoria:</strong> {{ fechaEjecutoria }}
-                  }
-                </p>
+                }
+                
               </div>
             </div>
           </div>
         </div>
       </div>
-
-      @if (idPedagogia) {
+     
+        <div class="col-12 d-flex flex-wrap gap-2 justify-content-end">
+          <button
+            type="button"
+            class="btn btn-primary"
+            [disabled]="!data.asignadoa"
+            (click)="registrarMovimiento('pendiente')"
+          >
+            Ingresar
+          </button>
+       
+        </div>
+      }
+      @if (expediente) {
+        @if (idPedagogia) {
         <div class="col-12 alert alert-danger">Se encontró conmutación por pedagogía.</div>
       }
 
@@ -234,10 +273,10 @@
                 </div>
                 <div class="col-md-6">
                   <label class="form-label">Porcentaje incremento *</label>
-                  <select class="form-select" [(ngModel)]="data.incremento">
-                    <option value="0">0%</option>
-                    <option value="50">50%</option>
-                    <option value="75">75%</option>
+                  <select class="form-select" [(ngModel)]="data.incremento" [compareWith]="compararValorNumerico">
+                    <option [ngValue]="0">0%</option>
+                    <option [ngValue]="50">50%</option>
+                    <option [ngValue]="75">75%</option>
                   </select>
                 </div>
                 <div class="col-md-6">
@@ -281,9 +320,9 @@
         ) {
           <button type="button" class="btn btn-primary" [disabled]="!data.asignadoa" (click)="registrarMovimiento('pendiente')">Ingresar</button>
         }
-        @if (permisos.tiene('controlsanciones_ingresar_expediente') && codigoEstadoExpediente() === 'devuelto') {
+        <!-- @if (permisos.tiene('controlsanciones_ingresar_expediente') && codigoEstadoExpediente() === 'devuelto') {
           <button type="button" class="btn btn-primary" (click)="registrarMovimiento('pendiente')">Reingresar</button>
-        }
+        } -->
         @if (permisos.tiene('controlsanciones_movimiento_expediente_tesoreria') && codigoEstadoExpediente() === 'aprobada') {
           <button type="button" class="btn btn-primary" (click)="registrarMovimiento('enviadotesoreria')">Enviar a tesorería</button>
         }
