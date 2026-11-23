@@ -8,6 +8,14 @@
     <div class="alert alert-info">{{ mensaje }}</div>
   }
 
+  <app-modal-mensaje
+    [visible]="modalMensajeVisible"
+    titulo="Registro de movimiento"
+    [mensaje]="modalMensajeTexto"
+    [variante]="modalMensajeVariante"
+    (cerrar)="cerrarModalMensajeRegistro()"
+  />
+
   <div class="row g-2 align-items-end mb-3">
     <div class="col-md-5">
       <label class="form-label" for="estado">Estado</label>
@@ -69,7 +77,11 @@
                 <td>{{ fmt(item.updatedAt) }}</td>
                 <td>
                   @if (busqueda.estado === 'pendiente') {
-                    <a [routerLink]="['/control-sanciones/registrar-movimiento', item.id]" title="Gestionar">
+                    <a
+                      [routerLink]="['/control-sanciones/registrar-movimiento']"
+                      [queryParams]="{ comparendo: item.formato }"
+                      title="Gestionar"
+                    >
                       <i class="bi bi-check-circle"></i>
                     </a>
                   } @else {
@@ -88,57 +100,15 @@
     <div class="d-flex flex-wrap gap-2 justify-content-end">
       @if (permisos.tiene('controlsanciones_movimiento_expediente_tesoreria') && busqueda.estado === 'aprobada') {
         <button type="button" class="btn btn-primary" (click)="registrarMovimiento('enviadotesoreria')">Enviar a tesorería</button>
-        <button type="button" class="btn btn-info" (click)="generarDocumento('informeSecretarial')">Informe secretarial</button>
-        <button type="button" class="btn btn-info" (click)="abrirUrl(api.urlGenerarBase())">Base</button>
-        <button type="button" class="btn btn-info" (click)="abrirUrl(api.urlGenerarFuid('aprobada', 0))">FUID</button>
       }
       @if (permisos.tiene('controlsanciones_movimiento_expediente_inspeccion') && busqueda.estado === 'rechazado') {
         <button type="button" class="btn btn-primary" (click)="registrarMovimiento('devuelto')">Devolver a inspección</button>
-        @if (busqueda.inspeccion != null) {
-          <button
-            type="button"
-            class="btn btn-info"
-            (click)="abrirUrl(api.urlGenerarDevolucion(busqueda.inspeccion!))"
-          >
-            Oficio devolución
-          </button>
-          <button
-            type="button"
-            class="btn btn-info"
-            (click)="abrirUrl(api.urlGenerarFuid('rechazado', busqueda.inspeccion!))"
-          >
-            FUID devolución
-          </button>
-        }
       }
       @if (permisos.tiene('tesoreria_cargar_expediente') && busqueda.estado === 'devueltoportesoreria') {
         <button type="button" class="btn btn-primary" (click)="registrarMovimiento('cerrado')">Devolver a control sanciones</button>
-        <button
-          type="button"
-          class="btn btn-info"
-          (click)="abrirUrl(api.urlGenerarDevolucionCsv('devueltoportesoreria', 0))"
-        >
-          Oficio devolución
-        </button>
       }
       @if (permisos.tiene('controlsanciones_cerrar_expediente') && busqueda.estado === 'enviadotesoreria') {
         <button type="button" class="btn btn-primary" (click)="registrarMovimiento('cerrado')">Envío custodia</button>
-      }
-      @if (permisos.tiene('controlsanciones_movimiento_expediente_oficina') && busqueda.estado === 'cerrarporpago' && busqueda.inspeccion != null) {
-        <button
-          type="button"
-          class="btn btn-info"
-          (click)="abrirUrl(api.urlGenerarFuid('cerrarporpago', busqueda.inspeccion!))"
-        >
-          FUID cerrado por pago
-        </button>
-        <button
-          type="button"
-          class="btn btn-info"
-          (click)="abrirUrl(api.urlGenerarEnvioCerradoPorPago(busqueda.inspeccion!))"
-        >
-          Informe envío cerrado por pago
-        </button>
       }
       <button type="button" class="btn btn-outline-secondary" (click)="limpiar()">Limpiar</button>
     </div>

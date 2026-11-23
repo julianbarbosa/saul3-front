@@ -22,8 +22,8 @@ export function fechaInputDesdeLegacy(val: FechaLegacy | string | undefined | nu
   return `${y}-${m}-${day}`;
 }
 
-export function esRespuestaExitosaSaul2(r: { success?: boolean; sucess?: boolean }): boolean {
-  return r.success === true || r.sucess === true;
+export function esRespuestaExitosaSaul2(r: { success?: boolean }): boolean {
+  return r.success === true;
 }
 
 /** Mapa rápido para `*tienePermiso('codigo')` en plantillas. */

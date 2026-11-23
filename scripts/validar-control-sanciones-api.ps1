@@ -59,11 +59,11 @@ Write-Host "Login OK - usuario id $($login.data.id)" -ForegroundColor Green
 $permisos = Invoke-Saul3Get -Path '/usuario/permisos' -Token $token
 Write-Host "Permisos: $($permisos.permisos.Count) codigo(s)"
 
-$inspecciones = Invoke-Saul3Get -Path '/controlpolicivo/inspector/getall' -Token $token
+$inspecciones = Invoke-Saul3Get -Path '/control-sanciones/inspector/getall' -Token $token
 $countIns = @($inspecciones.data).Count
 Write-Host "Inspecciones: $countIns registro(s)"
 
-$listado = Invoke-Saul3Get -Path "/controlsanciones/expediente/get?estado=$([uri]::EscapeDataString($Estado))" -Token $token
+$listado = Invoke-Saul3Get -Path "/control-sanciones/expediente/get?estado=$([uri]::EscapeDataString($Estado))" -Token $token
 $filas = @($listado.data)
 Write-Host "Expedientes (estado=$Estado): $($filas.Count) fila(s)"
 if ($filas.Count -gt 0) {
@@ -71,7 +71,7 @@ if ($filas.Count -gt 0) {
     Write-Host "Ejemplo primera fila: $muestra"
 }
 
-$responsables = Invoke-Saul3Get -Path '/controlsanciones/responsables' -Token $token
+$responsables = Invoke-Saul3Get -Path '/control-sanciones/responsables' -Token $token
 $countResp = @($responsables).Count
 if ($responsables -is [System.Array]) {
     Write-Host "Responsables: $countResp"

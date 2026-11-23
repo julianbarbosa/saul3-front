@@ -1,0 +1,30 @@
+@if (visible) {
+  <div
+    class="modal d-block app-modal-mensaje"
+    tabindex="-1"
+    role="dialog"
+    aria-modal="true"
+    [attr.aria-labelledby]="'modal-mensaje-titulo'"
+  >
+    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+      <div class="modal-content shadow">
+        <div class="modal-header border-0 pb-0" [ngClass]="claseEncabezado()">
+          <h5 class="modal-title" id="modal-mensaje-titulo">{{ titulo }}</h5>
+          <button
+            type="button"
+            class="btn-close btn-close-white"
+            aria-label="Cerrar"
+            (click)="solicitarCierre()"
+          ></button>
+        </div>
+        <div class="modal-body">
+          <p class="mb-0">{{ mensaje }}</p>
+        </div>
+        <div class="modal-footer border-0 pt-0">
+          <button type="button" class="btn btn-primary" (click)="solicitarCierre()">Aceptar</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="modal-backdrop fade show" aria-hidden="true" (click)="solicitarCierre()"></div>
+}
