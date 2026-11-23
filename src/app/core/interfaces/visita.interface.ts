@@ -54,7 +54,7 @@ export interface VisitaEncabezado {
   radicadoInspeccion: string | null;
 }
 
-/** Respuesta cruda del API SAUL2 (formato legacy). */
+/** Respuesta cruda de saul3 `/visita/generar/{id}` (conserva el formato legacy de saul2). */
 export interface ItemVisitaCampoRaw {
   idItemVisita: number;
   nombre: string;

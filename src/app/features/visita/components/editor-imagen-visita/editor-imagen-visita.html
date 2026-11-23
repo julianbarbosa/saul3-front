@@ -1,0 +1,94 @@
+<section class="editor-imagen-visita" aria-label="Editor de imagen">
+  <p class="editor-imagen-visita__descripcion">
+    Agregue texto, formas o flechas sobre la imagen. Al guardar se crea una imagen nueva; la original
+    se conserva.
+  </p>
+
+  <div class="editor-imagen-visita__panel">
+    <div class="editor-imagen-visita__fila">
+      <span class="editor-imagen-visita__rotulo" id="editor-herramientas">Herramientas</span>
+      <div class="editor-imagen-visita__herramientas" role="group" aria-labelledby="editor-herramientas">
+        <button type="button" class="editor-imagen-visita__herramienta" title="Agregar texto" [disabled]="cargando()" (click)="agregarTexto()">
+          <i class="bi bi-fonts" aria-hidden="true"></i><span class="visually-hidden">Agregar texto</span>
+        </button>
+        <button type="button" class="editor-imagen-visita__herramienta" title="Agregar rectángulo" [disabled]="cargando()" (click)="agregarRectangulo()">
+          <i class="bi bi-square" aria-hidden="true"></i><span class="visually-hidden">Agregar rectángulo</span>
+        </button>
+        <button type="button" class="editor-imagen-visita__herramienta" title="Agregar círculo" [disabled]="cargando()" (click)="agregarCirculo()">
+          <i class="bi bi-circle" aria-hidden="true"></i><span class="visually-hidden">Agregar círculo</span>
+        </button>
+        <button type="button" class="editor-imagen-visita__herramienta" title="Agregar línea" [disabled]="cargando()" (click)="agregarLinea()">
+          <i class="bi bi-dash-lg" aria-hidden="true"></i><span class="visually-hidden">Agregar línea</span>
+        </button>
+        <button type="button" class="editor-imagen-visita__herramienta" title="Agregar flecha" [disabled]="cargando()" (click)="agregarFlecha()">
+          <i class="bi bi-arrow-right" aria-hidden="true"></i><span class="visually-hidden">Agregar flecha</span>
+        </button>
+        <button type="button" class="editor-imagen-visita__herramienta" title="Rotar 90°" [disabled]="cargando()" (click)="rotar90()">
+          <i class="bi bi-arrow-clockwise" aria-hidden="true"></i><span class="visually-hidden">Rotar 90 grados</span>
+        </button>
+        <button
+          type="button"
+          class="editor-imagen-visita__herramienta editor-imagen-visita__herramienta--peligro"
+          title="Eliminar selección (Supr)"
+          [disabled]="cargando()"
+          (click)="eliminarSeleccion()"
+        >
+          <i class="bi bi-trash" aria-hidden="true"></i><span class="visually-hidden">Eliminar selección</span>
+        </button>
+      </div>
+    </div>
+
+    <div class="editor-imagen-visita__fila">
+      <span class="editor-imagen-visita__rotulo" id="editor-color">Color</span>
+      <div class="editor-imagen-visita__colores" role="group" aria-labelledby="editor-color">
+        @for (opcion of paleta; track opcion.valor) {
+          <button
+            type="button"
+            class="editor-imagen-visita__color"
+            [class.editor-imagen-visita__color--activo]="color() === opcion.valor"
+            [style.background-color]="opcion.valor"
+            [title]="opcion.nombre"
+            [attr.aria-pressed]="color() === opcion.valor"
+            [disabled]="cargando()"
+            (click)="seleccionarColor(opcion.valor)"
+          >
+            <span class="visually-hidden">{{ opcion.nombre }}</span>
+          </button>
+        }
+        <label
+          class="editor-imagen-visita__otro-color"
+          [class.editor-imagen-visita__otro-color--activo]="colorPersonalizado()"
+          title="Elegir otro color"
+        >
+          <input
+            type="color"
+            [value]="color()"
+            [disabled]="cargando()"
+            aria-label="Elegir otro color"
+            (input)="alElegirColorPersonalizado($event)"
+          />
+          <span>Otro</span>
+        </label>
+      </div>
+    </div>
+  </div>
+
+  @if (error(); as mensaje) {
+    <p class="editor-imagen-visita__error" role="alert">{{ mensaje }}</p>
+  }
+
+  <!-- El canvas debe existir siempre en el DOM: fabric se monta sobre él. -->
+  <div #contenedor class="editor-imagen-visita__lienzo" [attr.aria-busy]="cargando()">
+    <canvas #lienzo></canvas>
+  </div>
+
+  <div class="editor-imagen-visita__acciones">
+    <app-button
+      label="Guardar edición"
+      [relleno]="true"
+      [disabled]="cargando() || !hayCambios()"
+      (clicked)="guardarEdicion()"
+    />
+    <app-button label="Cancelar" [disabled]="cargando()" (clicked)="cancelar()" />
+  </div>
+</section>
