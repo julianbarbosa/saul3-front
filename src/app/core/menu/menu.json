@@ -122,18 +122,6 @@
                 "controlsanciones_movimiento_expediente_inspeccion",
                 "controlsanciones_cerrar_expediente"
               ]
-            },
-            {
-              "id": "cs-registrar-movimiento-multiple",
-              "label": "Movimiento múltiple expediente",
-              "path": "registrar-movimiento-multiple",
-              "permissions": [
-                "controlsanciones_movimiento_expediente_tesoreria",
-                "controlsanciones_movimiento_expediente_inspeccion",
-                "controlsanciones_cerrar_expediente",
-                "controlsanciones_movimiento_expediente_oficina",
-                "tesoreria_cargar_expediente"
-              ]
             }
           ]
         },

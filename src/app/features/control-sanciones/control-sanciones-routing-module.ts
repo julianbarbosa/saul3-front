@@ -10,17 +10,13 @@ const routes: Routes = [
     title: 'Registrar movimiento expediente',
   },
   {
-    path: 'registrar-movimiento/:id',
-    component: RegistrarMovimientoExpedienteComponent,
-    title: 'Registrar movimiento expediente',
-  },
-  {
     path: 'registrar-movimiento-multiple',
     component: RegistrarMovimientoExpedienteMultipleComponent,
     title: 'Movimiento múltiple expediente',
   },
   { path: 'registrarmovimiento', pathMatch: 'full', redirectTo: 'registrar-movimiento' },
-  { path: 'registrarmovimiento/:id', redirectTo: 'registrar-movimiento/:id' },
+  { path: 'registrarmovimiento/:id', redirectTo: 'registrar-movimiento' },
+  { path: 'registrar-movimiento/:id', redirectTo: 'registrar-movimiento' },
   { path: 'registrarmovimientomultiple', pathMatch: 'full', redirectTo: 'registrar-movimiento-multiple' },
   { path: '', pathMatch: 'full', redirectTo: 'registrar-movimiento-multiple' },
 ];
