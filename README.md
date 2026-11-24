@@ -31,7 +31,7 @@ flowchart TB
 
   subgraph features [Features - lazy loading]
     Comparendo[ComparendoModule]
-    Descargar[Descargar]
+    Sincronizar[Sincronizar]
     Futuro[Otros módulos...]
   end
 
@@ -54,10 +54,10 @@ flowchart TB
   Layout --> Footer
   Menu --> MenuJson
   Outlet --> Comparendo
-  Comparendo --> Descargar
-  Descargar --> Button
-  Descargar --> Select
-  Descargar --> InputText
+  Comparendo --> Sincronizar
+  Sincronizar --> Button
+  Sincronizar --> Select
+  Sincronizar --> InputText
   Menu --> Services
 ```
 
@@ -90,7 +90,7 @@ Módulos previstos en `menu.json`:
 
 | Módulo | Ruta base | Estado |
 |---|---|---|
-| Comparendos Ley 1801 | `/gestion-acceso-justicia/comparendo` | Implementado (descargar) |
+| Comparendos Ley 1801 | `/gestion-acceso-justicia/comparendo` | Implementado (sincronizar) |
 | Medida Correctiva Multa | `/gestion-acceso-justicia/medida-multa` | Pendiente |
 | Medida Correctiva Pedagogía | `/gestion-acceso-justicia/pedagogia` | Pendiente |
 
@@ -112,8 +112,8 @@ Configuración por ambiente (`TYSA_API_URL`, etc.).
       ├── router-outlet  ← contenido dinámico
       └── Footer
 
-/gestion-acceso-justicia/comparendo/descargar  →  Descargar (lazy)
-/gestion-acceso-justicia/comparendo             →  redirect a descargar
+/gestion-acceso-justicia/comparendo/sincronizar  →  Sincronizar (lazy)
+/gestion-acceso-justicia/comparendo             →  redirect a sincronizar
 ```
 
 - **`app.routes.ts`** — Ruta raíz con `Layout` y lazy loading de features.

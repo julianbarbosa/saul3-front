@@ -35,7 +35,7 @@ export const routes: Routes = [
       },
       {
         path: '',
-        redirectTo: 'comparendo/descargar',
+        redirectTo: 'comparendo/sincronizar',
         pathMatch: 'full',
       },
     ],

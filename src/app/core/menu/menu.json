@@ -11,9 +11,9 @@
           "loadChildren": "@modules/comparendo/comparendo.module#ComparendoModule",
           "children": [
             {
-              "id": "descargar-registrar",
-              "label": "Descargar del RNMC",
-              "path": "descargar",
+              "id": "sincronizar-rnmc",
+              "label": "Sincronizar RNMC",
+              "path": "sincronizar",
               "loadComponent": "@modules/comparendo/pages/registrar/registrar-comparendo.component#RegistrarComparendoComponent"
             },
             {
