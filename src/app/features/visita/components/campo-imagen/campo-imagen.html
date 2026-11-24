@@ -1,0 +1,53 @@
+<div class="form-group gestion-imagen">
+  <label [for]="'campo-' + campo.id" [class.gestion-imagen__etiqueta--oculta]="ocultarEtiqueta">
+    {{ etiqueta }}
+  </label>
+  <div class="form-control gestion-archivo">
+    <span class="gestion-archivo__nombre">{{ nombre }}</span>
+    @if (editable) {
+      <!-- capture="environment": en celular abre la cámara trasera. Oculto en escritorio. -->
+      <label class="gestion-archivo__boton gestion-archivo__boton--camara">
+        <input
+          class="gestion-archivo__input"
+          [id]="'campo-' + campo.id + '-camara'"
+          type="file"
+          [accept]="accept"
+          capture="environment"
+          [attr.aria-label]="'Tomar foto para ' + etiqueta"
+          (change)="archivoChange.emit($event)"
+          (blur)="blurred.emit()"
+        />
+        Tomar foto
+      </label>
+      <label class="gestion-archivo__boton">
+        <input
+          class="gestion-archivo__input"
+          [id]="'campo-' + campo.id"
+          type="file"
+          [accept]="accept"
+          (change)="archivoChange.emit($event)"
+          (blur)="blurred.emit()"
+        />
+        Seleccionar
+      </label>
+    }
+  </div>
+  @if (vistaPrevia) {
+    <img class="gestion-imagen__vista" [src]="vistaPrevia" [alt]="'Vista previa de ' + nombre" />
+    <app-button label="Quitar selección" (clicked)="quitar.emit()" />
+  }
+  @if (urlGuardada) {
+    @if (!noDisponible) {
+      <img
+        class="gestion-imagen__vista"
+        [src]="urlGuardada"
+        [alt]="etiqueta"
+        (error)="noDisponibleChange.emit()"
+      />
+    } @else {
+      <p class="gestion-imagen__aviso">
+        No se pudo mostrar la imagen guardada. La referencia se conserva.
+      </p>
+    }
+  }
+</div>

@@ -2,6 +2,7 @@ import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
+import { HTTP_SKIP_LOADING } from '../interceptors/http-loading.interceptor';
 import { ResponseI } from '../interfaces/response.interface';
 
 export interface ProgramacionPedagogia {
@@ -52,8 +53,12 @@ export class PedagogiaService {
   private http = inject(HttpClient);
 
   getProgramacionPedagogia(numeroComparendo: string, identificacion: string): Observable<ResponseI> {
+    const numero = encodeURIComponent(numeroComparendo.trim());
+    const doc = encodeURIComponent(identificacion.trim());
+    // Spinner propio en lista-pedagogia; evita CD cruzado con el overlay global (NG0100).
     return this.http.get<ResponseI>(
-      `${environment.SAUL3_API_URL}/comparendo/programacionpedagogia/${numeroComparendo}/${identificacion}`,
+      `${environment.SAUL3_API_URL}/comparendo/programacionpedagogia/${numero}/${doc}`,
+      { headers: { [HTTP_SKIP_LOADING]: '1' } },
     );
   }
 

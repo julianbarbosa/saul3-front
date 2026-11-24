@@ -8,4 +8,8 @@ export class BusquedaStateService {
   objecionId: number | null = null;
   fechaObjecion: string | null = null;
   expediente: string | null = null;
+  /** true cuando el ciudadano entró por /codigopolicia (sin sesión SAUL). */
+  accesoPublicoCodigoPolicia = false;
+  /** Última lista de comparendos consultada (restaura al volver desde detalle). */
+  comparendosConsulta: Record<string, unknown>[] | null = null;
 }

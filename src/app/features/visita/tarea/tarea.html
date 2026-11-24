@@ -1,0 +1,79 @@
+<h1 class="titulo-listado">{{ titulo }}</h1>
+
+@if (error()) {
+  <div class="alert alert-danger" role="alert">{{ error() }}</div>
+}
+
+<p class="leyenda-alertas">
+  <span class="leyenda-alertas__marca leyenda-alertas__marca--alta" aria-hidden="true"></span>
+  Más de 20 días desde la asignación
+  <span class="leyenda-alertas__marca leyenda-alertas__marca--media" aria-hidden="true"></span>
+  Más de 15 días
+</p>
+
+<div class="contenedor-tabla" [class.cargando]="cargando()" [attr.aria-busy]="cargando()">
+  <app-table
+    [columns]="columnas()"
+    [data]="filas()"
+    [total]="total()"
+    [page]="page"
+    [pageSize]="pageSize"
+    rowIdField="idvisita"
+    [pageSizeOptions]="tamanosPagina"
+    [sortBy]="orderBy"
+    [sortDir]="orderDir"
+    [rowClass]="claseFila"
+    (sortChange)="onSortChange($event)"
+    textoRegistros="visitas"
+    (filtersChange)="onFiltersChange($event)"
+  />
+</div>
+
+<ng-template #celdaAcciones let-fila>
+  <button
+    type="button"
+    [class]="estilos.claseBoton({ pequeno: true }) + ' btn-acciones'"
+    (click)="abrirAcciones(fila)"
+    [attr.aria-label]="'Acciones de la visita ' + fila.idvisita"
+  >
+    Acciones
+    <svg width="14" height="14" viewBox="0 0 16 16" aria-hidden="true" focusable="false">
+      <path
+        d="M3 6l5 5 5-5"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+        stroke-linecap="round"
+      />
+    </svg>
+  </button>
+</ng-template>
+
+<ng-template #celdaRadicado let-fila>
+  <!-- Un solo bloque: en tarjetas, la respuesta queda junto a su radicado. -->
+  <div>
+    @if (urlRadicado(fila.radicado, fila.identificacionDocumento); as url) {
+      <a class="radicado" [href]="url" target="_blank" rel="noopener">{{ fila.radicado }}</a>
+    }
+    @if (urlRadicado(fila.radicadoInspeccion, fila.numIdentificacionRevisor); as urlRpta) {
+      <small class="radicado-respuesta"
+        >Rpta:
+        <a class="radicado" [href]="urlRpta" target="_blank" rel="noopener">{{
+          fila.radicadoInspeccion
+        }}</a></small
+      >
+    }
+  </div>
+</ng-template>
+
+<ng-template #celdaEstado let-fila>
+  @if (fila.nombreEstado) {
+    <span [class]="estilos.claseEstado(fila.nombreEstado)">{{ fila.nombreEstado }}</span>
+  }
+</ng-template>
+
+<app-acciones-visita
+  [visita]="visitaSeleccionada()"
+  (cerrar)="visitaSeleccionada.set(null)"
+  (actualizado)="cargar()"
+/>

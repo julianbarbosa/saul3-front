@@ -56,6 +56,7 @@ export interface Comparendo {
 
 export interface ComparendoDetalle {
   expediente: string;
+  numeroFormato?: string;
   comparendo: number;
   fechaProntoPago: string;
   totalPagar: number;

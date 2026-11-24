@@ -19,6 +19,8 @@ export class Login implements OnInit {
 
   cargando = false;
   error = '';
+  /** Aviso al volver por cierre de sesión (inactividad / expiración). */
+  mensajeAviso = '';
 
   loginForm = this.formBuilder.group({
     usuario: ['', [Validators.required]],
@@ -26,8 +28,16 @@ export class Login implements OnInit {
   });
 
   ngOnInit(): void {
+    const aviso = this.auth.consumirMensajeCierreSesion();
+    if (aviso) {
+      queueMicrotask(() => {
+        this.mensajeAviso = aviso;
+      });
+    }
     if (this.auth.isAuthenticated()) {
-      void this.router.navigate(['/gestion-acceso-justicia/comparendo/descargar']);
+      queueMicrotask(() => {
+        void this.router.navigate(['/main']);
+      });
     }
   }
 
@@ -45,17 +55,24 @@ export class Login implements OnInit {
     const { usuario, contrasena } = this.loginForm.getRawValue();
     this.cargando = true;
     this.error = '';
+    this.mensajeAviso = '';
 
     this.auth.login(usuario!, contrasena!).subscribe({
       next: (result) => {
-        this.cargando = false;
-        if (!result.success) {
+        queueMicrotask(() => {
+          this.cargando = false;
+          if (result.success) {
+            void this.router.navigate(['/main']);
+            return;
+          }
           this.error = result.message ?? 'Usuario o contraseña incorrectos.';
-        }
+        });
       },
       error: () => {
-        this.cargando = false;
-        this.error = 'No fue posible iniciar sesión. Intente nuevamente.';
+        queueMicrotask(() => {
+          this.cargando = false;
+          this.error = 'No fue posible iniciar sesión. Intente nuevamente.';
+        });
       },
     });
   }

@@ -185,7 +185,7 @@ Abrir `http://localhost:4200/`.
 npm run build
 ```
 
-Artefactos en `dist/gestion-front/`.
+Artefactos en `dist/saul3-front/browser/`.
 
 ### Scaffolding
 

@@ -30,3 +30,58 @@
     width: 77%;
   }
 }
+
+.contenido-principal {
+  min-height: 70vh;
+  min-width: 0;
+}
+
+/*
+ * Pantallas medianas (768px a 1079px): es lo que pasa también al hacer zoom en el
+ * computador (ej. 150% en 1366px ≈ 910px). Se mantiene el menú al lado y el margen.
+ */
+@media (min-width: 768px) and (max-width: 1079.98px) {
+  .custom-row-padding {
+    padding-left: 1%;
+    padding-right: 1%;
+  }
+
+  .custom-col-md-2 {
+    flex: 0 0 auto;
+    width: 28%;
+  }
+
+  .custom-col-md-10 {
+    flex: 0 0 auto;
+    padding-left: 1%;
+    width: 72%;
+  }
+}
+
+/* Celular (< 768px): menú plegable encima del contenido, con margen a los lados. */
+@media (max-width: 767.98px) {
+  .custom-row-padding {
+    padding-left: 0.5rem;
+    padding-right: 0.5rem;
+  }
+
+  .custom-col-md-2,
+  .custom-col-md-10 {
+    width: 100%;
+  }
+
+  .menu-lateral {
+    display: none;
+  }
+
+  .menu-lateral--abierto {
+    display: block;
+  }
+}
+
+/* Desde 768px el menú siempre está visible y no hace falta el botón. */
+@media (min-width: 768px) {
+  .boton-menu {
+    display: none;
+  }
+}

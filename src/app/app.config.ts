@@ -1,5 +1,9 @@
-import { ApplicationConfig, importProvidersFrom, provideBrowserGlobalErrorListeners } from '@angular/core';
-import { provideHttpClient } from '@angular/common/http';
+import { ApplicationConfig, importProvidersFrom, provideAppInitializer, provideBrowserGlobalErrorListeners } from '@angular/core';
+import { provideHttpClient, withInterceptors } from '@angular/common/http';
+import { authTokenInterceptor } from './core/interceptors/auth-token.interceptor';
+import { httpLoadingInterceptor } from './core/interceptors/http-loading.interceptor';
+import { permisosRefreshInterceptor } from './core/interceptors/permisos-refresh.interceptor';
+import { initPermisosAlArranque } from './core/initializers/permisos.initializer';
 import { provideRouter } from '@angular/router';
 
 import { routes } from './app.routes';
@@ -8,7 +12,10 @@ import { SharedModule } from './shared/shared-module';
 export const appConfig: ApplicationConfig = {
   providers: [
     provideBrowserGlobalErrorListeners(),
-    provideHttpClient(),
+    provideAppInitializer(initPermisosAlArranque),
+    provideHttpClient(
+      withInterceptors([authTokenInterceptor, permisosRefreshInterceptor, httpLoadingInterceptor]),
+    ),
     provideRouter(routes),
     importProvidersFrom(SharedModule),
   ],

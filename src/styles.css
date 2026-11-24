@@ -1,2 +1,28 @@
 /* Estilos globales del proyecto (sobreescriben mintic.css si es necesario) */
-/* mintic.css se carga globalmente desde index.html → public/assets/css/mintic.css */
+/* mintic.css se incluye en angular.json (public/assets/css/mintic.css) */
+h1 {
+  font-size: 1.5rem;
+}
+h2 {
+  font-size: 1.25rem;
+}
+h3 {
+  font-size: 1rem;
+}
+
+/* Encabezado de cards: azul claro (Bootstrap primary subtle) */
+.card > .card-header {
+  background-color: var(--bs-primary-bg-subtle, #cfe2ff);
+  color: var(--bs-primary-text-emphasis, #052c65);
+  border-bottom: 1px solid var(--bs-primary-border-subtle, #9ec5fe);
+}
+
+/* Variantes que definen su propio fondo no se sobrescriben */
+.card > .card-header.bg-white,
+.card > .card-header[class*='modal-header-'],
+.card > .card-header.confirm-header,
+.card > .card-header.exito-header {
+  background-color: unset;
+  color: unset;
+  border-bottom: unset;
+}

@@ -71,6 +71,12 @@
   font-size: 0.9375rem;
 }
 
+.login-card__alert--info {
+  border-color: #9ec5fe;
+  background-color: #cfe2ff;
+  color: #052c65;
+}
+
 .login-card__actions {
   margin-top: 0.5rem;
 }

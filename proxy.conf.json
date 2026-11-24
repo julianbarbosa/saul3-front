@@ -7,5 +7,11 @@
     "pathRewrite": {
       "^/saul3-api": "/saul3/index.php/api"
     }
+  },
+  "/saul2": {
+    "target": "http://127.0.0.1",
+    "secure": false,
+    "changeOrigin": true,
+    "logLevel": "debug"
   }
 }

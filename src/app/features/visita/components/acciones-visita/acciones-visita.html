@@ -1,0 +1,131 @@
+@if (visita; as v) {
+  <div
+    class="modal d-block"
+    tabindex="-1"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="titulo-acciones-visita"
+  >
+    <div
+      class="modal-dialog modal-dialog-centered modal-dialog-scrollable modal-fullscreen-sm-down"
+    >
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="titulo-acciones-visita">
+            Acciones visita No. {{ v.idvisita }}
+          </h5>
+          <button
+            type="button"
+            class="btn-close"
+            aria-label="Cerrar"
+            (click)="cerrar.emit()"
+          ></button>
+        </div>
+        <div class="modal-body">
+          @if (v.direccion) {
+            <p class="mb-1"><strong>Dirección:</strong> {{ v.direccion }}</p>
+          }
+          @if (v.nombreEstado) {
+            <p class="mb-3"><strong>Estado:</strong> {{ v.nombreEstado }}</p>
+          }
+
+          @if (mensaje(); as m) {
+            <div
+              class="alert py-2"
+              [class.alert-success]="m.tipo === 'success'"
+              [class.alert-danger]="m.tipo === 'danger'"
+            >
+              {{ m.texto }}
+            </div>
+          }
+
+          <div class="list-group">
+            @if (v.ruta) {
+              <button
+                type="button"
+                class="list-group-item list-group-item-action"
+                (click)="gestionar()"
+              >
+                Gestionar visita
+              </button>
+            }
+            <button
+              type="button"
+              class="list-group-item list-group-item-action"
+              (click)="verHistorial()"
+            >
+              Ver historial <small class="text-muted">(abre SAUL)</small>
+            </button>
+            <button
+              type="button"
+              class="list-group-item list-group-item-action"
+              (click)="observar()"
+            >
+              Observaciones <small class="text-muted">(abre SAUL)</small>
+            </button>
+
+            @if (puedeEditarRadicado) {
+              <button
+                type="button"
+                class="list-group-item list-group-item-action"
+                (click)="editandoRadicado.set(!editandoRadicado())"
+              >
+                Editar número de radicado
+              </button>
+              @if (editandoRadicado()) {
+                <div class="list-group-item">
+                  <label class="form-label" for="nuevo-radicado">Nuevo radicado</label>
+                  <div class="d-flex gap-2">
+                    <input id="nuevo-radicado" class="form-control" [(ngModel)]="nuevoRadicado" />
+                    <button
+                      type="button"
+                      class="btn ssj-boton ssj-boton--relleno"
+                      [disabled]="procesando()"
+                      (click)="guardarRadicado()"
+                    >
+                      Guardar
+                    </button>
+                  </div>
+                </div>
+              }
+            }
+            @if (puedeAnularAsignacion) {
+              <button
+                type="button"
+                class="list-group-item list-group-item-action"
+                [disabled]="procesando()"
+                (click)="anularAsignacion()"
+              >
+                Anular asignación
+              </button>
+            }
+            @if (puedePasarControlPosterior) {
+              <button
+                type="button"
+                class="list-group-item list-group-item-action"
+                [disabled]="procesando()"
+                (click)="pasarControlPosterior()"
+              >
+                Pasar a control posterior
+              </button>
+            }
+            @if (puedeAnularVisita) {
+              <button
+                type="button"
+                class="list-group-item list-group-item-action text-danger"
+                [disabled]="procesando()"
+                (click)="anularVisita()"
+              >
+                Anular visita
+              </button>
+            }
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn ssj-boton" (click)="cerrar.emit()">Cerrar</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="modal-backdrop show"></div>
+}

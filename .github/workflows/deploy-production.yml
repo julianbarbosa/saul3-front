@@ -1,6 +1,6 @@
-# Despliegue del front de gestión (npm package: gestion-front, app Angular: gestion-front).
-# DEPLOY_ROOT debe ser el directorio del clon en el runner; cámbialo si en el servidor usas otra ruta (p. ej. /var/www/prd/gestion-front).
-name: Deploy gestion-front Production
+# Despliegue del front (npm package y proyecto Angular: saul3-front → dist/saul3-front/browser/).
+# DEPLOY_ROOT debe ser el directorio del clon en el runner.
+name: Deploy saul3-front Production
 
 on:
   push:
@@ -9,16 +9,16 @@ on:
   workflow_dispatch:
 
 concurrency:
-  group: gestion-front-production
+  group: saul3-front-production
   cancel-in-progress: false
 
 jobs:
   deploy:
-    name: Deploy to gestion-front production
+    name: Deploy to saul3-front production
     runs-on: self-hosted
     timeout-minutes: 30
     env:
-      DEPLOY_ROOT: /var/www/prd/tramites-front
+      DEPLOY_ROOT: /var/www/prd/saul3-front
 
     steps:
       - name: Verify server
@@ -48,5 +48,5 @@ jobs:
       - name: Verify deployment
         working-directory: ${{ env.DEPLOY_ROOT }}
         run: |
-          test -f dist/gestion-front/browser/index.html
+          test -f dist/saul3-front/browser/index.html
           git status -sb

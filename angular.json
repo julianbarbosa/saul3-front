@@ -7,7 +7,7 @@
   },
   "newProjectRoot": "projects",
   "projects": {
-    "gestion-front": {
+    "saul3-front": {
       "projectType": "application",
       "schematics": {},
       "root": "",
@@ -31,6 +31,7 @@
               }
             ],
             "styles": [
+              "public/assets/css/mintic.css",
               "node_modules/bootstrap/dist/css/bootstrap.min.css",
               "node_modules/bootstrap-icons/font/bootstrap-icons.css",
               "node_modules/@arcgis/core/assets/esri/themes/light/main.css",
@@ -50,8 +51,8 @@
               "budgets": [
                 {
                   "type": "initial",
-                  "maximumWarning": "600kB",
-                  "maximumError": "1MB"
+                  "maximumWarning": "1.5mb",
+                  "maximumError": "2mb"
                 },
                 {
                   "type": "anyComponentStyle",
@@ -71,8 +72,29 @@
               "budgets": [
                 {
                   "type": "initial",
-                  "maximumWarning": "600kB",
-                  "maximumError": "1MB"
+                  "maximumWarning": "1.5mb",
+                  "maximumError": "2mb"
+                },
+                {
+                  "type": "anyComponentStyle",
+                  "maximumWarning": "12kB",
+                  "maximumError": "16kB"
+                }
+              ],
+              "outputHashing": "all"
+            },
+            "quality": {
+              "fileReplacements": [
+                {
+                  "replace": "src/environments/environment.ts",
+                  "with": "src/environments/environment.qa.ts"
+                }
+              ],
+              "budgets": [
+                {
+                  "type": "initial",
+                  "maximumWarning": "1.5mb",
+                  "maximumError": "2mb"
                 },
                 {
                   "type": "anyComponentStyle",
@@ -97,10 +119,10 @@
           },
           "configurations": {
             "production": {
-              "buildTarget": "gestion-front:build:production"
+              "buildTarget": "saul3-front:build:production"
             },
             "development": {
-              "buildTarget": "gestion-front:build:development"
+              "buildTarget": "saul3-front:build:development"
             }
           },
           "defaultConfiguration": "development"
