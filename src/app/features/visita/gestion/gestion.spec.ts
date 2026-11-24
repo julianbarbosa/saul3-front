@@ -54,6 +54,7 @@ const visitaApi = {
     return of({ success: false, msg: 'no guardada' });
   },
   urlDocumento: (nombre: string) => `http://saul.local/upload/documentos/${nombre}`,
+  descargarDocumento: () => of(new Blob(['img'], { type: 'image/png' })),
 };
 
 describe('Gestion', () => {
