@@ -98,10 +98,15 @@
       [urlGuardada]="urlImagenGuardada(campo)"
       [noDisponible]="imagenNoDisponible(campo.codigo)"
       [bloqueado]="modoObservacion"
+      [imagenEdicion]="imagenEdicion(campo.codigo)"
+      [preparandoEdicion]="preparandoEdicion() === campo.codigo"
       (archivoChange)="onArchivoSeleccionado(campo, $event)"
       (blurred)="saveItem(campo)"
       (quitar)="limpiarSeleccion(campo)"
       (noDisponibleChange)="marcarImagenNoDisponible(campo.codigo)"
+      (editar)="editarImagen(campo)"
+      (edicionGuardada)="onImagenEditada(campo, $event)"
+      (edicionCancelada)="cerrarEditor()"
     />
   } @else if (esTextoLargo(campo)) {
     <app-textarea
