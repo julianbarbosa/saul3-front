@@ -207,6 +207,9 @@ export class Gestion implements OnInit, OnDestroy {
     { campo: VisitaCampo; etiqueta: string; ocultarEtiqueta: boolean }
   >();
   private readonly imagenesNoDisponibles = new Set<string>();
+    /** Imágenes guardadas descargadas con token (nombre → URL blob:). */
+  private readonly imagenesGuardadas = signal(new Map<string, string | null>());
+  private readonly descargandoImagenes = new Set<string>();
   private readonly extensionesImagen = ['png', 'jpeg', 'jpg'];
 
   get visualizacionSeleccionada(): string {
@@ -261,6 +264,7 @@ export class Gestion implements OnInit, OnDestroy {
     sessionStorage.removeItem(ID_VISITA_GESTION_SESION);
     this.cerrarEditor();
     this.liberarSelecciones();
+    this.liberarImagenesGuardadas();
   }
 
   /** Id recibido al navegar (state) o al recargar (sessionStorage del mismo tab). */
@@ -281,6 +285,7 @@ export class Gestion implements OnInit, OnDestroy {
     this.categoriasValidadas.set(new Set());
     this.cerrarEditor();
     this.liberarSelecciones();
+    this.liberarImagenesGuardadas();
     this.imagenesNoDisponibles.clear();
     this.idVisita = idVisita;
     this.visitaDetalle.set(null);
@@ -811,7 +816,54 @@ export class Gestion implements OnInit, OnDestroy {
 
   urlImagenGuardada(campo: VisitaCampo): string | null {
     const nombre = this.referenciaGuardada(campo);
-    return nombre ? this.visitaService.urlDocumento(nombre) : null;
+    if (!nombre) {
+      return null;
+    }
+    const descargadas = this.imagenesGuardadas();
+    if (descargadas.has(nombre)) {
+      return descargadas.get(nombre) ?? null;
+    }
+    this.descargarImagenGuardada(campo.codigo, nombre);
+    return null;
+  }
+
+  private descargarImagenGuardada(codigo: string, nombre: string): void {
+    if (this.descargandoImagenes.has(nombre)) {
+      return;
+    }
+    const descarga = this.visitaService.descargarDocumento(nombre);
+    if (!descarga) {
+      return;
+    }
+    this.descargandoImagenes.add(nombre);
+    // Fuera del pintado actual para no escribir el signal en medio de él (NG0100).
+    queueMicrotask(() => descarga.subscribe({
+      next: (blob) => {
+        if (!this.descargandoImagenes.delete(nombre)) {
+          return;
+        }
+        const url = URL.createObjectURL(blob);
+        this.imagenesGuardadas.update((mapa) => new Map(mapa).set(nombre, url));
+      },
+      error: () => {
+        if (!this.descargandoImagenes.delete(nombre)) {
+          return;
+        }
+        this.marcarImagenNoDisponible(codigo);
+        const ruta = this.visitaService.urlDocumento(nombre);
+        this.imagenesGuardadas.update((mapa) => new Map(mapa).set(nombre, ruta));
+      },
+    }));
+  }
+
+  private liberarImagenesGuardadas(): void {
+    for (const url of this.imagenesGuardadas().values()) {
+      if (url) {
+        URL.revokeObjectURL(url);
+      }
+    }
+    this.imagenesGuardadas.set(new Map());
+    this.descargandoImagenes.clear();
   }
 
   imagenNoDisponible(codigo: string): boolean {
