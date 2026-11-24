@@ -19,23 +19,15 @@ import { EstilosVisitaService } from './estilos-visita.service';
 import { serializarValorVisita } from './visita-limpia.service';
 
 /**
-<<<<<<< HEAD
- * El guardado automático (al salir de cada campo) no muestra el overlay global de carga:
- * cubría toda la pantalla, parecía un refresco y se tragaba el clic al siguiente campo.
- */
-const SIN_OVERLAY = { [HTTP_SKIP_LOADING]: '1' };
-=======
  * El formulario de la visita guarda cada campo al salir de él (autoguardado).
  * Esas peticiones no muestran el overlay global de carga: el usuario sigue llenando
  * el formulario sin bloqueos. Los errores se siguen mostrando en el aviso de la pantalla.
  */
 const SIN_OVERLAY = { [HTTP_SKIP_LOADING]: '1' } as const;
->>>>>>> dccda3e07160097253f810fec698358f063dcab4
 
 export interface VisitaGuardadoRespuesta {
   success: boolean;
   msg?: string;
-  value?: string;
 }
 
 @Injectable({
