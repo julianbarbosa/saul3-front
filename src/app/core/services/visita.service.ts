@@ -28,7 +28,6 @@ const SIN_OVERLAY = { [HTTP_SKIP_LOADING]: '1' } as const;
 export interface VisitaGuardadoRespuesta {
   success: boolean;
   msg?: string;
-  value?: string;
 }
 
 @Injectable({
@@ -104,6 +103,14 @@ export class VisitaService {
       cuerpoImagenVisita(idVisita, campo, archivo),
       { headers: SIN_OVERLAY },
     );
+  }
+
+  /**
+   * GET `/visita/informe/{idVisita}`: PDF del formulario de la visita (plantilla Word en saul3).
+   * Llega como Blob; si saul3 responde error, el cuerpo también es Blob con `{ success, msg }`.
+   */
+  generarInforme(idVisita: number): Observable<Blob> {
+    return this.http.get(`${this.baseUrl}/visita/informe/${idVisita}`, { responseType: 'blob' });
   }
 
   /* ---------- Listados (Control a Construcciones) ---------- */
