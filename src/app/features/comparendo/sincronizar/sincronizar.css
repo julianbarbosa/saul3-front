@@ -1,32 +1,32 @@
-.descargar-page {
+.sincronizar-page {
   padding: 1.5rem 0 2rem;
 }
 
-.descargar-header {
+.sincronizar-header {
   margin-bottom: 2rem;
 }
 
-.descargar-title {
+.sincronizar-title {
   margin-bottom: 0.75rem;
   color: #004884;
   font-weight: 600;
 }
 
-.descargar-description {
+.sincronizar-description {
   margin: 0;
   max-width: 42rem;
   line-height: 1.6;
   color: #4b4b4b;
 }
 
-.descargar-form {
+.sincronizar-form {
   display: flex;
   flex-direction: column;
   gap: 1.25rem;
   max-width: 32rem;
 }
 
-.descargar-actions {
+.sincronizar-actions {
   margin-top: 0.5rem;
   padding-top: 0.25rem;
 }
