@@ -12,7 +12,7 @@ import {
   urlRadicado,
 } from './listado-visita';
 
-/** Lee los parámetros `{name, value}` tal como los recibe saul2. */
+/** Lee los parámetros `{name, value}` tal como los recibe saul3 (mismo contrato que tenía saul2). */
 function parametrosEnviados(params: {
   keys(): string[];
   get(k: string): string | null;
@@ -28,7 +28,8 @@ function parametrosEnviados(params: {
 describe('Listado de visitas', () => {
   let servicio: VisitaService;
   let http: HttpTestingController;
-  const url = `${environment.SAUL2_API_URL}/visita`;
+  /** Visitas Pendientes: GET /visita/tarea de saul3. */
+  const url = `${environment.SAUL3_API_URL}/visita/tarea`;
 
   beforeEach(() => {
     TestBed.configureTestingModule({

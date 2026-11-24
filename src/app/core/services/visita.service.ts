@@ -3,6 +3,7 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
+import { HTTP_SKIP_LOADING } from '../interceptors/http-loading.interceptor';
 import {
   PersonaSaulRaw,
   VisitaAccionRespuesta,
@@ -16,6 +17,13 @@ import {
 } from '../interfaces/visita.interface';
 import { EstilosVisitaService } from './estilos-visita.service';
 import { serializarValorVisita } from './visita-limpia.service';
+
+/**
+ * El formulario de la visita guarda cada campo al salir de él (autoguardado).
+ * Esas peticiones no muestran el overlay global de carga: el usuario sigue llenando
+ * el formulario sin bloqueos. Los errores se siguen mostrando en el aviso de la pantalla.
+ */
+const SIN_OVERLAY = { [HTTP_SKIP_LOADING]: '1' } as const;
 
 export interface VisitaGuardadoRespuesta {
   success: boolean;
@@ -58,6 +66,17 @@ export class VisitaService {
     return `${this.baseUrl}/visita/documento/${encodeURIComponent(archivo)}`;
   }
 
+  /**
+   * Descarga una imagen guardada como Blob (para editarla en el lienzo).
+   * Va por HttpClient y no por `<img>`: así pasa por los interceptores y el lienzo no queda
+   * bloqueado por CORS al exportar.
+   */
+  descargarDocumento(nombre: string): Observable<Blob> | null {
+    const url = this.urlDocumento(nombre);
+    // Sin overlay: el botón «Editar imagen» ya muestra «Cargando imagen…».
+    return url ? this.http.get(url, { responseType: 'blob', headers: SIN_OVERLAY }) : null;
+  }
+
   /** POST `/visita` de SAUL: un campo por petición, con su `codigo` y `tipoItem`. 1. */
   guardarCampo(
     idVisita: number,
@@ -71,7 +90,7 @@ export class VisitaService {
       .set('data[0][valor]', serializarValorVisita(valor));
 
     return this.http.post<VisitaGuardadoRespuesta>(`${this.baseUrl}/visita`, body.toString(), {
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded', ...SIN_OVERLAY },
     });
   }
 
@@ -83,6 +102,7 @@ export class VisitaService {
     return this.http.post<VisitaGuardadoRespuesta>(
       `${this.baseUrl}/visita`,
       cuerpoImagenVisita(idVisita, campo, archivo),
+      { headers: SIN_OVERLAY },
     );
   }
 
