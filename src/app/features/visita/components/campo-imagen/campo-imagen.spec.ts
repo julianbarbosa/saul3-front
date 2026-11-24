@@ -57,6 +57,35 @@ describe('CampoImagen', () => {
     expect(eventos.length).toBe(2);
   });
 
+  it('sin imagen no ofrece editar', () => {
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.textContent).not.toContain('Editar imagen');
+  });
+
+  it('con imagen guardada ofrece editar y emite el evento', () => {
+    fixture.componentRef.setInput('urlGuardada', 'http://localhost/api/visita/documento/a.jpg');
+    fixture.detectChanges();
+    let veces = 0;
+    component.editar.subscribe(() => veces++);
+
+    const boton = Array.from<HTMLButtonElement>(fixture.nativeElement.querySelectorAll('button')).find(
+      (b) => b.textContent?.includes('Editar imagen'),
+    );
+    boton?.click();
+
+    expect(boton).toBeTruthy();
+    expect(veces).toBe(1);
+  });
+
+  it('en modo observación no ofrece editar', () => {
+    fixture.componentRef.setInput('urlGuardada', 'http://localhost/api/visita/documento/a.jpg');
+    fixture.componentRef.setInput('bloqueado', true);
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.textContent).not.toContain('Editar imagen');
+  });
+
   it('en modo observación no muestra ningún botón para cambiar la imagen', () => {
     fixture.componentRef.setInput('bloqueado', true);
     fixture.detectChanges();
