@@ -4,7 +4,7 @@
   </label>
   <div class="form-control gestion-archivo">
     <span class="gestion-archivo__nombre">{{ nombre }}</span>
-    @if (editable) {
+    @if (editable && !editando) {
       <!-- capture="environment": en celular abre la cámara trasera. Oculto en escritorio. -->
       <label class="gestion-archivo__boton gestion-archivo__boton--camara">
         <input
@@ -32,22 +32,39 @@
       </label>
     }
   </div>
-  @if (vistaPrevia) {
-    <img class="gestion-imagen__vista" [src]="vistaPrevia" [alt]="'Vista previa de ' + nombre" />
-    <app-button label="Quitar selección" (clicked)="quitar.emit()" />
-  }
-  @if (urlGuardada) {
-    @if (!noDisponible) {
-      <img
-        class="gestion-imagen__vista"
-        [src]="urlGuardada"
-        [alt]="etiqueta"
-        (error)="noDisponibleChange.emit()"
+  @if (imagenEdicion) {
+    <!-- Mientras se edita, el editor reemplaza la vista previa. -->
+    <app-editor-imagen-visita
+      [imagen]="imagenEdicion"
+      [nombreBase]="nombre"
+      (guardado)="edicionGuardada.emit($event)"
+      (cancelado)="edicionCancelada.emit()"
+    />
+  } @else {
+    @if (vistaPrevia) {
+      <img class="gestion-imagen__vista" [src]="vistaPrevia" [alt]="'Vista previa de ' + nombre" />
+      <app-button label="Quitar selección" (clicked)="quitar.emit()" />
+    }
+    @if (urlGuardada) {
+      @if (!noDisponible) {
+        <img
+          class="gestion-imagen__vista"
+          [src]="urlGuardada"
+          [alt]="etiqueta"
+          (error)="noDisponibleChange.emit()"
+        />
+      } @else {
+        <p class="gestion-imagen__aviso">
+          No se pudo mostrar la imagen guardada. La referencia se conserva.
+        </p>
+      }
+    }
+    @if (puedeEditar) {
+      <app-button
+        [label]="preparandoEdicion ? 'Cargando imagen…' : 'Editar imagen'"
+        [disabled]="preparandoEdicion"
+        (clicked)="editar.emit()"
       />
-    } @else {
-      <p class="gestion-imagen__aviso">
-        No se pudo mostrar la imagen guardada. La referencia se conserva.
-      </p>
     }
   }
 </div>

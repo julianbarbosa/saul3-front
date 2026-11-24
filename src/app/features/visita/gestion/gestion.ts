@@ -259,6 +259,7 @@ export class Gestion implements OnInit, OnDestroy {
 
   ngOnDestroy(): void {
     sessionStorage.removeItem(ID_VISITA_GESTION_SESION);
+    this.cerrarEditor();
     this.liberarSelecciones();
   }
 
@@ -278,6 +279,7 @@ export class Gestion implements OnInit, OnDestroy {
     this.pasoActual.set(0);
     this.pasosHechos.set(new Set());
     this.categoriasValidadas.set(new Set());
+    this.cerrarEditor();
     this.liberarSelecciones();
     this.imagenesNoDisponibles.clear();
     this.idVisita = idVisita;
@@ -825,7 +827,73 @@ export class Gestion implements OnInit, OnDestroy {
     const input = event.target as HTMLInputElement;
     const archivo = input.files?.[0];
     input.value = '';
-    if (!archivo || this.soloLectura(campo) || this.idVisita === null) {
+    if (archivo) {
+      await this.procesarArchivo(campo, archivo);
+    }
+  }
+
+  /* ---------- Edición de imágenes (editor-imagen-visita) ---------- */
+
+  /** Código del campo que se está editando y la imagen cargada en el editor. */
+  readonly edicion = signal<{ codigo: string; imagen: Blob } | null>(null);
+  /** Código del campo cuya imagen guardada se está descargando para editar. */
+  readonly preparandoEdicion = signal<string | null>(null);
+
+  imagenEdicion(codigo: string): Blob | null {
+    const edicion = this.edicion();
+    return edicion?.codigo === codigo ? edicion.imagen : null;
+  }
+
+  /**
+   * Abre el editor con la imagen del campo: la recién seleccionada o, si no hay,
+   * la guardada (se descarga como Blob). La original nunca se modifica.
+   */
+  async editarImagen(campo: VisitaCampo): Promise<void> {
+    if (this.soloLectura(campo) || this.idVisita === null || this.preparandoEdicion() !== null) {
+      return;
+    }
+
+    const pendiente = this.archivoPendiente(campo.codigo);
+    if (pendiente) {
+      this.edicion.set({ codigo: campo.codigo, imagen: pendiente });
+      return;
+    }
+
+    const descarga = this.visitaService.descargarDocumento(this.referenciaGuardada(campo) ?? '');
+    if (!descarga) {
+      return;
+    }
+    const idVisita = this.idVisita;
+    this.preparandoEdicion.set(campo.codigo);
+    try {
+      const imagen = await firstValueFrom(descarga);
+      if (this.idVisita === idVisita) {
+        this.mensajeError.set('');
+        this.edicion.set({ codigo: campo.codigo, imagen });
+      }
+    } catch {
+      this.mensajeError.set('No se pudo cargar la imagen guardada para editarla.');
+    } finally {
+      this.preparandoEdicion.set(null);
+    }
+  }
+
+  /**
+   * La imagen editada entra como una foto nueva del campo: misma validación y mismo guardado.
+   * saul3 la registra en visitaxdocumento sin borrar la original; el campo queda con la editada.
+   */
+  async onImagenEditada(campo: VisitaCampo, archivo: File): Promise<void> {
+    this.cerrarEditor();
+    await this.procesarArchivo(campo, archivo);
+  }
+
+  cerrarEditor(): void {
+    this.edicion.set(null);
+  }
+
+  /** Valida la imagen, la deja como pendiente (vista previa) y la guarda en saul3. */
+  private async procesarArchivo(campo: VisitaCampo, archivo: File): Promise<void> {
+    if (this.soloLectura(campo) || this.idVisita === null) {
       return;
     }
 

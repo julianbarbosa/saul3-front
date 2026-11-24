@@ -166,4 +166,64 @@ describe('aEncabezadoVisita', () => {
     expect(encabezado.radicadoRespuesta).toBeNull();
     expect(encabezado.radicadoInspeccion).toBe('0');
   });
+  describe('autoguardado sin overlay de carga', () => {
+    let servicio: VisitaService;
+    let http: HttpTestingController;
+    const base = environment.SAUL3_API_URL;
+
+    beforeEach(() => {
+      TestBed.configureTestingModule({
+        providers: [provideHttpClient(), provideHttpClientTesting()],
+      });
+      servicio = TestBed.inject(VisitaService);
+      http = TestBed.inject(HttpTestingController);
+    });
+
+    afterEach(() => http.verify());
+
+    const campo: VisitaCampo = {
+      id: 1,
+      codigo: 'v15_corregimiento',
+      nombre: 'corregimiento',
+      tipo: 'texto',
+      label: 'Corregimiento',
+      dominio: null,
+      opciones: null,
+      descripcion: null,
+      soloLectura: false,
+      valor: 'NA',
+    };
+
+    it('guardarCampo pide omitir el overlay global', () => {
+      servicio.guardarCampo(10, campo).subscribe();
+
+      const peticion = http.expectOne(`${base}/visita`);
+      expect(peticion.request.headers.has(HTTP_SKIP_LOADING)).toBe(true);
+      expect(peticion.request.headers.get('Content-Type')).toBe('application/x-www-form-urlencoded');
+      peticion.flush({ success: true });
+    });
+
+    it('guardarImagen pide omitir el overlay global', () => {
+      const archivo = new File([new Uint8Array([0xff, 0xd8, 0xff])], 'foto.jpg', { type: 'image/jpeg' });
+      servicio.guardarImagen(10, { ...campo, tipo: 'imagen' }, archivo).subscribe();
+
+      const peticion = http.expectOne(`${base}/visita`);
+      expect(peticion.request.headers.has(HTTP_SKIP_LOADING)).toBe(true);
+      expect(peticion.request.body instanceof FormData).toBe(true);
+      peticion.flush({ success: true, value: 'abc-0.jpg' });
+    });
+
+    it('descargarDocumento trae la imagen como Blob sin overlay', () => {
+      servicio.descargarDocumento('abc-0.jpg')?.subscribe();
+
+      const peticion = http.expectOne(`${base}/visita/documento/abc-0.jpg`);
+      expect(peticion.request.responseType).toBe('blob');
+      expect(peticion.request.headers.has(HTTP_SKIP_LOADING)).toBe(true);
+      peticion.flush(new Blob());
+    });
+
+    it('descargarDocumento rechaza nombres con rutas', () => {
+      expect(servicio.descargarDocumento('../.env')).toBeNull();
+    });
+  });
 });

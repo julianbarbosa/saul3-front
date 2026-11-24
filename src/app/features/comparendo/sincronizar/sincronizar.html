@@ -1,0 +1,110 @@
+<section class="sincronizar-page" aria-labelledby="sincronizar-titulo">
+  <app-modal-mensaje
+    [visible]="modalMensajeVisible()"
+    [titulo]="modalMensajeTitulo()"
+    [mensaje]="modalMensajeTexto()"
+    [variante]="modalMensajeVariante()"
+    (cerrar)="cerrarModalMensaje()"
+  />
+
+  <header class="sincronizar-header">
+    <p class="sincronizar-epigrafe small text-muted mb-2">
+      <i class="bi bi-arrow-repeat me-2" aria-hidden="true"></i>
+      Módulo Comparendo — sincronización RNMC (Policía Nacional)
+    </p>
+    <h2 id="sincronizar-titulo" class="sincronizar-title">Sincronizar comparendos</h2>
+    <p class="sincronizar-description">
+      Consulte el Registro Nacional de Medidas Correctivas (RNMC) por tipo y número de documento del
+      presunto infractor y actualice en SAUL los comparendos asociados al área metropolitana de Santiago
+      de Cali. Esta acción no genera archivos PDF; persiste la información en la base de datos local.
+    </p>
+  </header>
+
+  <div class="sincronizar-layout">
+    <div class="sincronizar-form">
+      <app-select
+        id="tipo-documento-rnmc"
+        label="Tipo de documento"
+        [options]="opcionesTipoDocumento()"
+        [value]="tipoIdentificacion()"
+        [required]="true"
+        [validar]="validarCampos()"
+        [readOnly]="cargando() || cargandoTipos()"
+        (valueChange)="onTipoChange($event)"
+      ></app-select>
+
+      @if (cargandoTipos()) {
+        <p class="form-text text-muted mb-0" role="status">
+          <span class="spinner-border spinner-border-sm me-2" aria-hidden="true"></span>
+          Cargando tipos de documento…
+        </p>
+      } @else if (errorTipos()) {
+        <p class="sincronizar-alerta sincronizar-alerta--error" role="alert">
+          No fue posible cargar el catálogo de tipos de documento. Verifique su sesión o intente más
+          tarde.
+        </p>
+      }
+
+      <app-input-text
+        id="numero-documento-rnmc"
+        label="Número de documento"
+        [placeholder]="placeholderIdentificacion()"
+        [value]="identificacion()"
+        [required]="true"
+        [validar]="validarCampos()"
+        [readOnly]="cargando()"
+        (changed)="onIdentificacionChange($event)"
+        (valueChange)="onIdentificacionChange($event)"
+      ></app-input-text>
+
+      <p class="form-text text-muted mb-0">
+        Entre 3 y 20 caracteres; solo letras, números, punto o guion (sin espacios).
+      </p>
+
+      <div class="sincronizar-privacidad" aria-label="Aviso de tratamiento de datos personales">
+        <div class="sincronizar-privacidad__caja">
+          <i class="bi bi-shield-lock-fill sincronizar-privacidad__icono" aria-hidden="true"></i>
+          <p class="sincronizar-privacidad__texto mb-0">
+            Los datos de identificación se tratan conforme a la Ley 1581 de 2012 y se usan únicamente
+            para consultar y actualizar comparendos en el marco del Código Nacional de Seguridad y
+            Convivencia Ciudadana (Ley 1801 de 2016).
+          </p>
+        </div>
+      </div>
+
+      <div class="sincronizar-actions">
+        <app-button
+          [label]="etiquetaBotonSincronizar()"
+          [disabled]="cargando() || cargandoTipos() || !tiposDisponibles()"
+          [attr.aria-busy]="cargando()"
+          (clicked)="sincronizar()"
+        ></app-button>
+      </div>
+    </div>
+
+    @if (resultado()) {
+      <div
+        class="sincronizar-alerta"
+        [class.sincronizar-alerta--exito]="resultado()!.tipo === 'exito'"
+        [class.sincronizar-alerta--error]="resultado()!.tipo === 'error'"
+        role="status"
+        aria-live="polite"
+        [attr.aria-label]="resultado()!.tipo === 'exito' ? 'Sincronización exitosa' : 'Error en sincronización'"
+      >
+        @if (resultado()!.tipo === 'exito') {
+          <i class="bi bi-check-circle-fill me-2" aria-hidden="true"></i>
+        } @else {
+          <i class="bi bi-exclamation-triangle-fill me-2" aria-hidden="true"></i>
+        }
+        <span>{{ resultado()!.mensaje }}</span>
+      </div>
+    }
+
+    @if (cargando()) {
+      <p class="sincronizar-espera text-muted" role="status">
+        <span class="spinner-border spinner-border-sm me-2" aria-hidden="true"></span>
+        Consultando RNMC y actualizando comparendos. Este proceso puede tardar varios segundos.
+      </p>
+    }
+  </div>
+</section>

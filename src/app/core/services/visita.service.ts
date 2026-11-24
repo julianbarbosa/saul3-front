@@ -19,10 +19,18 @@ import { EstilosVisitaService } from './estilos-visita.service';
 import { serializarValorVisita } from './visita-limpia.service';
 
 /**
+<<<<<<< HEAD
  * El guardado automático (al salir de cada campo) no muestra el overlay global de carga:
  * cubría toda la pantalla, parecía un refresco y se tragaba el clic al siguiente campo.
  */
 const SIN_OVERLAY = { [HTTP_SKIP_LOADING]: '1' };
+=======
+ * El formulario de la visita guarda cada campo al salir de él (autoguardado).
+ * Esas peticiones no muestran el overlay global de carga: el usuario sigue llenando
+ * el formulario sin bloqueos. Los errores se siguen mostrando en el aviso de la pantalla.
+ */
+const SIN_OVERLAY = { [HTTP_SKIP_LOADING]: '1' } as const;
+>>>>>>> dccda3e07160097253f810fec698358f063dcab4
 
 export interface VisitaGuardadoRespuesta {
   success: boolean;
@@ -63,6 +71,17 @@ export class VisitaService {
       return null;
     }
     return `${this.baseUrl}/visita/documento/${encodeURIComponent(archivo)}`;
+  }
+
+  /**
+   * Descarga una imagen guardada como Blob (para editarla en el lienzo).
+   * Va por HttpClient y no por `<img>`: así pasa por los interceptores y el lienzo no queda
+   * bloqueado por CORS al exportar.
+   */
+  descargarDocumento(nombre: string): Observable<Blob> | null {
+    const url = this.urlDocumento(nombre);
+    // Sin overlay: el botón «Editar imagen» ya muestra «Cargando imagen…».
+    return url ? this.http.get(url, { responseType: 'blob', headers: SIN_OVERLAY }) : null;
   }
 
   /** POST `/visita` de SAUL: un campo por petición, con su `codigo` y `tipoItem`. 1. */
