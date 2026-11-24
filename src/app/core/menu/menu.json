@@ -22,7 +22,21 @@
               "path": "gestion-ciudadano"
             }            
           ]
-        },        
+        },  
+        {
+          "id": "firma-digital",
+          "label": "Firma Digital",
+          "basePath": "/firma-digital",
+          "path": "",
+          "children": [
+            {
+              "id": "listar-procesos-firma",
+              "label": "Listar Procesos de Firma",
+              "path": "listar"
+            }
+          ]
+        },
+
         {
           "id": "pedagogia",
           "label": "Medida Correctiva Pedagogía",
