@@ -24,10 +24,10 @@ import { serializarValorVisita } from './visita-limpia.service';
  * el formulario sin bloqueos. Los errores se siguen mostrando en el aviso de la pantalla.
  */
 const SIN_OVERLAY = { [HTTP_SKIP_LOADING]: '1' } as const;
-
 export interface VisitaGuardadoRespuesta {
   success: boolean;
   msg?: string;
+  value?: string;
 }
 
 @Injectable({
