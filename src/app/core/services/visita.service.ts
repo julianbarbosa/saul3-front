@@ -3,6 +3,7 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
+import { HTTP_SKIP_LOADING } from '../interceptors/http-loading.interceptor';
 import {
   PersonaSaulRaw,
   VisitaAccionRespuesta,
@@ -16,6 +17,12 @@ import {
 } from '../interfaces/visita.interface';
 import { EstilosVisitaService } from './estilos-visita.service';
 import { serializarValorVisita } from './visita-limpia.service';
+
+/**
+ * El guardado automático (al salir de cada campo) no muestra el overlay global de carga:
+ * cubría toda la pantalla, parecía un refresco y se tragaba el clic al siguiente campo.
+ */
+const SIN_OVERLAY = { [HTTP_SKIP_LOADING]: '1' };
 
 export interface VisitaGuardadoRespuesta {
   success: boolean;
@@ -71,7 +78,7 @@ export class VisitaService {
       .set('data[0][valor]', serializarValorVisita(valor));
 
     return this.http.post<VisitaGuardadoRespuesta>(`${this.baseUrl}/visita`, body.toString(), {
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded', ...SIN_OVERLAY },
     });
   }
 
@@ -83,7 +90,16 @@ export class VisitaService {
     return this.http.post<VisitaGuardadoRespuesta>(
       `${this.baseUrl}/visita`,
       cuerpoImagenVisita(idVisita, campo, archivo),
+      { headers: SIN_OVERLAY },
     );
+  }
+
+  /**
+   * GET `/visita/informe/{idVisita}`: PDF del formulario de la visita (plantilla Word en saul3).
+   * Llega como Blob; si saul3 responde error, el cuerpo también es Blob con `{ success, msg }`.
+   */
+  generarInforme(idVisita: number): Observable<Blob> {
+    return this.http.get(`${this.baseUrl}/visita/informe/${idVisita}`, { responseType: 'blob' });
   }
 
   /* ---------- Listados (Control a Construcciones) ---------- */

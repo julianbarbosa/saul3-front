@@ -4,7 +4,8 @@ import { TestBed } from '@angular/core/testing';
 import { firstValueFrom } from 'rxjs';
 
 import { environment } from '../../../environments/environment';
-import { VisitaDetalle } from '../interfaces/visita.interface';
+import { HTTP_SKIP_LOADING } from '../interceptors/http-loading.interceptor';
+import { VisitaCampo, VisitaDetalle } from '../interfaces/visita.interface';
 import { aEncabezadoVisita, VisitaService } from './visita.service';
 
 describe('VisitaService', () => {
@@ -35,6 +36,38 @@ describe('VisitaService', () => {
     peticion.flush({ idVisita: 7279, latitud: null, longitud: null });
 
     expect((await respuesta).idVisita).toBe(7279);
+  });
+
+  it('guardarCampo no muestra el overlay global de carga (guardado automático)', () => {
+    const campo = { codigo: 'v6_area_lote_obra', tipo: 'decimal', valor: '120' } as unknown as VisitaCampo;
+    servicio.guardarCampo(7279, campo).subscribe();
+
+    const peticion = http.expectOne(`${base}/visita`);
+    expect(peticion.request.method).toBe('POST');
+    expect(peticion.request.headers.has(HTTP_SKIP_LOADING)).toBe(true);
+    peticion.flush({ success: true });
+  });
+
+  it('guardarImagen no muestra el overlay global de carga', () => {
+    const campo = { codigo: 'v6_foto_fachada', tipo: 'imagen', valor: '' } as unknown as VisitaCampo;
+    const archivo = new File(['x'], 'foto.jpg', { type: 'image/jpeg' });
+    servicio.guardarImagen(7279, campo, archivo).subscribe();
+
+    const peticion = http.expectOne(`${base}/visita`);
+    expect(peticion.request.headers.has(HTTP_SKIP_LOADING)).toBe(true);
+    peticion.flush({ success: true });
+  });
+
+  it('generarInforme hace GET a /visita/informe/{id} y devuelve el PDF como Blob', async () => {
+    const respuesta = firstValueFrom(servicio.generarInforme(7279));
+
+    const peticion = http.expectOne(`${base}/visita/informe/7279`);
+    expect(peticion.request.method).toBe('GET');
+    expect(peticion.request.responseType).toBe('blob');
+    peticion.flush(new Blob(['%PDF-1.7'], { type: 'application/pdf' }));
+
+    const pdf = await respuesta;
+    expect(pdf.type).toBe('application/pdf');
   });
 
   it('findById acepta el id como texto (viene de la URL)', async () => {

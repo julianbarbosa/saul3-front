@@ -184,6 +184,8 @@ export class Gestion implements OnInit, OnDestroy {
   idVisita: number | null = null;
   /** Signal: así Angular (zoneless) redibuja el aviso aunque se asigne desde una respuesta HTTP. */
   readonly mensajeError = signal('');
+  /** true mientras saul3 arma el PDF del informe (evita dobles clics). */
+  readonly generandoInforme = signal(false);
   /**
    * Como `esModoObservacion` de SAUL (`accion === 'observar'`): se ve todo, no se guarda nada.
    * Se activa con `/visita/gestionar?accion=observar`.
@@ -323,6 +325,51 @@ export class Gestion implements OnInit, OnDestroy {
         );
       }
     }
+  }
+
+  /**
+   * Genera el PDF del formulario en saul3 (GET /visita/informe/{id}) y lo abre en otra pestaña.
+   * La pestaña se abre antes de la petición para que el navegador no la bloquee como ventana emergente.
+   */
+  async generarInforme(): Promise<void> {
+    const idVisita = this.idVisita;
+    if (idVisita === null || this.generandoInforme()) {
+      return;
+    }
+
+    this.generandoInforme.set(true);
+    this.mensajeError.set('');
+    const pestana = window.open('', '_blank');
+
+    try {
+      const pdf = await firstValueFrom(this.visitaService.generarInforme(idVisita));
+      if (pdf.type !== 'application/pdf') {
+        throw new Error('La respuesta no es un PDF.');
+      }
+      const url = URL.createObjectURL(pdf);
+      if (pestana) {
+        pestana.opener = null;
+        pestana.location.href = url;
+      } else {
+        this.descargarArchivo(url, `informe-visita-${idVisita}.pdf`);
+      }
+      // Se libera cuando el visor ya tuvo tiempo de cargarlo.
+      setTimeout(() => URL.revokeObjectURL(url), 60_000);
+    } catch (error) {
+      pestana?.close();
+      console.error('No se pudo generar el PDF de la visita', error);
+      this.mensajeError.set(await mensajeErrorInforme(error));
+    } finally {
+      this.generandoInforme.set(false);
+    }
+  }
+
+  private descargarArchivo(url: string, nombre: string): void {
+    const enlace = document.createElement('a');
+    enlace.href = url;
+    enlace.download = nombre;
+    enlace.rel = 'noopener';
+    enlace.click();
   }
 
   onVisualizacionChange(etiqueta: string): void {
@@ -1025,5 +1072,21 @@ export class Gestion implements OnInit, OnDestroy {
       return anterior;
     }
     return texto;
+  }
+}
+
+/** Mensaje de saul3 (`{ msg }`) que llega dentro del Blob de error, o uno genérico. */
+async function mensajeErrorInforme(error: unknown): Promise<string> {
+  const generico = 'No fue posible generar el PDF de la visita. Intente nuevamente.';
+  const cuerpo = (error as { error?: unknown })?.error;
+  if (!(cuerpo instanceof Blob)) {
+    return generico;
+  }
+  try {
+    const json = JSON.parse(await cuerpo.text()) as { msg?: unknown; message?: unknown };
+    const mensaje = json.msg ?? json.message;
+    return typeof mensaje === 'string' && mensaje.trim() !== '' ? mensaje : generico;
+  } catch {
+    return generico;
   }
 }
