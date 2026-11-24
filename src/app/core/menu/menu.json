@@ -17,46 +17,12 @@
               "loadComponent": "@modules/comparendo/pages/registrar/registrar-comparendo.component#RegistrarComparendoComponent"
             },
             {
-              "id": "comparendo-consultar",
-              "label": "Consultar",
-              "path": "consultar",
-              "loadComponent": "@modules/comparendo/pages/consultar/consultar-comparendo.component#ConsultarComparendoComponent"
-            },
-            {
               "id": "gestion-ciudadano",
               "label": "Gestión ciudadano",
               "path": "gestion-ciudadano"
             }            
           ]
-        },
-        {
-          "id": "medida-multa",
-          "label": "Medida Correctiva Multa",
-          "path": "medida-multa",
-          "loadChildren": "@modules/medida-multa/medida-multa.module#MedidaMultaModule",
-          "children": [           
-            {
-              "id": "medida-multa-audiencia",
-              "label": "Audiencia",
-              "path": ":comparendoId/audiencia",
-              "loadComponent": "@modules/medida-multa/pages/audiencia/audiencia.component#AudienciaComponent"
-            },
-            {
-              "id": "medida-multa-primera-instancia",
-              "label": "Primera Instancia",
-              "path": ":comparendoId/primera-instancia",
-              "loadComponent": "@modules/medida-multa/pages/primera-instancia/primera-instancia.component#PrimeraInstanciaComponent"
-            },
-            {
-              "id": "medida-multa-segunda-instancia",
-              "label": "Segunda Instancia",
-              "path": ":comparendoId/segunda-instancia",
-              "loadComponent": "@modules/medida-multa/pages/segunda-instancia/segunda-instancia.component#SegundaInstanciaComponent"
-            }
-
-            
-          ]
-        },
+        },        
         {
           "id": "pedagogia",
           "label": "Medida Correctiva Pedagogía",
