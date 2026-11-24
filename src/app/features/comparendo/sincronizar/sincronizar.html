@@ -8,15 +8,11 @@
   />
 
   <header class="sincronizar-header">
-    <p class="sincronizar-epigrafe small text-muted mb-2">
-      <i class="bi bi-arrow-repeat me-2" aria-hidden="true"></i>
-      Módulo Comparendo — sincronización RNMC (Policía Nacional)
-    </p>
     <h2 id="sincronizar-titulo" class="sincronizar-title">Sincronizar comparendos</h2>
     <p class="sincronizar-description">
       Consulte el Registro Nacional de Medidas Correctivas (RNMC) por tipo y número de documento del
-      presunto infractor y actualice en SAUL los comparendos asociados al área metropolitana de Santiago
-      de Cali. Esta acción no genera archivos PDF; persiste la información en la base de datos local.
+      presunto infractor y actualice en SAUL los comparendos asociados a Santiago
+      de Cali. 
     </p>
   </header>
 
@@ -61,17 +57,7 @@
         Entre 3 y 20 caracteres; solo letras, números, punto o guion (sin espacios).
       </p>
 
-      <div class="sincronizar-privacidad" aria-label="Aviso de tratamiento de datos personales">
-        <div class="sincronizar-privacidad__caja">
-          <i class="bi bi-shield-lock-fill sincronizar-privacidad__icono" aria-hidden="true"></i>
-          <p class="sincronizar-privacidad__texto mb-0">
-            Los datos de identificación se tratan conforme a la Ley 1581 de 2012 y se usan únicamente
-            para consultar y actualizar comparendos en el marco del Código Nacional de Seguridad y
-            Convivencia Ciudadana (Ley 1801 de 2016).
-          </p>
-        </div>
-      </div>
-
+      
       <div class="sincronizar-actions">
         <app-button
           [label]="etiquetaBotonSincronizar()"
