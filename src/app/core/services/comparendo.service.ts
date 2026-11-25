@@ -86,4 +86,11 @@ export class ComparendoService {
   getDetalleComparendo(comparendoId: number): Observable<ResponseI> {
     return this.http.get<ResponseI>(`${environment.SAUL3_API_URL}/comparendo/detalle/${comparendoId}`);
   }
+
+  /** Sincroniza comparendos del ciudadano desde RNMC hacia SAUL (GET /comparendo/rnmc/...). */
+  sincronizarComparendosDesdeRnmc(tipoIdentificacion: string, identificacion: string): Observable<ResponseI> {
+    const tipo = encodeURIComponent(tipoIdentificacion.trim());
+    const numero = encodeURIComponent(identificacion.trim());
+    return this.http.get<ResponseI>(`${environment.SAUL3_API_URL}/comparendo/rnmc/${tipo}/${numero}`);
+  }
 }

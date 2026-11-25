@@ -4,10 +4,6 @@
     Control a sanciones — Expediente físico
   </h1>
 
-  @if (mensaje) {
-    <div class="alert alert-info" role="status">{{ mensaje }}</div>
-  }
-
   <app-modal-mensaje
     [visible]="modalMensajeVisible"
     titulo="Registro de movimiento"
@@ -57,22 +53,18 @@
           <div class="card-body">
             <div class="row g-3">
               <div class="col-md-6">
-                <p class="mb-0">
-                  <strong>Id:</strong> {{ comparendo.id }}<br />
+                <p class="mb-0">                  
                   <strong>Número formato:</strong>
                   {{ textoCampoComparendo(comparendo.numeroformato ?? comparendo.numeroFormato) }}<br />
                   <strong>Expediente:</strong> {{ textoCampoComparendo(comparendo.expediente) }}<br />
                   <strong>Fecha comparendo:</strong>
-                  {{ fechaHoraComparendo(comparendo.fechacomparendo) || '—' }}<br />
-                  <strong>Porcentaje incremento:</strong> {{ textoIncrementoComparendo() }}
+                  {{ fechaHoraComparendo(comparendo.fechacomparendo) || '—' }}<br />                  
                 </p>
               </div>
               <div class="col-md-6">
                 <p class="mb-0">
-                  <strong>Tipo identificación:</strong>
-                  {{ textoCampoComparendo(comparendo.tipoidentificacioninfractor) }}<br />
                   <strong>Identificación infractor:</strong>
-                  {{ textoCampoComparendo(comparendo.identificacioninfractor) }}<br />
+                  {{ textoCampoComparendo(comparendo.tipoidentificacioninfractor) }} {{ textoCampoComparendo(comparendo.identificacioninfractor) }}<br />
                   <strong>Nombre infractor:</strong> {{ textoCampoComparendo(comparendo.nombreInfractor) }}
                 </p>
               </div>
@@ -366,7 +358,7 @@
       <div class="col-12 d-flex flex-wrap gap-2 justify-content-end">
         @if (
           permisos.tiene('controlsanciones_ingresar_expediente') &&
-          (codigoEstadoExpediente() === 'cerrado' || !expediente.estado?.codigo)
+          (codigoEstadoExpediente() === 'cerrado' || !expediente)
         ) {
           <button type="button" class="btn btn-primary" [disabled]="!data.asignadoa" (click)="registrarMovimiento('pendiente')">Ingresar</button>
         }

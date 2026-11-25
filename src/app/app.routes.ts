@@ -33,9 +33,10 @@ export const routes: Routes = [
         loadChildren: () =>
           import('./features/comparendo/comparendo-module').then((m) => m.ComparendoModule),
       },
+      
       {
         path: '',
-        redirectTo: 'comparendo/descargar',
+        redirectTo: 'comparendo/sincronizar',
         pathMatch: 'full',
       },
     ],
@@ -70,6 +71,20 @@ export const routes: Routes = [
         loadChildren: () =>
           import('./features/control-sanciones/control-sanciones-module').then(
             (m) => m.ControlSancionesModule,
+          ),
+      },
+    ],
+  },
+  {
+    path: 'firma-digital',
+    component: Layout,
+    canActivate: [authGuard],
+    children: [
+      {
+        path: '',
+        loadChildren: () =>
+          import('./features/firma-digital/firma-digital-module').then(
+            (m) => m.FirmaDigitalModule,
           ),
       },
     ],
