@@ -4,7 +4,8 @@ import { TestBed } from '@angular/core/testing';
 import { firstValueFrom } from 'rxjs';
 
 import { environment } from '../../../environments/environment';
-import { VisitaDetalle } from '../interfaces/visita.interface';
+import { HTTP_SKIP_LOADING } from '../interceptors/http-loading.interceptor';
+import { VisitaCampo, VisitaDetalle } from '../interfaces/visita.interface';
 import { aEncabezadoVisita, VisitaService } from './visita.service';
 
 describe('VisitaService', () => {
@@ -35,6 +36,38 @@ describe('VisitaService', () => {
     peticion.flush({ idVisita: 7279, latitud: null, longitud: null });
 
     expect((await respuesta).idVisita).toBe(7279);
+  });
+
+  it('guardarCampo no muestra el overlay global de carga (guardado automático)', () => {
+    const campo = { codigo: 'v6_area_lote_obra', tipo: 'decimal', valor: '120' } as unknown as VisitaCampo;
+    servicio.guardarCampo(7279, campo).subscribe();
+
+    const peticion = http.expectOne(`${base}/visita`);
+    expect(peticion.request.method).toBe('POST');
+    expect(peticion.request.headers.has(HTTP_SKIP_LOADING)).toBe(true);
+    peticion.flush({ success: true });
+  });
+
+  it('guardarImagen no muestra el overlay global de carga', () => {
+    const campo = { codigo: 'v6_foto_fachada', tipo: 'imagen', valor: '' } as unknown as VisitaCampo;
+    const archivo = new File(['x'], 'foto.jpg', { type: 'image/jpeg' });
+    servicio.guardarImagen(7279, campo, archivo).subscribe();
+
+    const peticion = http.expectOne(`${base}/visita`);
+    expect(peticion.request.headers.has(HTTP_SKIP_LOADING)).toBe(true);
+    peticion.flush({ success: true });
+  });
+
+  it('generarInforme hace GET a /visita/informe/{id} y devuelve el PDF como Blob', async () => {
+    const respuesta = firstValueFrom(servicio.generarInforme(7279));
+
+    const peticion = http.expectOne(`${base}/visita/informe/7279`);
+    expect(peticion.request.method).toBe('GET');
+    expect(peticion.request.responseType).toBe('blob');
+    peticion.flush(new Blob(['%PDF-1.7'], { type: 'application/pdf' }));
+
+    const pdf = await respuesta;
+    expect(pdf.type).toBe('application/pdf');
   });
 
   it('findById acepta el id como texto (viene de la URL)', async () => {
@@ -132,5 +165,65 @@ describe('aEncabezadoVisita', () => {
     expect(encabezado.radicadoSolicitud).toBe('2026419');
     expect(encabezado.radicadoRespuesta).toBeNull();
     expect(encabezado.radicadoInspeccion).toBe('0');
+  });
+  describe('autoguardado sin overlay de carga', () => {
+    let servicio: VisitaService;
+    let http: HttpTestingController;
+    const base = environment.SAUL3_API_URL;
+
+    beforeEach(() => {
+      TestBed.configureTestingModule({
+        providers: [provideHttpClient(), provideHttpClientTesting()],
+      });
+      servicio = TestBed.inject(VisitaService);
+      http = TestBed.inject(HttpTestingController);
+    });
+
+    afterEach(() => http.verify());
+
+    const campo: VisitaCampo = {
+      id: 1,
+      codigo: 'v15_corregimiento',
+      nombre: 'corregimiento',
+      tipo: 'texto',
+      label: 'Corregimiento',
+      dominio: null,
+      opciones: null,
+      descripcion: null,
+      soloLectura: false,
+      valor: 'NA',
+    };
+
+    it('guardarCampo pide omitir el overlay global', () => {
+      servicio.guardarCampo(10, campo).subscribe();
+
+      const peticion = http.expectOne(`${base}/visita`);
+      expect(peticion.request.headers.has(HTTP_SKIP_LOADING)).toBe(true);
+      expect(peticion.request.headers.get('Content-Type')).toBe('application/x-www-form-urlencoded');
+      peticion.flush({ success: true });
+    });
+
+    it('guardarImagen pide omitir el overlay global', () => {
+      const archivo = new File([new Uint8Array([0xff, 0xd8, 0xff])], 'foto.jpg', { type: 'image/jpeg' });
+      servicio.guardarImagen(10, { ...campo, tipo: 'imagen' }, archivo).subscribe();
+
+      const peticion = http.expectOne(`${base}/visita`);
+      expect(peticion.request.headers.has(HTTP_SKIP_LOADING)).toBe(true);
+      expect(peticion.request.body instanceof FormData).toBe(true);
+      peticion.flush({ success: true, value: 'abc-0.jpg' });
+    });
+
+    it('descargarDocumento trae la imagen como Blob sin overlay', () => {
+      servicio.descargarDocumento('abc-0.jpg')?.subscribe();
+
+      const peticion = http.expectOne(`${base}/visita/documento/abc-0.jpg`);
+      expect(peticion.request.responseType).toBe('blob');
+      expect(peticion.request.headers.has(HTTP_SKIP_LOADING)).toBe(true);
+      peticion.flush(new Blob());
+    });
+
+    it('descargarDocumento rechaza nombres con rutas', () => {
+      expect(servicio.descargarDocumento('../.env')).toBeNull();
+    });
   });
 });

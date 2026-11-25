@@ -1,0 +1,30 @@
+.listar-proceso-firma {
+  padding: 1.5rem 0 2rem;
+}
+
+.listar-proceso-firma__encabezado {
+  margin-bottom: 1.5rem;
+}
+
+.listar-proceso-firma__titulo {
+  margin: 0 0 0.75rem;
+  color: #004884;
+  font-weight: 600;
+  font-size: 1.5rem;
+}
+
+.listar-proceso-firma__descripcion {
+  margin: 0;
+  max-width: 42rem;
+  line-height: 1.6;
+  color: #4b4b4b;
+}
+
+.listar-proceso-firma__tabla {
+  min-width: 0;
+}
+
+.listar-proceso-firma__tabla--cargando {
+  opacity: 0.55;
+  pointer-events: none;
+}

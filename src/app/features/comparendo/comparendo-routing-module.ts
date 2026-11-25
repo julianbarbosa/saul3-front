@@ -1,6 +1,6 @@
 import { NgModule } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
-import { Descargar } from './descargar/descargar';
+import { Sincronizar } from './sincronizar/sincronizar';
 
 const routes: Routes = [
   {
@@ -9,12 +9,12 @@ const routes: Routes = [
       import('./gestion-ciudadano/codigo-policia.module').then((m) => m.CodigoPoliciaModule),
   },
   {
-    path: 'descargar',
-    component: Descargar,
+    path: 'sincronizar',
+    component: Sincronizar,
   },
   {
     path: '',
-    redirectTo: 'descargar',
+    redirectTo: 'sincronizar',
     pathMatch: 'full',
   },
 ];
