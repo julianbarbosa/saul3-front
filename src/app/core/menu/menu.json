@@ -9,6 +9,7 @@
           "label": "Comparendos Ley 1801",
           "path": "comparendo",
           "loadChildren": "@modules/comparendo/comparendo.module#ComparendoModule",
+          "permissions": ["actualizarcomparendo_controlpolicivo"],
           "children": [
             {
               "id": "sincronizar-rnmc",
@@ -28,6 +29,7 @@
           "label": "Firma Digital",
           "basePath": "/firma-digital",
           "path": "",
+          "permissions": ["controlpolicivo_gestionfirmadigital"],
           "children": [
             {
               "id": "listar-procesos-firma",
@@ -110,6 +112,7 @@
           "label": "Control a Construcciones",
           "basePath": "/visita",
           "path": "",
+          "permissions": ["registrarvisita_vis"],
           "children": [
             { "id": "cc-visitas-pendientes", "label": "Visitas Pendientes", "path": "listar-visita" }
           ]
