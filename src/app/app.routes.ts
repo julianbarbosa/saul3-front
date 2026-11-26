@@ -4,6 +4,7 @@ import { Forbidden } from './features/auth/forbidden/forbidden';
 import { Login } from './features/auth/login/login';
 import { Layout } from './features/main/layout/layout';
 import { Main } from './features/main/main/main';
+import { ListaProgramacionPedagogia } from './features/pedagogia/lista-programacion-pedagogia/lista-programacion-pedagogia';
 
 export const routes: Routes = [
   {
@@ -32,6 +33,11 @@ export const routes: Routes = [
         path: 'comparendo',
         loadChildren: () =>
           import('./features/comparendo/comparendo-module').then((m) => m.ComparendoModule),
+      },
+      {
+        path: 'pedagogia/listar',
+        component: ListaProgramacionPedagogia,
+        title: 'Listar Pedagogía',
       },
       
       {
