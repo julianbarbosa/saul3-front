@@ -104,6 +104,17 @@
   font-size: inherit;
 }
 
+.tabla-ssj__tabla thead .fila-filtros-columnas th {
+  padding: 0.25rem 0.5rem;
+  border-bottom: 0;
+  background: #fff;
+  vertical-align: middle;
+}
+
+.tabla-ssj__tabla thead .fila-filtros-columnas input {
+  min-width: 0;
+}
+
 .tabla-ssj__tabla tbody td {
   padding: 0.875rem 0.75rem;
   border-bottom: 1px solid #e0e0e0;
@@ -381,6 +392,22 @@ col.table-checkbox-col-width {
   display: flex;
   flex-wrap: wrap;
   gap: 0.375rem 1rem;
+}
+
+.tabla-ssj--tarjetas .tabla-ssj__tabla thead tr.fila-filtros-columnas {
+  margin-bottom: 0.5rem;
+  padding: 0;
+  background: transparent;
+}
+
+.tabla-ssj--tarjetas .tabla-ssj__tabla thead tr.fila-filtros-columnas th {
+  display: none;
+}
+
+.tabla-ssj--tarjetas .tabla-ssj__tabla thead tr.fila-filtros-columnas th.table-filter-cell--active {
+  display: block;
+  flex: 1 1 12rem;
+  width: auto !important;
 }
 
 .tabla-ssj--tarjetas .tabla-ssj__tabla thead {

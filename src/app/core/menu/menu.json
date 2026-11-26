@@ -21,6 +21,11 @@
               "id": "gestion-ciudadano",
               "label": "Gestión ciudadano",
               "path": "gestion-ciudadano"
+            },
+            {
+              "id": "pedagogia",
+              "label": "Pedagogía",
+              "path": "pedagogia"
             }            
           ]
         },  

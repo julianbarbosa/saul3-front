@@ -32,6 +32,31 @@ describe('Table', () => {
     expect(input?.getAttribute('placeholder')).toBe('Nombre');
   });
 
+  it('muestra filtros de entrada sobre los encabezados indicados', async () => {
+    fixture.componentRef.setInput('columns', [
+      { label: 'Identificación', campo: 'identificacion', filtroEntrada: true, filtroInputmode: 'numeric' },
+      { label: 'Nombre Infractor', campo: 'nombreInfractor', filtroEntrada: true },
+      { label: 'Contacto', campo: 'contacto' },
+    ]);
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    const filaFiltros = fixture.nativeElement.querySelector(
+      'thead tr.fila-filtros-columnas',
+    ) as HTMLTableRowElement | null;
+    const inputs = Array.from(
+      fixture.nativeElement.querySelectorAll(
+        'thead tr.fila-filtros-columnas input',
+      ) as NodeListOf<HTMLInputElement>,
+    );
+
+    expect(filaFiltros?.nextElementSibling?.querySelectorAll('th')).toHaveLength(3);
+    expect(inputs).toHaveLength(2);
+    expect(inputs[0]?.getAttribute('aria-label')).toBe('Filtrar por Identificación');
+    expect(inputs[0]?.getAttribute('inputmode')).toBe('numeric');
+    expect(inputs[1]?.getAttribute('aria-label')).toBe('Filtrar por Nombre Infractor');
+  });
+
   it('emite filtersChange con el mapa de filtros superiores', () => {
     const emitSpy = vi.spyOn(component.filtersChange, 'emit');
     component.filters = [

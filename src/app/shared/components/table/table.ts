@@ -71,6 +71,8 @@ export interface ColumnaTabla {
   iconoFiltro?: boolean;
   activateFilter?: boolean;
   tipoFiltro?: string;
+  filtroEntrada?: boolean;
+  filtroInputmode?: 'numeric' | 'text';
   opciones?: unknown[];
   options?: unknown[];
   filtroPlaceholder?: string;
@@ -312,6 +314,10 @@ export class Table implements OnChanges, AfterViewInit, OnDestroy {
   /** La columna muestra el embudo. */
   tieneFiltro(column: ColumnaTabla): boolean {
     return this.mostrarIconoFiltro(column) && column.activateFilter !== false && !!this.claveConsulta(column);
+  }
+
+  tieneFiltrosEntrada(): boolean {
+    return this.columns.some((column) => column.filtroEntrada);
   }
 
   /** La columna tiene un filtro aplicado: el embudo queda relleno aunque la tarjeta esté cerrada. */
