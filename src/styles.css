@@ -1,5 +1,36 @@
 /* Estilos globales del proyecto (sobreescriben mintic.css si es necesario) */
 /* mintic.css se incluye en angular.json (public/assets/css/mintic.css) */
+
+/*
+ * Contención horizontal global (R1): evita que un hijo ensanche el documento y
+ * provoque el efecto de “página de escritorio encogida” en móviles.
+ * `clip` (no `hidden`) para no romper position: sticky en menús internos.
+ */
+html,
+body {
+  overflow-x: clip;
+}
+
+.contenido-principal {
+  min-width: 0;
+  max-width: 100%;
+  overflow-x: clip;
+  overflow-wrap: break-word;
+}
+
+img,
+video,
+iframe {
+  max-width: 100%;
+  height: auto;
+}
+
+input,
+select,
+textarea {
+  max-width: 100%;
+}
+
 h1 {
   font-size: 1.5rem;
 }
