@@ -2,23 +2,6 @@
   padding: 1.5rem 0 2rem;
 }
 
-.sincronizar-header {
-  margin-bottom: 2rem;
-}
-
-.sincronizar-title {
-  margin-bottom: 0.75rem;
-  color: #004884;
-  font-weight: 600;
-}
-
-.sincronizar-description {
-  margin: 0;
-  max-width: 42rem;
-  line-height: 1.6;
-  color: #4b4b4b;
-}
-
 .sincronizar-form {
   display: flex;
   flex-direction: column;

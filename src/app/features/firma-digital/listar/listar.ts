@@ -4,6 +4,7 @@ import {
   ColumnaTabla,
   Table,
 } from '../../../shared/components/table/table';
+import { PageHeader } from '../../../shared/components/header/header';
 import { ModalMensajeComponent } from '../../../shared/components/modal-mensaje/modal-mensaje';
 import {
   ProcesoFirmaListadoItem,
@@ -21,7 +22,7 @@ function textoCelda(valor: unknown): string {
 
 @Component({
   selector: 'app-listar',
-  imports: [Table, ModalMensajeComponent],
+  imports: [Table, ModalMensajeComponent, PageHeader],
   templateUrl: './listar.html',
   styleUrl: './listar.css',
 })

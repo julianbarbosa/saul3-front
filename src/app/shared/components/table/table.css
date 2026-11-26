@@ -85,9 +85,8 @@
   --bs-table-border-color: #e0e0e0;
 }
 
-.tabla-ssj__tabla.table-has-checkboxes {
-  table-layout: fixed;
-}
+/* No usar table-layout:fixed aquí: si los % de columnas no suman 100%,
+   el espacio sobrante ensancha la columna del checkbox. */
 
 .tabla-ssj__tabla thead th {
   padding: 1rem 0.75rem;
@@ -262,18 +261,30 @@
   font-weight: 600;
 }
 
+/*
+ * Columna de checkbox siempre estrecha (patrón width:1% + nowrap).
+ * Encaja al contenido (~14px) sin absorber el espacio sobrante de la tabla.
+ */
 col.table-checkbox-col-width {
-  width: 40px;
+  width: 5rem;
 }
 
-.table-checkbox-col {
-  width: 40px;
-  min-width: 40px;
-  max-width: 40px;
-  padding: 0 !important;
-  overflow: hidden;
+.tabla-ssj__tabla th.table-checkbox-col,
+.tabla-ssj__tabla td.table-checkbox-col {
+  width: 10rem;
+  min-width: 5rem;
+  max-width: 5rem;
+  box-sizing: border-box;
+  padding: 0.5rem 0.35rem !important;
+  overflow: visible;
   text-align: center;
   vertical-align: middle;
+  white-space: nowrap;
+}
+
+.tabla-ssj__tabla thead th.table-checkbox-col {
+  padding-top: 1rem !important;
+  padding-bottom: 1rem !important;
 }
 
 .table-checkbox-col .form-check-input {
@@ -281,6 +292,8 @@ col.table-checkbox-col-width {
   height: 14px;
   margin: 0;
   float: none;
+  position: relative;
+  vertical-align: middle;
 }
 
 .table-checkbox-col .form-check-input:checked {

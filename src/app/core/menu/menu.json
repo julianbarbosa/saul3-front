@@ -109,6 +109,18 @@
                 "controlsanciones_movimiento_expediente_inspeccion",
                 "controlsanciones_cerrar_expediente"
               ]
+            },
+            {
+              "id": "cs-listar-expedientes",
+              "label": "Listar expedientes",
+              "path": "registrar-movimiento-multiple",
+              "permissions": [
+                "controlsanciones_ingresar_expediente",
+                "controlsanciones_movimiento_expediente_oficina",
+                "controlsanciones_movimiento_expediente_tesoreria",
+                "controlsanciones_movimiento_expediente_inspeccion",
+                "controlsanciones_cerrar_expediente"
+              ]
             }
           ]
         },
