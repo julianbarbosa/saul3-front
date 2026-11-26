@@ -1,6 +1,8 @@
 import { NgModule } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
 import { Sincronizar } from './sincronizar/sincronizar';
+import { ListaProgramacionPedagogia } from '../pedagogia/lista-programacion-pedagogia/lista-programacion-pedagogia';
+import { RegistrarAsistenciaPedagogia } from '../pedagogia/registrar-asistencia-pedagogia/registrar-asistencia-pedagogia';
 
 const routes: Routes = [
   {
@@ -11,6 +13,14 @@ const routes: Routes = [
   {
     path: 'sincronizar',
     component: Sincronizar,
+  },
+  {
+    path: 'pedagogia/:id/asistencia',
+    component: RegistrarAsistenciaPedagogia,
+  },
+  {
+    path: 'pedagogia',
+    component: ListaProgramacionPedagogia,
   },
   {
     path: '',
