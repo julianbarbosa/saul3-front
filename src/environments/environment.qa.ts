@@ -1,6 +1,6 @@
 export const environment = {
   production: true,
   TYSA_API_URL: 'https://saul.cali.gov.co/tramites-api',
-  SAUL3_API_URL: 'https://saulv3.cali.gov.co/qa/saul3/api',
+  SAUL3_API_URL: 'https://saul.cali.gov.co/qa/saul3/api',
   ARCGIS_API_KEY: '.',
 };
