@@ -1,5 +1,16 @@
 import { CommonModule } from '@angular/common';
-import { ChangeDetectorRef, Component, DestroyRef, inject, OnInit } from '@angular/core';
+import {
+  ChangeDetectorRef,
+  Component,
+  DestroyRef,
+  EventEmitter,
+  inject,
+  Input,
+  OnChanges,
+  OnInit,
+  Output,
+  SimpleChanges,
+} from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
 import { catchError, forkJoin, of } from 'rxjs';
@@ -20,6 +31,7 @@ import {
 } from '../constants/criterios-verificacion-expediente';
 import { HasPermissionDirective } from '../../../core/directives/has-permission.directive';
 import { PermisosService } from '../../../core/services/permisos.service';
+import { PageHeader } from '../../../shared/components/header/header';
 import { ModalMensajeComponent } from '../../../shared/components/modal-mensaje/modal-mensaje';
 import { MascaraExpedienteDirective } from './mascara-expediente.directive';
 import {
@@ -38,16 +50,30 @@ import {
 @Component({
   selector: 'app-registrar-movimiento-expediente',
   standalone: true,
-  imports: [CommonModule, FormsModule, HasPermissionDirective, ModalMensajeComponent, MascaraExpedienteDirective],
+  imports: [
+    CommonModule,
+    FormsModule,
+    HasPermissionDirective,
+    PageHeader,
+    ModalMensajeComponent,
+    MascaraExpedienteDirective,
+  ],
   templateUrl: './registrar-movimiento-expediente.component.html',
   styleUrl: './registrar-movimiento-expediente.component.css',
 })
-export class RegistrarMovimientoExpedienteComponent implements OnInit {
+export class RegistrarMovimientoExpedienteComponent implements OnInit, OnChanges {
   private readonly route = inject(ActivatedRoute);
   private readonly cdr = inject(ChangeDetectorRef);
   private readonly destroyRef = inject(DestroyRef);
   readonly api = inject(ControlSancionesExpedienteService);
   readonly permisos = inject(PermisosService);
+
+  /** Número de expediente al abrir embebido (p. ej. desde listado múltiple). */
+  @Input() comparendoInicial: string | null = null;
+  /** true = sin título de página; pensado para modal. */
+  @Input() embebido = false;
+  @Output() cerrado = new EventEmitter<void>();
+  @Output() registroExitoso = new EventEmitter<void>();
 
   readonly ejemploNumeroExpediente = EJEMPLO_NUMERO_EXPEDIENTE;
 
@@ -81,12 +107,28 @@ export class RegistrarMovimientoExpedienteComponent implements OnInit {
   }
 
   ngOnInit(): void {
-    const comparendo = this.route.snapshot.queryParamMap.get('comparendo')?.trim();
-    if (comparendo) {
-      this.busqueda.comparendo = formatearNumeroExpediente(comparendo);
-      // Se difiere para que la primera detección de cambios termine antes de buscar.
-      setTimeout(() => this.buscar());
+    const desdeRuta = this.route.snapshot.queryParamMap.get('comparendo')?.trim();
+    const inicial = this.comparendoInicial?.trim() || desdeRuta;
+    if (inicial) {
+      this.cargarComparendoInicial(inicial);
     }
+  }
+
+  ngOnChanges(changes: SimpleChanges): void {
+    if (!changes['comparendoInicial'] || changes['comparendoInicial'].firstChange) {
+      return;
+    }
+    const valor = this.comparendoInicial?.trim();
+    if (valor) {
+      this.limpiar();
+      this.cargarComparendoInicial(valor);
+    }
+  }
+
+  private cargarComparendoInicial(comparendo: string): void {
+    this.busqueda.comparendo = formatearNumeroExpediente(comparendo);
+    // Se difiere para que la primera detección de cambios termine antes de buscar.
+    setTimeout(() => this.buscar());
   }
 
   buscar(): void {
@@ -304,7 +346,16 @@ export class RegistrarMovimientoExpedienteComponent implements OnInit {
     if (this.modalTrasRegistroExitoso) {
       this.modalTrasRegistroExitoso = false;
       this.limpiar();
+      if (this.embebido) {
+        this.registroExitoso.emit();
+        this.cerrado.emit();
+      }
     }
+  }
+
+  cerrarEmbebido(): void {
+    this.limpiar();
+    this.cerrado.emit();
   }
 
   limpiar(): void {

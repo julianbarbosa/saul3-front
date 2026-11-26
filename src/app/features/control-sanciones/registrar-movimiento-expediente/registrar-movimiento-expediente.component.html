@@ -1,8 +1,10 @@
-<div class="container-fluid py-3">
-  <h1 class="h4 mb-3">
-    <i class="bi bi-folder2-open me-2" aria-hidden="true"></i>
-    Control a sanciones — Expediente físico
-  </h1>
+<div [class.container-fluid]="!embebido" [class.py-3]="!embebido">
+  @if (!embebido) {
+    <app-page-header
+      titulo="Buscar expediente"
+      subtitulo="Registro de movimiento de expediente físico" 
+    />
+  }
 
   <app-modal-mensaje
     [visible]="modalMensajeVisible"
@@ -397,6 +399,9 @@
           <button type="button" class="btn btn-outline-primary" (click)="registrarMovimiento('cerrarporpago')">Cerrar por cumplimiento</button>
         }
         <button type="button" class="btn btn-outline-secondary" (click)="limpiar()">Limpiar</button>
+        @if (embebido) {
+          <button type="button" class="btn btn-outline-dark" (click)="cerrarEmbebido()">Cerrar</button>
+        }
       </div>
   }
 

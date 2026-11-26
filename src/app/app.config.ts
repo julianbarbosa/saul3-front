@@ -3,6 +3,7 @@ import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { authTokenInterceptor } from './core/interceptors/auth-token.interceptor';
 import { httpLoadingInterceptor } from './core/interceptors/http-loading.interceptor';
 import { permisosRefreshInterceptor } from './core/interceptors/permisos-refresh.interceptor';
+import { publicRecaptchaInterceptor } from './core/interceptors/public-recaptcha.interceptor';
 import { initPermisosAlArranque } from './core/initializers/permisos.initializer';
 import { provideRouter } from '@angular/router';
 
@@ -14,7 +15,12 @@ export const appConfig: ApplicationConfig = {
     provideBrowserGlobalErrorListeners(),
     provideAppInitializer(initPermisosAlArranque),
     provideHttpClient(
-      withInterceptors([authTokenInterceptor, permisosRefreshInterceptor, httpLoadingInterceptor]),
+      withInterceptors([
+        authTokenInterceptor,
+        publicRecaptchaInterceptor,
+        permisosRefreshInterceptor,
+        httpLoadingInterceptor,
+      ]),
     ),
     provideRouter(routes),
     importProvidersFrom(SharedModule),

@@ -1,0 +1,33 @@
+:host {
+  display: block;
+}
+
+.page-header {
+  margin-bottom: 2rem;
+}
+
+/* Tamaño único en todas las pantallas (KIT: h1 = 2rem / 700). */
+.page-header__titulo {
+  margin-top: 0;
+  color: var(--ssj-azul, #0943b5);
+  font-size: 2rem;
+  font-weight: 700;
+  line-height: 1.25;
+}
+
+.page-header__subtitulo {
+  margin: 0 0 1rem;
+  max-width: 42rem;
+  color: var(--ssj-gris-texto, #4b4b4b);
+  font-size: 1.125rem;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+.page-header__descripcion {
+  margin: 0;
+  max-width: 42rem;
+  font-size: 1rem;
+  line-height: 1.6;
+  color: var(--ssj-gris-texto, #4b4b4b);
+}

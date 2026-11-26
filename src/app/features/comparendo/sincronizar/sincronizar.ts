@@ -1,6 +1,7 @@
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { HttpErrorResponse } from '@angular/common/http';
 import { Button } from '../../../shared/components/button/button';
+import { PageHeader } from '../../../shared/components/header/header';
 import { InputText } from '../../../shared/components/input-text/input-text';
 import { Select, SelectOption } from '../../../shared/components/select/select';
 import { ModalMensajeComponent } from '../../../shared/components/modal-mensaje/modal-mensaje';
@@ -24,7 +25,7 @@ const MENSAJE_EXITO_RNMC =
 
 @Component({
   selector: 'app-sincronizar',
-  imports: [Select, InputText, Button, ModalMensajeComponent],
+  imports: [Select, InputText, Button, ModalMensajeComponent, PageHeader],
   templateUrl: './sincronizar.html',
   styleUrl: './sincronizar.css',
 })
