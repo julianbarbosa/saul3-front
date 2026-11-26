@@ -135,6 +135,34 @@
             }
           </colgroup>
           <thead>
+            @if (tieneFiltrosEntrada()) {
+              <tr class="fila-filtros-columnas">
+                @if (showCheckboxes) {
+                  <th class="table-checkbox-col"></th>
+                }
+                @for (column of columns; track $index) {
+                  <th
+                    class="table-data-col"
+                    [class.table-filter-cell--active]="column.filtroEntrada"
+                    [style.width]="getColumnWidth(column)"
+                  >
+                    @if (column.filtroEntrada) {
+                      <input
+                        type="text"
+                        class="form-control form-control-sm"
+                        [attr.inputmode]="column.filtroInputmode ?? null"
+                        [attr.aria-label]="'Filtrar por ' + (column.label ?? column.titulo ?? '')"
+                        [placeholder]="column.filtroPlaceholder || column.label || column.titulo || 'Filtrar'"
+                        [value]="valorFiltroColumna(column)"
+                        autocomplete="off"
+                        (input)="programarFiltroColumna(column, valorInput($event))"
+                        (keydown.enter)="aplicarFiltroColumnaYa(column, valorInput($event))"
+                      />
+                    }
+                  </th>
+                }
+              </tr>
+            }
             <tr>
               @if (showCheckboxes) {
                 <th class="table-checkbox-col" style="width: 10rem">
