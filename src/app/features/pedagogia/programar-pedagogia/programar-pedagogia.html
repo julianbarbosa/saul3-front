@@ -1,0 +1,256 @@
+<section class="container py-4" aria-labelledby="programar-pedagogia-titulo">
+  <header class="d-flex align-items-center gap-3 border-bottom pb-3 mb-4">
+    <i class="bi bi-mortarboard fs-5 text-primary" aria-hidden="true"></i>
+    <h1 id="programar-pedagogia-titulo" class="h4 mb-0">Programar Pedagogía</h1>
+  </header>
+
+  @if (resultado(); as estado) {
+    <div
+      class="alert"
+      [class.alert-success]="estado.tipo === 'exito'"
+      [class.alert-danger]="estado.tipo === 'error'"
+      role="status"
+      aria-live="polite"
+    >
+      {{ estado.mensaje }}
+    </div>
+  }
+
+  @if (cargandoInicial()) {
+    <div class="text-center py-5 text-muted" role="status" aria-live="polite">
+      <span class="spinner-border spinner-border-sm me-2" aria-hidden="true"></span>
+      Cargando datos para programar…
+    </div>
+  } @else if (errorInicial()) {
+    <div class="alert alert-danger" role="alert">{{ errorInicial() }}</div>
+  } @else {
+    <div class="card border shadow-sm">
+      <div class="card-body p-3 p-md-4">
+        <form [formGroup]="formulario" (ngSubmit)="guardar()" novalidate>
+          <div class="row g-3">
+            <div class="col-md-4">
+              <label for="duracion-pedagogia" class="form-label">
+                Duración (minutos) <span class="text-danger" aria-hidden="true">*</span>
+              </label>
+              <select
+                id="duracion-pedagogia"
+                class="form-select"
+                [class.is-invalid]="formularioEnviado() && formulario.controls.duracion.invalid"
+                formControlName="duracion"
+                (change)="consultarHorarios()"
+                required
+              >
+                <option value="">-- Seleccione --</option>
+                @for (duracion of duraciones; track duracion) {
+                  <option [value]="duracion">{{ duracion }}</option>
+                }
+              </select>
+              @if (formularioEnviado() && formulario.controls.duracion.invalid) {
+                <div class="invalid-feedback">Seleccione la duración.</div>
+              }
+            </div>
+
+            <div class="col-md-4">
+              <label for="fecha-pedagogia" class="form-label">
+                Fecha <span class="text-danger" aria-hidden="true">*</span>
+              </label>
+              <select
+                id="fecha-pedagogia"
+                class="form-select"
+                [class.is-invalid]="formularioEnviado() && formulario.controls.fecha.invalid"
+                formControlName="fecha"
+                (change)="consultarHorarios()"
+                required
+              >
+                <option value="">-- Seleccione --</option>
+                @for (fecha of fechas(); track fecha.fecha) {
+                  <option [value]="fecha.fecha">{{ fecha.fecha }}</option>
+                }
+              </select>
+              @if (formularioEnviado() && formulario.controls.fecha.invalid) {
+                <div class="invalid-feedback">Seleccione la fecha.</div>
+              }
+            </div>
+
+            <div class="col-md-4">
+              <label for="hora-pedagogia" class="form-label">
+                Hora <span class="text-danger" aria-hidden="true">*</span>
+              </label>
+              <select
+                id="hora-pedagogia"
+                class="form-select"
+                [class.is-invalid]="formularioEnviado() && formulario.controls.hora.invalid"
+                formControlName="hora"
+                required
+              >
+                <option value="">-- Seleccione --</option>
+                @for (hora of horasDisponibles(); track hora) {
+                  <option [value]="hora">{{ hora }}</option>
+                }
+              </select>
+              @if (formularioEnviado() && formulario.controls.hora.invalid) {
+                <div class="invalid-feedback">Seleccione la hora.</div>
+              }
+            </div>
+
+            <div class="col-md-6">
+              <label for="pedagogia-seleccionada" class="form-label">
+                Pedagogía <span class="text-danger" aria-hidden="true">*</span>
+              </label>
+              <select
+                id="pedagogia-seleccionada"
+                class="form-select"
+                [class.is-invalid]="formularioEnviado() && formulario.controls.pedagogiaId.invalid"
+                formControlName="pedagogiaId"
+                required
+              >
+                <option value="">-- Seleccione --</option>
+                @for (pedagogia of pedagogias(); track pedagogia.id) {
+                  <option [value]="pedagogia.id">{{ pedagogia.nombre }}</option>
+                }
+              </select>
+              @if (formularioEnviado() && formulario.controls.pedagogiaId.invalid) {
+                <div class="invalid-feedback">Seleccione la pedagogía.</div>
+              }
+            </div>
+
+            <div class="col-md-6">
+              <label for="cupo-pedagogia" class="form-label">
+                Cupo <span class="text-danger" aria-hidden="true">*</span>
+              </label>
+              <input
+                id="cupo-pedagogia"
+                type="number"
+                min="0"
+                max="100"
+                step="1"
+                class="form-control"
+                [class.is-invalid]="formularioEnviado() && formulario.controls.cupo.invalid"
+                formControlName="cupo"
+                required
+              />
+              @if (formularioEnviado() && formulario.controls.cupo.invalid) {
+                <div class="invalid-feedback">Ingrese un cupo entre 0 y 100.</div>
+              }
+            </div>
+
+            <div class="col-md-6">
+              <label for="capacitador-pedagogia" class="form-label">
+                Capacitador <span class="text-danger" aria-hidden="true">*</span>
+              </label>
+              <select
+                id="capacitador-pedagogia"
+                class="form-select"
+                [class.is-invalid]="formularioEnviado() && formulario.controls.capacitadorId.invalid"
+                formControlName="capacitadorId"
+                (change)="actualizarLugar()"
+                required
+              >
+                <option value="">-- Seleccione --</option>
+                @for (capacitador of capacitadores(); track capacitador.id) {
+                  <option [value]="capacitador.id">{{ capacitador.nombre }}</option>
+                }
+              </select>
+              @if (formularioEnviado() && formulario.controls.capacitadorId.invalid) {
+                <div class="invalid-feedback">Seleccione el capacitador.</div>
+              }
+            </div>
+
+            <div class="col-md-6">
+              <label for="modalidad-pedagogia" class="form-label">
+                Modalidad <span class="text-danger" aria-hidden="true">*</span>
+              </label>
+              <select
+                id="modalidad-pedagogia"
+                class="form-select"
+                [class.is-invalid]="formularioEnviado() && formulario.controls.modalidad.invalid"
+                formControlName="modalidad"
+                (change)="actualizarLugar()"
+                required
+              >
+                <option value="">-- Seleccione --</option>
+                <option value="presencial">Presencial</option>
+                <option value="virtual">Virtual</option>
+              </select>
+              @if (formularioEnviado() && formulario.controls.modalidad.invalid) {
+                <div class="invalid-feedback">Seleccione la modalidad.</div>
+              }
+            </div>
+
+            <div class="col-12">
+              <label for="lugar-pedagogia" class="form-label">
+                {{
+                  formulario.controls.modalidad.value === 'virtual'
+                    ? 'URL aula virtual'
+                    : 'Lugar de encuentro'
+                }}
+                <span class="text-danger" aria-hidden="true">*</span>
+              </label>
+              <input
+                id="lugar-pedagogia"
+                type="text"
+                class="form-control"
+                [class.is-invalid]="formularioEnviado() && formulario.controls.lugar.invalid"
+                formControlName="lugar"
+                [placeholder]="
+                  formulario.controls.modalidad.value === 'virtual'
+                    ? 'Ingrese el enlace de la reunión'
+                    : 'Ingrese el lugar de encuentro'
+                "
+                required
+              />
+              @if (formularioEnviado() && formulario.controls.lugar.invalid) {
+                <div class="invalid-feedback">Ingrese la localización.</div>
+              }
+              @if (formulario.controls.modalidad.value === 'virtual') {
+                <a
+                  class="small"
+                  href="https://meet.google.com/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  Abrir Google Meet
+                </a>
+              }
+            </div>
+
+            <div class="col-12">
+              <label for="observaciones-pedagogia" class="form-label">
+                Observaciones (precondiciones/herramientas)
+              </label>
+              <input
+                id="observaciones-pedagogia"
+                type="text"
+                class="form-control"
+                formControlName="observaciones"
+              />
+            </div>
+          </div>
+
+          <footer class="d-flex flex-wrap justify-content-between align-items-center gap-3 mt-4">
+            <a href="https://calendar.google.com/" target="_blank" rel="noopener noreferrer">
+              <i class="bi bi-calendar-event me-1" aria-hidden="true"></i>
+              Google Calendar
+            </a>
+            <div class="d-flex align-items-center gap-2">
+              <button type="submit" class="btn btn-primary" [disabled]="guardando()">
+                @if (guardando()) {
+                  <span class="spinner-border spinner-border-sm me-2" aria-hidden="true"></span>
+                  Guardando…
+                } @else {
+                  Crear Programación de Pedagogía
+                }
+              </button>
+              <a
+                class="btn btn-link"
+                [routerLink]="['/gestion-acceso-justicia', 'pedagogia', 'listar']"
+              >
+                Cancelar
+              </a>
+            </div>
+          </footer>
+        </form>
+      </div>
+    </div>
+  }
+</section>

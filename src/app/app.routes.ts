@@ -6,6 +6,7 @@ import { Layout } from './features/main/layout/layout';
 import { Main } from './features/main/main/main';
 import { CrearPedagogia } from './features/pedagogia/crear-pedagogia/crear-pedagogia';
 import { ListaProgramacionPedagogia } from './features/pedagogia/lista-programacion-pedagogia/lista-programacion-pedagogia';
+import { ProgramarPedagogia } from './features/pedagogia/programar-pedagogia/programar-pedagogia';
 
 export const routes: Routes = [
   {
@@ -44,6 +45,11 @@ export const routes: Routes = [
         path: 'pedagogia/crear',
         component: CrearPedagogia,
         title: 'Crear Pedagogía',
+      },
+      {
+        path: 'pedagogia/programar',
+        component: ProgramarPedagogia,
+        title: 'Programar Pedagogía',
       },
       
       {

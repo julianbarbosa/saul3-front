@@ -65,9 +65,53 @@ export interface CrearPedagogiaPayload {
   comportamientosIds: number[];
 }
 
+export interface CapacitadorPedagogia {
+  id: number;
+  nombre: string;
+  direccion?: string;
+}
+
+export interface CatalogoPedagogia {
+  id: number;
+  tipo: string;
+  nombre: string;
+  descripcion: string;
+}
+
+export interface FechaPedagogia {
+  fecha: string;
+}
+
+export interface CrearProgramacionPedagogiaPayload {
+  duracion: number;
+  fechaCita: { fecha: string };
+  horaCita: { hora: Date };
+  pedagogia: CatalogoPedagogia;
+  cupo: number;
+  responsable: CapacitadorPedagogia;
+  modalidad: 'presencial' | 'virtual';
+  lugar: string;
+  observaciones: string;
+  fechaInicialISO: string;
+  fechaFinalISO: string;
+}
+
 @Injectable({ providedIn: 'root' })
 export class PedagogiaService {
   private http = inject(HttpClient);
+
+  datosInicialesProgramacionPedagogia(): Observable<ResponseI> {
+    return this.http.get<ResponseI>(`${environment.SAUL3_API_URL}/pedagogia/inicial`);
+  }
+
+  guardarProgramacionPedagogia(
+    payload: CrearProgramacionPedagogiaPayload,
+  ): Observable<ResponseI> {
+    return this.http.post<ResponseI>(
+      `${environment.SAUL3_API_URL}/controlpolicivo/programacionpedagogia`,
+      payload,
+    );
+  }
 
   listarComportamientosContrarios(): Observable<unknown> {
     return this.http.get<unknown>(

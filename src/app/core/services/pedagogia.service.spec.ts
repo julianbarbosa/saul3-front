@@ -20,6 +20,48 @@ describe('PedagogiaService', () => {
     httpTesting.verify();
   });
 
+  it('carga los datos iniciales del formulario de programación', () => {
+    service.datosInicialesProgramacionPedagogia().subscribe();
+
+    const request = httpTesting.expectOne('http://localhost:8000/api/pedagogia/inicial');
+    expect(request.request.method).toBe('GET');
+    request.flush({
+      success: true,
+      data: { capacitadores: [], pedagogias: [], fechas: [] },
+    });
+  });
+
+  it('guarda una programación de pedagogía', () => {
+    const fechaInicial = new Date(2026, 11, 10, 8, 0);
+    const payload = {
+      duracion: 60,
+      fechaCita: { fecha: '2026-12-10' },
+      horaCita: { hora: fechaInicial },
+      pedagogia: {
+        id: 1,
+        tipo: 'Pedagogía',
+        nombre: 'Cultura ciudadana',
+        descripcion: 'Jornada pedagógica',
+      },
+      cupo: 10,
+      responsable: { id: 7903, nombre: 'Pedro A Perez Muriel A' },
+      modalidad: 'presencial' as const,
+      lugar: 'Control a Construcciones HOLA',
+      observaciones: '',
+      fechaInicialISO: fechaInicial.toISOString(),
+      fechaFinalISO: new Date(fechaInicial.getTime() + 60 * 60_000).toISOString(),
+    };
+
+    service.guardarProgramacionPedagogia(payload).subscribe();
+
+    const request = httpTesting.expectOne(
+      'http://localhost:8000/api/controlpolicivo/programacionpedagogia',
+    );
+    expect(request.request.method).toBe('POST');
+    expect(request.request.body).toEqual(payload);
+    request.flush({ success: true, message: 'Programación creada.', data: null });
+  });
+
   it('consulta los comportamientos contrarios', () => {
     service.listarComportamientosContrarios().subscribe();
 
