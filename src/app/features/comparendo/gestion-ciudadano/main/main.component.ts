@@ -7,6 +7,7 @@ import { ComparendoService, TipoDocIdentificacionApi } from 'src/app/core/servic
 import { BusquedaStateService } from 'src/app/core/services/busqueda-state.service';
 import { ActivatedRoute, Router } from '@angular/router';
 import { marcarAccesoPublicoCodigoPolicia } from 'src/app/core/helpers/codigo-policia-route.helper';
+import { PageHeader } from 'src/app/shared/components/header/header';
 
 interface TipoIdentificacionOpcion {
   id: number;
@@ -26,7 +27,7 @@ interface InfoCard {
 
 @Component({
   selector: 'app-main',
-  imports: [CommonModule, ReactiveFormsModule, ListaComparendosComponent],
+  imports: [CommonModule, ReactiveFormsModule, ListaComparendosComponent, PageHeader],
   templateUrl: './main.component.html',
   styleUrls: ['./main.component.sass']
 })

@@ -1,12 +1,8 @@
 <div class="container-fluid py-3">
-  <h1 class="h4 mb-3">
-    <i class="bi bi-collection me-2" aria-hidden="true"></i>
-    Control a sanciones — Movimiento múltiple
-  </h1>
-
-  @if (mensaje) {
-    <div class="alert alert-info">{{ mensaje }}</div>
-  }
+  <app-page-header
+    titulo="Listado de expedientes"
+    subtitulo="Registro de movimiento múltiple de expedientes"    
+  />
 
   <app-modal-mensaje
     [visible]="modalMensajeVisible"
@@ -16,17 +12,27 @@
     (cerrar)="cerrarModalMensajeRegistro()"
   />
 
-  <div class="row g-2 align-items-end mb-3">
-    <div class="col-md-5">
-      <label class="form-label" for="estado">Estado</label>
-      <select id="estado" class="form-select" [(ngModel)]="busqueda.estado">
-        <option [ngValue]="undefined">Seleccione…</option>
-        @for (e of estados; track e.value) {
-          <option [ngValue]="e.value">{{ e.label }}</option>
-        }
-      </select>
-    </div>
-    @if (requiereInspeccion()) {
+  <ul class="nav nav-tabs estado-tabs mb-3" role="tablist" aria-label="Estado del expediente">
+    @for (e of estados; track e.value) {
+      <li class="nav-item" role="presentation">
+        <button
+          type="button"
+          class="nav-link"
+          role="tab"
+          [id]="'tab-estado-' + e.value"
+          [class.active]="busqueda.estado === e.value"
+          [attr.aria-selected]="busqueda.estado === e.value"
+          [disabled]="cargando"
+          (click)="seleccionarEstado(e.value)"
+        >
+          {{ e.label }}
+        </button>
+      </li>
+    }
+  </ul>
+
+  @if (requiereInspeccion()) {
+    <div class="row g-2 align-items-end mb-3">
       <div class="col-md-5">
         <label class="form-label" for="inspeccion">Inspección</label>
         <select id="inspeccion" class="form-select" [(ngModel)]="busqueda.inspeccion">
@@ -36,81 +42,114 @@
           }
         </select>
       </div>
+      <div class="col-md-2">
+        <button
+          type="button"
+          class="btn btn-success w-100"
+          (click)="buscar()"
+          [disabled]="cargando || !busqueda.estado"
+        >
+          Buscar
+        </button>
+      </div>
+    </div>
+  }
+
+  @if (busquedaRealizada) {
+    <div class="listado-expedientes" [class.listado-expedientes--cargando]="cargando" [attr.aria-busy]="cargando">
+
+      <app-table
+        [columns]="columnas()"
+        [data]="filasPagina()"
+        [total]="total()"
+        [page]="page"
+        [pageSize]="pageSize"
+        [pageSizeOptions]="tamanosPagina"
+        [showCheckboxes]="mostrarCheckboxes()"
+        [mostrarBotonLimpiar]="false"
+        [mostrarBotonAplicar]="false"
+        textoRegistros="expedientes"
+        rowIdField="id"
+        (filtersChange)="onPaginacion($event)"
+        (pageChange)="onCambioPagina($event)"
+        (pageSizeChange)="onCambioTamanoPagina($event)"
+        (selectionChange)="onSeleccionChange($event)"
+      />
+    </div>
+
+    @if (mostrarCheckboxes()) {
+      <p class="mt-2">Cantidad seleccionados: {{ cantidadCheckeado() }}</p>
     }
-    <div class="col-md-2">
-      <button type="button" class="btn btn-success w-100" (click)="buscar()" [disabled]="cargando || !busqueda.estado">
-        Buscar
-      </button>
-    </div>
-  </div>
 
-  @if (data.length) {
-    <div class="card">
-      <div class="card-header">Listado — estado {{ busqueda.estado }} ({{ data.length }})</div>
-      <div class="card-body row g-2">
-        <div class="col-md-4">
-          <label class="form-label">Filtrar por id interno</label>
-          <input class="form-control" [(ngModel)]="filterId" />
-        </div>
-        <div class="col-md-4">
-          <label class="form-label">Filtrar por comparendo</label>
-          <input class="form-control" [(ngModel)]="filterFormato" />
-        </div>
-      </div>
-      <div class="table-responsive">
-        <table class="table table-sm table-hover mb-0">
-          <thead>
-            <tr>
-              <th>Id</th>
-              <th>Comparendo</th>
-              <th>Nombre infractor</th>
-              <th>Actualización</th>
-              <th>Acción</th>
-            </tr>
-          </thead>
-          <tbody>
-            @for (item of expedientesFiltrados(); track item.id) {
-              <tr>
-                <td>{{ item.id }}</td>
-                <td>{{ item.formato }}</td>
-                <td>{{ item.nombre }}</td>
-                <td>{{ fmt(item.updatedAt) }}</td>
-                <td>
-                  @if (busqueda.estado === 'pendiente') {
-                    <a
-                      [routerLink]="['/control-sanciones/registrar-movimiento']"
-                      [queryParams]="{ comparendo: item.formato }"
-                      title="Gestionar"
-                    >
-                      <i class="bi bi-check-circle"></i>
-                    </a>
-                  } @else {
-                    <input type="checkbox" [(ngModel)]="item.isChecked" (ngModelChange)="actualizarCantidad()" />
-                  }
-                </td>
-              </tr>
-            }
-          </tbody>
-        </table>
-      </div>
-    </div>
-
-    <p class="mt-2">Cantidad seleccionados: {{ cantidadCheckeado }}</p>
-
-    <div class="d-flex flex-wrap gap-2 justify-content-end">
+    <div class="d-flex flex-wrap gap-2 justify-content-end mt-3">
       @if (permisos.tiene('controlsanciones_movimiento_expediente_tesoreria') && busqueda.estado === 'aprobada') {
-        <button type="button" class="btn btn-primary" (click)="registrarMovimiento('enviadotesoreria')">Enviar a tesorería</button>
+        <button type="button" class="btn btn-primary" (click)="registrarMovimiento('enviadotesoreria')">
+          Enviar a tesorería
+        </button>
       }
       @if (permisos.tiene('controlsanciones_movimiento_expediente_inspeccion') && busqueda.estado === 'rechazado') {
-        <button type="button" class="btn btn-primary" (click)="registrarMovimiento('devuelto')">Devolver a inspección</button>
+        <button type="button" class="btn btn-primary" (click)="registrarMovimiento('devuelto')">
+          Devolver a inspección
+        </button>
       }
       @if (permisos.tiene('tesoreria_cargar_expediente') && busqueda.estado === 'devueltoportesoreria') {
-        <button type="button" class="btn btn-primary" (click)="registrarMovimiento('cerrado')">Devolver a control sanciones</button>
+        <button type="button" class="btn btn-primary" (click)="registrarMovimiento('cerrado')">
+          Devolver a control sanciones
+        </button>
       }
       @if (permisos.tiene('controlsanciones_cerrar_expediente') && busqueda.estado === 'enviadotesoreria') {
-        <button type="button" class="btn btn-primary" (click)="registrarMovimiento('cerrado')">Envío custodia</button>
+        <button type="button" class="btn btn-primary" (click)="registrarMovimiento('cerrado')">
+          Envío custodia
+        </button>
       }
       <button type="button" class="btn btn-outline-secondary" (click)="limpiar()">Limpiar</button>
     </div>
   }
 </div>
+
+<ng-template #celdaAccion let-fila>
+  <button
+    type="button"
+    class="btn btn-link btn-sm p-0"
+    title="Gestionar"
+    (click)="abrirModalGestion(fila)"
+  >
+    <i class="bi bi-check-circle" aria-hidden="true"></i>
+    <span class="visually-hidden">Gestionar {{ fila.formato }}</span>
+  </button>
+</ng-template>
+
+@if (comparendoModal; as comparendo) {
+  <div
+    class="modal d-block modal-gestion-expediente"
+    tabindex="-1"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="titulo-modal-gestion-expediente"
+  >
+    <div class="modal-dialog modal-xl modal-dialog-scrollable modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="titulo-modal-gestion-expediente">
+            Gestionar expediente {{ comparendo }}
+          </h5>
+          <button
+            type="button"
+            class="btn-close"
+            aria-label="Cerrar"
+            (click)="cerrarModalGestion()"
+          ></button>
+        </div>
+        <div class="modal-body">
+          <app-registrar-movimiento-expediente
+            [embebido]="true"
+            [comparendoInicial]="comparendo"
+            (cerrado)="cerrarModalGestion()"
+            (registroExitoso)="onRegistroExitosoModal()"
+          />
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="modal-backdrop fade show" (click)="cerrarModalGestion()"></div>
+}

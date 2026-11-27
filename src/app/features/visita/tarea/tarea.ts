@@ -3,6 +3,7 @@ import { Component, computed, inject, OnInit, signal, TemplateRef, viewChild } f
 import { VisitaListadoFila } from '../../../core/interfaces/visita.interface';
 import { EstilosVisitaService } from '../../../core/services/estilos-visita.service';
 import { VisitaService } from '../../../core/services/visita.service';
+import { PageHeader } from '../../../shared/components/header/header';
 import {
   ColumnaTabla,
   OpcionFiltro,
@@ -25,7 +26,7 @@ import {
 /** Visitas Pendientes: Visitas que el usuario tiene por gestionar (SAUL: listarVisita). */
 @Component({
   selector: 'app-tarea',
-  imports: [Table, AccionesVisita],
+  imports: [Table, AccionesVisita, PageHeader],
   templateUrl: './tarea.html',
   styleUrl: './tarea.css',
 })

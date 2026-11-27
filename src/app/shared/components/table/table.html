@@ -128,7 +128,7 @@
         <table class="table tabla-ssj__tabla" [class.table-has-checkboxes]="showCheckboxes">
           <colgroup>
             @if (showCheckboxes) {
-              <col class="table-checkbox-col-width" />
+              <col class="table-checkbox-col-width" style="width: 10rem" />
             }
             @for (column of columns; track $index) {
               <col [style.width]="getColumnWidth(column)" />
@@ -165,7 +165,7 @@
             }
             <tr>
               @if (showCheckboxes) {
-                <th class="table-checkbox-col">
+                <th class="table-checkbox-col" style="width: 10rem">
                   <input
                     type="checkbox"
                     class="form-check-input"
@@ -261,7 +261,7 @@
               @for (row of data ?? []; track rowSelectionKey(row) ?? $index) {
                 <tr [class]="claseFila(row)">
                   @if (showCheckboxes) {
-                    <td class="table-checkbox-col">
+                    <td class="table-checkbox-col" style="width: 10rem">
                       <input
                         type="checkbox"
                         class="form-check-input"
