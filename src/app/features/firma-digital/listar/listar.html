@@ -1,0 +1,37 @@
+<section class="listar-proceso-firma" aria-labelledby="listar-proceso-firma-titulo">
+  <app-modal-mensaje
+    [visible]="modalMensajeVisible()"
+    [titulo]="modalMensajeTitulo()"
+    [mensaje]="modalMensajeTexto()"
+    [variante]="modalMensajeVariante()"
+    (cerrar)="cerrarModalMensaje()"
+  />
+
+  <app-page-header
+    tituloId="listar-proceso-firma-titulo"
+    [titulo]="titulo"
+    [descripcion]="descripcion"
+  />
+
+  <div
+    class="listar-proceso-firma__tabla"
+    [class.listar-proceso-firma__tabla--cargando]="cargando()"
+    [attr.aria-busy]="cargando()"
+  >
+    <app-table
+      [columns]="columnas"
+      [data]="filasPagina()"
+      [total]="total()"
+      [page]="page"
+      [pageSize]="pageSize"
+      [pageSizeOptions]="tamanosPagina"
+      [mostrarBotonLimpiar]="false"
+      [mostrarBotonAplicar]="false"
+      textoRegistros="procesos"
+      rowIdField="id"
+      (filtersChange)="onPaginacion($event)"
+      (pageChange)="onCambioPagina($event)"
+      (pageSizeChange)="onCambioTamanoPagina($event)"
+    />
+  </div>
+</section>

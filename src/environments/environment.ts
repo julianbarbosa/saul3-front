@@ -3,13 +3,12 @@ export const environment = {
   TYSA_API_URL: 'https://saul-qa.cali.gov.co/tramites-api',
   SAUL3_API_URL: 'http://localhost:8000/api',
 
-  /**
-   * saul2 local a través del proxy de `ng serve` (proxy.conf.json → http://127.0.0.1).
-   * Así viaja la cookie de sesión de SAUL: inicia sesión en http://localhost/saul antes de usar SsjFront.
-   * saul-dev: 'https://saul-dev.cali.gov.co:1443/saul2/app_dev.php'
-   */
-  SAUL2_API_URL: 'https://saul-dev.cali.gov.co:1443/saul2/app_dev.php',
   /** Front de SAUL (AngularJS): para abrir historial y observaciones que aún no existen en ssjfront. */
   /** Opcional: clave de API de ArcGIS (https://developers.arcgis.com/) */
   ARCGIS_API_KEY: '',
+
+  /** reCAPTCHA v3 — alineado con RECAPTCHA_* del backend SAUL3. */
+  RECAPTCHA_ENABLED: false,
+  RECAPTCHA_SITE_KEY: '6LerDs0tAAAAAMmSbQaIto2im3nkv6vBZfqUpvtR',
+  RECAPTCHA_ACTION: 'api_access',
 };

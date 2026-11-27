@@ -1,0 +1,62 @@
+<section class="container py-4" aria-labelledby="lista-programacion-pedagogia-titulo">
+  <header class="mb-4">
+    <h1 id="lista-programacion-pedagogia-titulo" class="h3 mb-2">Programaciones de Pedagogía</h1>
+    <p class="text-muted mb-0">Consulta las jornadas pedagógicas programadas.</p>
+  </header>
+
+  @if (cargando()) {
+    <div class="text-center py-5 text-muted" role="status" aria-live="polite">
+      <span class="spinner-border spinner-border-sm me-2" aria-hidden="true"></span>
+      Cargando programaciones…
+    </div>
+  } @else if (error()) {
+    <div class="alert alert-danger" role="alert">{{ error() }}</div>
+  } @else {
+    <app-table
+      [columns]="columnas()"
+      [data]="filasPagina()"
+      [total]="filas().length"
+      [page]="page"
+      [pageSize]="pageSize"
+      [pageSizeOptions]="[10, 20, 50]"
+      [mostrarBotonLimpiar]="false"
+      [mostrarBotonAplicar]="false"
+      textoRegistros="programaciones"
+      rowIdField="id"
+      (filtersChange)="onPaginacion($event)"
+      (pageChange)="onCambioPagina($event)"
+      (pageSizeChange)="onCambioTamanoPagina($event)"
+    />
+  }
+</section>
+
+<ng-template #celdaAcciones let-fila>
+  <div class="d-flex align-items-center gap-1">
+    <button
+      type="button"
+      class="btn btn-sm btn-outline-primary"
+      title="Agregar asistente"
+      aria-label="Agregar asistente"
+    >
+      <i class="bi bi-person-plus" aria-hidden="true"></i>
+    </button>
+    <a
+      class="btn btn-sm btn-outline-success"
+      [routerLink]="['/gestion-acceso-justicia', 'comparendo', 'pedagogia', fila.id, 'asistencia']"
+      target="_blank"
+      rel="noopener noreferrer"
+      title="Registrar asistencia"
+      aria-label="Registrar asistencia"
+    >
+      <i class="bi bi-clipboard-check" aria-hidden="true"></i>
+    </a>
+    <button
+      type="button"
+      class="btn btn-sm btn-outline-secondary"
+      title="Editar la programación de la pedagogía"
+      aria-label="Editar la programación de la pedagogía"
+    >
+      <i class="bi bi-pencil-square" aria-hidden="true"></i>
+    </button>
+  </div>
+</ng-template>

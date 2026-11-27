@@ -1,0 +1,175 @@
+<section class="container-fluid py-3" aria-labelledby="registrar-asistencia-pedagogia-titulo">
+  <header class="d-flex align-items-center gap-3 border-bottom pb-3 mb-3">
+    <i class="bi bi-hand-index fs-5 text-primary" aria-hidden="true"></i>
+    <h1 id="registrar-asistencia-pedagogia-titulo" class="h5 mb-0">
+      Registrar Asistencia a Pedagogías
+    </h1>
+  </header>
+
+  @if (cargando()) {
+    <div class="text-center py-5 text-muted" role="status" aria-live="polite">
+      <span class="spinner-border spinner-border-sm me-2" aria-hidden="true"></span>
+      Cargando asistentes…
+    </div>
+  } @else if (error()) {
+    <div class="alert alert-danger" role="alert">{{ error() }}</div>
+  } @else {
+    @if (programacion(); as detalle) {
+      <section class="border-start border-info border-3 bg-light p-3 mb-4" aria-labelledby="programacion-titulo">
+        <h2 id="programacion-titulo" class="h6 text-info mb-2">Programación Pedagogía</h2>
+        <div class="row g-2 small">
+          <div class="col-md-6"><strong>Pedagogía:</strong> {{ detalle.nombrePedagogia }}</div>
+          <div class="col-12"><strong>Descripción:</strong> {{ detalle.descripcionPedagogia }}</div>
+          <div class="col-md-6"><strong>Lugar:</strong> {{ detalle.lugar }}</div>
+          <div class="col-md-6"><strong>Fecha:</strong> {{ detalle.fecha }}</div>
+          <div class="col-md-6"><strong>Modalidad:</strong> {{ detalle.modalidad }}</div>
+          <div class="col-md-6"><strong>Hora:</strong> {{ detalle.hora }}</div>
+          <div class="col-12 d-flex flex-wrap gap-4">
+            <div><strong>Cupo:</strong> {{ detalle.cupo }}</div>
+            <div><strong>Cupo usado:</strong> {{ detalle.cupoUsado }}</div>
+            <div><strong>Cupo lleno:</strong> {{ detalle.cupoLleno }}</div>
+          </div>
+          <div class="col-md-6"><strong>Duración:</strong> {{ detalle.duracion }}</div>
+          <div class="col-md-6"><strong>Usuario:</strong> {{ detalle.usuario }}</div>
+          <div class="col-md-6"><strong>Actualizado:</strong> {{ detalle.updatedAt }}</div>
+          <div class="col-md-6"><strong>Creado:</strong> {{ detalle.createdAt }}</div>
+        </div>
+      </section>
+    }
+
+    <app-table
+      [columns]="columnas()"
+      [data]="filasPagina()"
+      [total]="totalFiltrado()"
+      [page]="page"
+      [pageSize]="pageSize"
+      [pageSizeOptions]="[10, 20, 50]"
+      [mostrarBotonLimpiar]="false"
+      [mostrarBotonAplicar]="false"
+      textoRegistros="asistentes"
+      rowIdField="id"
+      (filtersChange)="onPaginacion($event)"
+      (pageChange)="onCambioPagina($event)"
+      (pageSizeChange)="onCambioTamanoPagina($event)"
+    />
+
+    <p class="text-muted small text-end mt-2 mb-0" aria-live="polite">
+      Asistencias marcadas:
+      <strong>{{ asistentesMarcados() }}</strong> de {{ asistentes().length }} asistentes
+    </p>
+
+    @if (resultadoOperacion(); as resultado) {
+      <div
+        class="alert mt-3"
+        [class.alert-success]="resultado.tipo === 'exito'"
+        [class.alert-danger]="resultado.tipo === 'error'"
+        role="status"
+        aria-live="polite"
+      >
+        {{ resultado.mensaje }}
+      </div>
+    }
+
+    @if (errorImpresion()) {
+      <div class="alert alert-danger mt-3" role="alert">{{ errorImpresion() }}</div>
+    }
+
+    <footer class="d-flex justify-content-end gap-2 mt-3">
+      <button
+        type="button"
+        class="btn btn-primary"
+        [disabled]="
+          asistenciaYaRegistrada() || guardandoAsistencia() || asistentes().length === 0
+        "
+        (click)="abrirConfirmacion()"
+      >
+        {{ asistenciaYaRegistrada() ? 'Asistencia ya registrada' : 'Registrar asistencia' }}
+      </button>
+      <button
+        type="button"
+        class="btn btn-outline-primary"
+        [disabled]="imprimiendo()"
+        (click)="imprimirAsistencia()"
+      >
+        @if (imprimiendo()) {
+          <span class="spinner-border spinner-border-sm me-1" aria-hidden="true"></span>
+          Generando…
+        } @else {
+          <i class="bi bi-printer me-1" aria-hidden="true"></i> Imprimir asistencia
+        }
+      </button>
+      <a
+        class="btn btn-link"
+        [routerLink]="['/gestion-acceso-justicia', 'comparendo', 'pedagogia']"
+      >
+        Cancelar
+      </a>
+    </footer>
+  }
+</section>
+
+<ng-template #celdaAsistio let-asistente>
+  <input
+    type="checkbox"
+    class="form-check-input"
+    [checked]="asistente.asistio"
+    [disabled]="guardandoAsistencia()"
+    (change)="cambiarAsistencia(asistente, $event)"
+    [attr.aria-label]="'Asistió: ' + asistente.nombreInfractor"
+  />
+</ng-template>
+
+@if (confirmacionVisible()) {
+  <div
+    class="modal d-block"
+    tabindex="-1"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="confirmar-asistencia-titulo"
+    aria-describedby="confirmar-asistencia-mensaje"
+  >
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content shadow">
+        <div class="modal-header">
+          <h2 id="confirmar-asistencia-titulo" class="modal-title fs-5">Confirmación</h2>
+          <button
+            type="button"
+            class="btn-close"
+            aria-label="Cerrar"
+            [disabled]="guardandoAsistencia()"
+            (click)="cancelarConfirmacion()"
+          ></button>
+        </div>
+        <div class="modal-body">
+          <p id="confirmar-asistencia-mensaje" class="mb-0">
+            ¿Confirma que desea realizar esta acción?
+          </p>
+        </div>
+        <div class="modal-footer">
+          <button
+            type="button"
+            class="btn btn-outline-secondary"
+            [disabled]="guardandoAsistencia()"
+            (click)="cancelarConfirmacion()"
+          >
+            Cancelar
+          </button>
+          <button
+            type="button"
+            class="btn btn-primary"
+            [disabled]="guardandoAsistencia()"
+            (click)="confirmarAsistencia()"
+          >
+            @if (guardandoAsistencia()) {
+              <span class="spinner-border spinner-border-sm me-2" aria-hidden="true"></span>
+              Enviando…
+            } @else {
+              OK
+            }
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="modal-backdrop fade show" aria-hidden="true"></div>
+}

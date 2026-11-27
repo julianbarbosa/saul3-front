@@ -184,6 +184,8 @@ export class Gestion implements OnInit, OnDestroy {
   idVisita: number | null = null;
   /** Signal: así Angular (zoneless) redibuja el aviso aunque se asigne desde una respuesta HTTP. */
   readonly mensajeError = signal('');
+  /** true mientras saul3 arma el PDF del informe (evita dobles clics). */
+  readonly generandoInforme = signal(false);
   /**
    * Como `esModoObservacion` de SAUL (`accion === 'observar'`): se ve todo, no se guarda nada.
    * Se activa con `/visita/gestionar?accion=observar`.
@@ -205,6 +207,9 @@ export class Gestion implements OnInit, OnDestroy {
     { campo: VisitaCampo; etiqueta: string; ocultarEtiqueta: boolean }
   >();
   private readonly imagenesNoDisponibles = new Set<string>();
+    /** Imágenes guardadas descargadas con token (nombre → URL blob:). */
+  private readonly imagenesGuardadas = signal(new Map<string, string | null>());
+  private readonly descargandoImagenes = new Set<string>();
   private readonly extensionesImagen = ['png', 'jpeg', 'jpg'];
 
   get visualizacionSeleccionada(): string {
@@ -257,7 +262,9 @@ export class Gestion implements OnInit, OnDestroy {
 
   ngOnDestroy(): void {
     sessionStorage.removeItem(ID_VISITA_GESTION_SESION);
+    this.cerrarEditor();
     this.liberarSelecciones();
+    this.liberarImagenesGuardadas();
   }
 
   /** Id recibido al navegar (state) o al recargar (sessionStorage del mismo tab). */
@@ -276,7 +283,9 @@ export class Gestion implements OnInit, OnDestroy {
     this.pasoActual.set(0);
     this.pasosHechos.set(new Set());
     this.categoriasValidadas.set(new Set());
+    this.cerrarEditor();
     this.liberarSelecciones();
+    this.liberarImagenesGuardadas();
     this.imagenesNoDisponibles.clear();
     this.idVisita = idVisita;
     this.visitaDetalle.set(null);
@@ -323,6 +332,51 @@ export class Gestion implements OnInit, OnDestroy {
         );
       }
     }
+  }
+
+  /**
+   * Genera el PDF del formulario en saul3 (GET /visita/informe/{id}) y lo abre en otra pestaña.
+   * La pestaña se abre antes de la petición para que el navegador no la bloquee como ventana emergente.
+   */
+  async generarInforme(): Promise<void> {
+    const idVisita = this.idVisita;
+    if (idVisita === null || this.generandoInforme()) {
+      return;
+    }
+
+    this.generandoInforme.set(true);
+    this.mensajeError.set('');
+    const pestana = window.open('', '_blank');
+
+    try {
+      const pdf = await firstValueFrom(this.visitaService.generarInforme(idVisita));
+      if (pdf.type !== 'application/pdf') {
+        throw new Error('La respuesta no es un PDF.');
+      }
+      const url = URL.createObjectURL(pdf);
+      if (pestana) {
+        pestana.opener = null;
+        pestana.location.href = url;
+      } else {
+        this.descargarArchivo(url, `informe-visita-${idVisita}.pdf`);
+      }
+      // Se libera cuando el visor ya tuvo tiempo de cargarlo.
+      setTimeout(() => URL.revokeObjectURL(url), 60_000);
+    } catch (error) {
+      pestana?.close();
+      console.error('No se pudo generar el PDF de la visita', error);
+      this.mensajeError.set(await mensajeErrorInforme(error));
+    } finally {
+      this.generandoInforme.set(false);
+    }
+  }
+
+  private descargarArchivo(url: string, nombre: string): void {
+    const enlace = document.createElement('a');
+    enlace.href = url;
+    enlace.download = nombre;
+    enlace.rel = 'noopener';
+    enlace.click();
   }
 
   onVisualizacionChange(etiqueta: string): void {
@@ -762,7 +816,54 @@ export class Gestion implements OnInit, OnDestroy {
 
   urlImagenGuardada(campo: VisitaCampo): string | null {
     const nombre = this.referenciaGuardada(campo);
-    return nombre ? this.visitaService.urlDocumento(nombre) : null;
+    if (!nombre) {
+      return null;
+    }
+    const descargadas = this.imagenesGuardadas();
+    if (descargadas.has(nombre)) {
+      return descargadas.get(nombre) ?? null;
+    }
+    this.descargarImagenGuardada(campo.codigo, nombre);
+    return null;
+  }
+
+  private descargarImagenGuardada(codigo: string, nombre: string): void {
+    if (this.descargandoImagenes.has(nombre)) {
+      return;
+    }
+    const descarga = this.visitaService.descargarDocumento(nombre);
+    if (!descarga) {
+      return;
+    }
+    this.descargandoImagenes.add(nombre);
+    // Fuera del pintado actual para no escribir el signal en medio de él (NG0100).
+    queueMicrotask(() => descarga.subscribe({
+      next: (blob) => {
+        if (!this.descargandoImagenes.delete(nombre)) {
+          return;
+        }
+        const url = URL.createObjectURL(blob);
+        this.imagenesGuardadas.update((mapa) => new Map(mapa).set(nombre, url));
+      },
+      error: () => {
+        if (!this.descargandoImagenes.delete(nombre)) {
+          return;
+        }
+        this.marcarImagenNoDisponible(codigo);
+        const ruta = this.visitaService.urlDocumento(nombre);
+        this.imagenesGuardadas.update((mapa) => new Map(mapa).set(nombre, ruta));
+      },
+    }));
+  }
+
+  private liberarImagenesGuardadas(): void {
+    for (const url of this.imagenesGuardadas().values()) {
+      if (url) {
+        URL.revokeObjectURL(url);
+      }
+    }
+    this.imagenesGuardadas.set(new Map());
+    this.descargandoImagenes.clear();
   }
 
   imagenNoDisponible(codigo: string): boolean {
@@ -778,7 +879,73 @@ export class Gestion implements OnInit, OnDestroy {
     const input = event.target as HTMLInputElement;
     const archivo = input.files?.[0];
     input.value = '';
-    if (!archivo || this.soloLectura(campo) || this.idVisita === null) {
+    if (archivo) {
+      await this.procesarArchivo(campo, archivo);
+    }
+  }
+
+  /* ---------- Edición de imágenes (editor-imagen-visita) ---------- */
+
+  /** Código del campo que se está editando y la imagen cargada en el editor. */
+  readonly edicion = signal<{ codigo: string; imagen: Blob } | null>(null);
+  /** Código del campo cuya imagen guardada se está descargando para editar. */
+  readonly preparandoEdicion = signal<string | null>(null);
+
+  imagenEdicion(codigo: string): Blob | null {
+    const edicion = this.edicion();
+    return edicion?.codigo === codigo ? edicion.imagen : null;
+  }
+
+  /**
+   * Abre el editor con la imagen del campo: la recién seleccionada o, si no hay,
+   * la guardada (se descarga como Blob). La original nunca se modifica.
+   */
+  async editarImagen(campo: VisitaCampo): Promise<void> {
+    if (this.soloLectura(campo) || this.idVisita === null || this.preparandoEdicion() !== null) {
+      return;
+    }
+
+    const pendiente = this.archivoPendiente(campo.codigo);
+    if (pendiente) {
+      this.edicion.set({ codigo: campo.codigo, imagen: pendiente });
+      return;
+    }
+
+    const descarga = this.visitaService.descargarDocumento(this.referenciaGuardada(campo) ?? '');
+    if (!descarga) {
+      return;
+    }
+    const idVisita = this.idVisita;
+    this.preparandoEdicion.set(campo.codigo);
+    try {
+      const imagen = await firstValueFrom(descarga);
+      if (this.idVisita === idVisita) {
+        this.mensajeError.set('');
+        this.edicion.set({ codigo: campo.codigo, imagen });
+      }
+    } catch {
+      this.mensajeError.set('No se pudo cargar la imagen guardada para editarla.');
+    } finally {
+      this.preparandoEdicion.set(null);
+    }
+  }
+
+  /**
+   * La imagen editada entra como una foto nueva del campo: misma validación y mismo guardado.
+   * saul3 la registra en visitaxdocumento sin borrar la original; el campo queda con la editada.
+   */
+  async onImagenEditada(campo: VisitaCampo, archivo: File): Promise<void> {
+    this.cerrarEditor();
+    await this.procesarArchivo(campo, archivo);
+  }
+
+  cerrarEditor(): void {
+    this.edicion.set(null);
+  }
+
+  /** Valida la imagen, la deja como pendiente (vista previa) y la guarda en saul3. */
+  private async procesarArchivo(campo: VisitaCampo, archivo: File): Promise<void> {
+    if (this.soloLectura(campo) || this.idVisita === null) {
       return;
     }
 
@@ -1025,5 +1192,21 @@ export class Gestion implements OnInit, OnDestroy {
       return anterior;
     }
     return texto;
+  }
+}
+
+/** Mensaje de saul3 (`{ msg }`) que llega dentro del Blob de error, o uno genérico. */
+async function mensajeErrorInforme(error: unknown): Promise<string> {
+  const generico = 'No fue posible generar el PDF de la visita. Intente nuevamente.';
+  const cuerpo = (error as { error?: unknown })?.error;
+  if (!(cuerpo instanceof Blob)) {
+    return generico;
+  }
+  try {
+    const json = JSON.parse(await cuerpo.text()) as { msg?: unknown; message?: unknown };
+    const mensaje = json.msg ?? json.message;
+    return typeof mensaje === 'string' && mensaje.trim() !== '' ? mensaje : generico;
+  } catch {
+    return generico;
   }
 }

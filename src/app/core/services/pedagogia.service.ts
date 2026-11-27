@@ -48,9 +48,67 @@ export interface PedagogiaInscripcion {
   programacion_pedagogia: ProgramacionDetalle | null;
 }
 
+export interface RegistrarAsistenciaPedagogiaPayload {
+  programacionPedagogia: { id: number };
+  data: Array<{ idComparendo: number; check: boolean }>;
+}
+
+export interface ComportamientoContrario {
+  id: number;
+  descripcion: string;
+}
+
+export interface CrearPedagogiaPayload {
+  tipo: string;
+  nombre: string;
+  descripcion: string;
+  comportamientosIds: number[];
+}
+
 @Injectable({ providedIn: 'root' })
 export class PedagogiaService {
   private http = inject(HttpClient);
+
+  listarComportamientosContrarios(): Observable<unknown> {
+    return this.http.get<unknown>(
+      `${environment.SAUL3_API_URL}/controlpolicivo/comportamientocontrario`,
+    );
+  }
+
+  crearPedagogia(payload: CrearPedagogiaPayload): Observable<ResponseI> {
+    return this.http.post<ResponseI>(
+      `${environment.SAUL3_API_URL}/controlpolicivo/pedagogia`,
+      payload,
+    );
+  }
+
+  listarProgramacionesPedagogia(): Observable<ResponseI> {
+    return this.http.get<ResponseI>(`${environment.SAUL3_API_URL}/controlpolicivo/programacionpedagogia`);
+  }
+
+  listarAsistentesProgramacion(idProgramacion: number | string): Observable<ResponseI> {
+    const id = encodeURIComponent(String(idProgramacion));
+    return this.http.get<ResponseI>(
+      `${environment.SAUL3_API_URL}/controlpolicivo/registrarasistenciapedagogia/${id}`,
+    );
+  }
+
+  registrarAsistenciaPedagogia(
+    payload: RegistrarAsistenciaPedagogiaPayload,
+  ): Observable<ResponseI> {
+    return this.http.post<ResponseI>(
+      `${environment.SAUL3_API_URL}/controlpolicivo/asistentesprogramacionpedagogia`,
+      payload,
+    );
+  }
+
+  imprimirAsistenciaPedagogia(idProgramacion: number | string): Observable<Blob> {
+    const id = encodeURIComponent(String(idProgramacion));
+    return this.http.get(
+      `${environment.SAUL3_API_URL}/programacion-pedagogia/${id}/imprimir-asistencia`,
+      { responseType: 'blob' },
+    );
+  }
 
   getProgramacionPedagogia(numeroComparendo: string, identificacion: string): Observable<ResponseI> {
     const numero = encodeURIComponent(numeroComparendo.trim());

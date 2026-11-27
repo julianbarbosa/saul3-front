@@ -9,54 +9,41 @@
           "label": "Comparendos Ley 1801",
           "path": "comparendo",
           "loadChildren": "@modules/comparendo/comparendo.module#ComparendoModule",
+          "permissions": ["actualizarcomparendo_controlpolicivo"],
           "children": [
             {
-              "id": "descargar-registrar",
-              "label": "Descargar del RNMC",
-              "path": "descargar",
+              "id": "sincronizar-rnmc",
+              "label": "Sincronizar RNMC",
+              "path": "sincronizar",
               "loadComponent": "@modules/comparendo/pages/registrar/registrar-comparendo.component#RegistrarComparendoComponent"
-            },
-            {
-              "id": "comparendo-consultar",
-              "label": "Consultar",
-              "path": "consultar",
-              "loadComponent": "@modules/comparendo/pages/consultar/consultar-comparendo.component#ConsultarComparendoComponent"
             },
             {
               "id": "gestion-ciudadano",
               "label": "Gestión ciudadano",
               "path": "gestion-ciudadano"
+            },
+            {
+              "id": "pedagogia",
+              "label": "Pedagogía",
+              "path": "pedagogia"
             }            
           ]
-        },
+        },  
         {
-          "id": "medida-multa",
-          "label": "Medida Correctiva Multa",
-          "path": "medida-multa",
-          "loadChildren": "@modules/medida-multa/medida-multa.module#MedidaMultaModule",
-          "children": [           
+          "id": "firma-digital",
+          "label": "Firma Digital",
+          "basePath": "/firma-digital",
+          "path": "",
+          "permissions": ["controlpolicivo_gestionfirmadigital"],
+          "children": [
             {
-              "id": "medida-multa-audiencia",
-              "label": "Audiencia",
-              "path": ":comparendoId/audiencia",
-              "loadComponent": "@modules/medida-multa/pages/audiencia/audiencia.component#AudienciaComponent"
-            },
-            {
-              "id": "medida-multa-primera-instancia",
-              "label": "Primera Instancia",
-              "path": ":comparendoId/primera-instancia",
-              "loadComponent": "@modules/medida-multa/pages/primera-instancia/primera-instancia.component#PrimeraInstanciaComponent"
-            },
-            {
-              "id": "medida-multa-segunda-instancia",
-              "label": "Segunda Instancia",
-              "path": ":comparendoId/segunda-instancia",
-              "loadComponent": "@modules/medida-multa/pages/segunda-instancia/segunda-instancia.component#SegundaInstanciaComponent"
+              "id": "listar-procesos-firma",
+              "label": "Listar Procesos de Firma",
+              "path": "listar"
             }
-
-            
           ]
         },
+
         {
           "id": "pedagogia",
           "label": "Medida Correctiva Pedagogía",
@@ -122,6 +109,18 @@
                 "controlsanciones_movimiento_expediente_inspeccion",
                 "controlsanciones_cerrar_expediente"
               ]
+            },
+            {
+              "id": "cs-listar-expedientes",
+              "label": "Listar expedientes",
+              "path": "registrar-movimiento-multiple",
+              "permissions": [
+                "controlsanciones_ingresar_expediente",
+                "controlsanciones_movimiento_expediente_oficina",
+                "controlsanciones_movimiento_expediente_tesoreria",
+                "controlsanciones_movimiento_expediente_inspeccion",
+                "controlsanciones_cerrar_expediente"
+              ]
             }
           ]
         },
@@ -130,6 +129,7 @@
           "label": "Control a Construcciones",
           "basePath": "/visita",
           "path": "",
+          "permissions": ["registrarvisita_vis"],
           "children": [
             { "id": "cc-visitas-pendientes", "label": "Visitas Pendientes", "path": "listar-visita" }
           ]

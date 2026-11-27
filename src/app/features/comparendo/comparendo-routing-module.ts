@@ -1,6 +1,8 @@
 import { NgModule } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
-import { Descargar } from './descargar/descargar';
+import { Sincronizar } from './sincronizar/sincronizar';
+import { ListaProgramacionPedagogia } from '../pedagogia/lista-programacion-pedagogia/lista-programacion-pedagogia';
+import { RegistrarAsistenciaPedagogia } from '../pedagogia/registrar-asistencia-pedagogia/registrar-asistencia-pedagogia';
 
 const routes: Routes = [
   {
@@ -9,12 +11,20 @@ const routes: Routes = [
       import('./gestion-ciudadano/codigo-policia.module').then((m) => m.CodigoPoliciaModule),
   },
   {
-    path: 'descargar',
-    component: Descargar,
+    path: 'sincronizar',
+    component: Sincronizar,
+  },
+  {
+    path: 'pedagogia/:id/asistencia',
+    component: RegistrarAsistenciaPedagogia,
+  },
+  {
+    path: 'pedagogia',
+    component: ListaProgramacionPedagogia,
   },
   {
     path: '',
-    redirectTo: 'descargar',
+    redirectTo: 'sincronizar',
     pathMatch: 'full',
   },
 ];

@@ -1,7 +1,7 @@
 /**
  * Campos obligatorios del formulario de gestión de visitas, por tipo de control.
  *
- * El API (SAUL2 `/visita/generar/{id}`) no envía hoy una marca de obligatoriedad, así que
+ * El API (saul3 `/visita/generar/{id}`, migrado de saul2) no envía hoy una marca de obligatoriedad, así que
  * se resuelve en el front comparando el label / nombre / código de cada campo contra estas
  * listas, de forma tolerante a tildes, mayúsculas, signos y palabras vacías
  * («Fecha de visita» ≡ «fecha visita» ≡ «FECHA_VISITA»).

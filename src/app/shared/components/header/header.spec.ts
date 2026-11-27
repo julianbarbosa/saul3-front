@@ -1,18 +1,19 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
-import { Descargar } from './descargar';
+import { PageHeader } from './header';
 
-describe('Descargar', () => {
-  let component: Descargar;
-  let fixture: ComponentFixture<Descargar>;
+describe('PageHeader', () => {
+  let component: PageHeader;
+  let fixture: ComponentFixture<PageHeader>;
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [Descargar],
+      imports: [PageHeader],
     }).compileComponents();
 
-    fixture = TestBed.createComponent(Descargar);
+    fixture = TestBed.createComponent(PageHeader);
     component = fixture.componentInstance;
+    fixture.componentRef.setInput('titulo', 'Título de prueba');
     await fixture.whenStable();
   });
 

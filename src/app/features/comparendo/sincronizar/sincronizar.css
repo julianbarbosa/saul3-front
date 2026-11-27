@@ -1,0 +1,15 @@
+.sincronizar-page {
+  padding: 1.5rem 0 2rem;
+}
+
+.sincronizar-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  max-width: 32rem;
+}
+
+.sincronizar-actions {
+  margin-top: 0.5rem;
+  padding-top: 0.25rem;
+}

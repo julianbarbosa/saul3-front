@@ -439,6 +439,35 @@
   overflow-wrap: anywhere;
 }
 
+/* «Revisión de la Visita»: título arriba y debajo los botones a la derecha (Generar PDF y los que vengan). */
+.gestion-revision {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  margin: 2.5rem 0 3rem;
+  padding: 1.25rem 1.5rem;
+  border: 1px solid var(--ssj-gris-borde, #d9d9d9);
+  border-radius: 0.5rem;
+}
+
+.gestion-revision__titulo {
+  margin: 0;
+}
+
+.gestion-revision__acciones {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 0.5rem;
+}
+
+/* Contenido angosto: botones uno debajo del otro. */
+@container gestion (max-width: 575.98px) {
+  .gestion-revision__acciones {
+    flex-direction: column;
+  }
+}
+
 /* Contenido muy angosto (celular): el dato encima del valor. */
 @container gestion (max-width: 419.98px) {
   .gestion-encabezado__datos > div {

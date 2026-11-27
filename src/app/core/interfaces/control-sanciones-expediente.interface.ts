@@ -121,6 +121,8 @@ export interface ExpedienteFisicoRespuesta {
 
 export interface ExpedienteListadoItem {
   id: number;
+  /** Número de expediente del comparendo (p. ej. 76-001-6-…); usar al abrir gestión. */
+  expediente?: string | null;
   formato?: string;
   nombre?: string;
   updatedAt?: FechaLegacy;

@@ -1,0 +1,12 @@
+.listar-proceso-firma {
+  padding: 1.5rem 0 2rem;
+}
+
+.listar-proceso-firma__tabla {
+  min-width: 0;
+}
+
+.listar-proceso-firma__tabla--cargando {
+  opacity: 0.55;
+  pointer-events: none;
+}

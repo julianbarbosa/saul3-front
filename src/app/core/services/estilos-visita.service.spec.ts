@@ -129,7 +129,7 @@ describe('EstilosVisitaService', () => {
     servicio.sincronizar('/visita/gestionar/7279?x=1');
     expect(document.body.classList.contains(CLASE_VISITAS)).toBe(true);
 
-    servicio.sincronizar('/gestion-acceso-justicia/comparendo/descargar');
+    servicio.sincronizar('/gestion-acceso-justicia/comparendo/sincronizar');
     expect(document.body.classList.contains(CLASE_VISITAS)).toBe(false);
 
     // Una ruta que solo empieza igual no cuenta.
