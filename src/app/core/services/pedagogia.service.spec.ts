@@ -20,6 +20,34 @@ describe('PedagogiaService', () => {
     httpTesting.verify();
   });
 
+  it('consulta los comportamientos contrarios', () => {
+    service.listarComportamientosContrarios().subscribe();
+
+    const request = httpTesting.expectOne(
+      'http://localhost:8000/api/controlpolicivo/comportamientocontrario',
+    );
+    expect(request.request.method).toBe('GET');
+    request.flush([{ id: 459, descripcion: 'Acuerdo de Pago' }]);
+  });
+
+  it('crea pedagogía con sus comportamientos seleccionados', () => {
+    const payload = {
+      tipo: 'Comparendo',
+      nombre: 'Pedagogía sobre convivencia ciudadana',
+      descripcion: 'Actividad pedagógica orientada a fortalecer la convivencia ciudadana.',
+      comportamientosIds: [1, 2, 3],
+    };
+
+    service.crearPedagogia(payload).subscribe();
+
+    const request = httpTesting.expectOne(
+      'http://localhost:8000/api/controlpolicivo/pedagogia',
+    );
+    expect(request.request.method).toBe('POST');
+    expect(request.request.body).toEqual(payload);
+    request.flush({ success: true, message: 'OK', data: null });
+  });
+
   it('consulta los asistentes usando el ID de la programación', () => {
     service.listarAsistentesProgramacion(4388).subscribe();
 

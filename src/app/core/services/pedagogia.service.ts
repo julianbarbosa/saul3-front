@@ -53,9 +53,34 @@ export interface RegistrarAsistenciaPedagogiaPayload {
   data: Array<{ idComparendo: number; check: boolean }>;
 }
 
+export interface ComportamientoContrario {
+  id: number;
+  descripcion: string;
+}
+
+export interface CrearPedagogiaPayload {
+  tipo: string;
+  nombre: string;
+  descripcion: string;
+  comportamientosIds: number[];
+}
+
 @Injectable({ providedIn: 'root' })
 export class PedagogiaService {
   private http = inject(HttpClient);
+
+  listarComportamientosContrarios(): Observable<unknown> {
+    return this.http.get<unknown>(
+      `${environment.SAUL3_API_URL}/controlpolicivo/comportamientocontrario`,
+    );
+  }
+
+  crearPedagogia(payload: CrearPedagogiaPayload): Observable<ResponseI> {
+    return this.http.post<ResponseI>(
+      `${environment.SAUL3_API_URL}/controlpolicivo/pedagogia`,
+      payload,
+    );
+  }
 
   listarProgramacionesPedagogia(): Observable<ResponseI> {
     return this.http.get<ResponseI>(`${environment.SAUL3_API_URL}/controlpolicivo/programacionpedagogia`);

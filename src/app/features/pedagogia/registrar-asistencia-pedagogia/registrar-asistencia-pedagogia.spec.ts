@@ -59,6 +59,7 @@ describe('RegistrarAsistenciaPedagogia', () => {
             {
               id: 22404,
               idComparendo: 619936,
+              numeroExpediente: '002',
               contacto: '3178020008',
               createdAt: '2026-06-30 20:28:33',
               descripcion: 'Comportamiento de prueba',
@@ -113,6 +114,11 @@ describe('RegistrarAsistenciaPedagogia', () => {
         'thead tr.fila-filtros-columnas input',
       ) as NodeListOf<HTMLInputElement>,
     );
+    const celdasAsistente = Array.from(
+      fixture.nativeElement.querySelectorAll(
+        'tbody tr:first-child td',
+      ) as NodeListOf<HTMLTableCellElement>,
+    );
     const casilla = fixture.nativeElement.querySelector(
       'tbody input[type="checkbox"]',
     ) as HTMLInputElement | null;
@@ -127,7 +133,7 @@ describe('RegistrarAsistenciaPedagogia', () => {
     expect(texto).toContain('1004810625');
     expect(encabezados).toEqual([
       'Asistió',
-      'Num Programación',
+      'N.º Expediente / Comparendo',
       'Identificación',
       'Nombre Infractor',
       'Contacto',
@@ -135,6 +141,8 @@ describe('RegistrarAsistenciaPedagogia', () => {
       'Comportamiento Contrario',
       'Fecha de Inscripción',
     ]);
+    expect(celdasAsistente[1]?.textContent.trim()).toBe('002');
+    expect(encabezados).not.toContain('Num Programación');
     expect(filtrosEncabezado).toHaveLength(2);
     expect(filtrosEncabezado.map((filtro) => filtro.getAttribute('aria-label'))).toEqual([
       'Filtrar por Identificación',
@@ -177,6 +185,25 @@ describe('RegistrarAsistenciaPedagogia', () => {
     expect(componente.filasPagina()[0].nombreInfractor).toBe('MARIA ORELLANOS');
   });
 
+  it('actualiza el contador al marcar y desmarcar asistencia', () => {
+    const componente = fixture.componentInstance;
+    const casilla = fixture.nativeElement.querySelector(
+      'tbody input[type="checkbox"]',
+    ) as HTMLInputElement;
+
+    expect(componente.asistentesMarcados()).toBe(0);
+    casilla.checked = true;
+    casilla.dispatchEvent(new Event('change'));
+    fixture.detectChanges();
+    expect(componente.asistentesMarcados()).toBe(1);
+    expect(fixture.nativeElement.textContent).toContain('Asistencias marcadas: 1 de 1 asistentes');
+
+    casilla.checked = false;
+    casilla.dispatchEvent(new Event('change'));
+    fixture.detectChanges();
+    expect(componente.asistentesMarcados()).toBe(0);
+  });
+
   it('pide confirmación y envía el estado de cada asistente al confirmar', () => {
     const casilla = fixture.nativeElement.querySelector(
       'tbody input[type="checkbox"]',
@@ -207,6 +234,36 @@ describe('RegistrarAsistenciaPedagogia', () => {
       data: [{ idComparendo: 619936, check: true }],
     });
     expect(fixture.nativeElement.textContent).toContain('Asistencia registrada correctamente.');
+    expect(fixture.componentInstance.asistenciaYaRegistrada()).toBe(true);
+    expect(
+      (fixture.nativeElement.querySelector('.btn-primary') as HTMLButtonElement).disabled,
+    ).toBe(true);
+  });
+
+  it('deshabilita el registro si el servicio indica que ya estaba registrado', () => {
+    registrarAsistenciaPedagogia.mockReturnValueOnce(
+      of({ success: false, message: 'Esta Pedagogía ya fue registrada.', data: null }),
+    );
+
+    const botonRegistrar = Array.from(
+      fixture.nativeElement.querySelectorAll('button') as NodeListOf<HTMLButtonElement>,
+    ).find((boton) => boton.textContent.includes('Registrar asistencia'));
+    botonRegistrar?.click();
+    fixture.detectChanges();
+
+    const botonOk = Array.from(
+      fixture.nativeElement.querySelectorAll('button') as NodeListOf<HTMLButtonElement>,
+    ).find((boton) => boton.textContent.trim() === 'OK');
+    botonOk?.click();
+    fixture.detectChanges();
+
+    const botonAsistencia = Array.from(
+      fixture.nativeElement.querySelectorAll('button') as NodeListOf<HTMLButtonElement>,
+    ).find((boton) => boton.textContent.includes('Asistencia ya registrada'));
+
+    expect(fixture.nativeElement.textContent).toContain('Esta Pedagogía ya fue registrada.');
+    expect(fixture.componentInstance.asistenciaYaRegistrada()).toBe(true);
+    expect(botonAsistencia?.disabled).toBe(true);
   });
 
   it('no envía la asistencia cuando se cancela la confirmación', () => {
