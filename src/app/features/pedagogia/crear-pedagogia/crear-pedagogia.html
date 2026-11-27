@@ -1,0 +1,150 @@
+<section class="container py-4" aria-labelledby="crear-pedagogia-titulo">
+  <header class="d-flex align-items-center gap-3 border-bottom pb-3 mb-4">
+    <i class="bi bi-mortarboard fs-5 text-primary" aria-hidden="true"></i>
+    <h1 id="crear-pedagogia-titulo" class="h4 mb-0">Crear Pedagogías</h1>
+  </header>
+
+  <div class="card border shadow-sm">
+    <div class="card-body p-3 p-md-4">
+      @if (resultado(); as estado) {
+        <div
+          class="alert"
+          [class.alert-success]="estado.tipo === 'exito'"
+          [class.alert-danger]="estado.tipo === 'error'"
+          role="status"
+          aria-live="polite"
+        >
+          {{ estado.mensaje }}
+        </div>
+      }
+
+      <form [formGroup]="formulario" (ngSubmit)="guardar()" novalidate>
+        <div class="mb-3">
+          <label for="pedagogia-nombre" class="form-label">
+            Nombre <span class="text-danger" aria-hidden="true">*</span>
+          </label>
+          <input
+            id="pedagogia-nombre"
+            class="form-control"
+            [class.is-invalid]="formularioEnviado() && formulario.controls.nombre.invalid"
+            formControlName="nombre"
+            type="text"
+            placeholder="Nombre de la Pedagogía."
+            autocomplete="off"
+            required
+          />
+          @if (formularioEnviado() && formulario.controls.nombre.invalid) {
+            <div class="invalid-feedback">Ingrese el nombre de la pedagogía.</div>
+          }
+        </div>
+
+        <div class="mb-3">
+          <label for="pedagogia-descripcion" class="form-label">
+            Descripción <span class="text-danger" aria-hidden="true">*</span>
+          </label>
+          <textarea
+            id="pedagogia-descripcion"
+            class="form-control"
+            [class.is-invalid]="formularioEnviado() && formulario.controls.descripcion.invalid"
+            formControlName="descripcion"
+            rows="4"
+            placeholder="Ingrese la descripción de la pedagogía."
+            autocomplete="off"
+            required
+          ></textarea>
+          @if (formularioEnviado() && formulario.controls.descripcion.invalid) {
+            <div class="invalid-feedback">Ingrese la descripción de la pedagogía.</div>
+          }
+        </div>
+
+        <div class="mb-4">
+          <label for="pedagogia-tipo" class="form-label">
+            Tipo <span class="text-danger" aria-hidden="true">*</span>
+          </label>
+          <select
+            id="pedagogia-tipo"
+            class="form-select"
+            [class.is-invalid]="formularioEnviado() && formulario.controls.tipo.invalid"
+            formControlName="tipo"
+            required
+          >
+            <option value="">-- Seleccione --</option>
+            @for (tipo of tipos; track tipo) {
+              <option [value]="tipo">{{ tipo }}</option>
+            }
+          </select>
+          @if (formularioEnviado() && formulario.controls.tipo.invalid) {
+            <div class="invalid-feedback">Seleccione el tipo de pedagogía.</div>
+          }
+        </div>
+
+        <section aria-labelledby="comportamientos-titulo">
+          <h2 id="comportamientos-titulo" class="h6 mb-2">Comportamientos contrarios</h2>
+          <div class="mb-3">
+            <label for="buscar-comportamiento" class="form-label">Filtrar comportamientos</label>
+            <input
+              id="buscar-comportamiento"
+              class="form-control"
+              type="search"
+              placeholder="Escriba una palabra clave"
+              [value]="busqueda()"
+              (input)="onBusqueda($event)"
+            />
+          </div>
+
+          @if (errorComportamientos()) {
+            <div class="alert alert-danger" role="alert">{{ errorComportamientos() }}</div>
+          } @else if (cargandoComportamientos()) {
+            <div class="text-center py-4 text-muted" role="status" aria-live="polite">
+              <span class="spinner-border spinner-border-sm me-2" aria-hidden="true"></span>
+              Cargando comportamientos…
+            </div>
+          } @else {
+            <app-table
+              [columns]="columnas()"
+              [data]="filasPagina()"
+              [total]="totalFiltrado()"
+              [page]="page"
+              [pageSize]="pageSize"
+              [pageSizeOptions]="[10, 20, 50]"
+              [mostrarBotonLimpiar]="false"
+              [mostrarBotonAplicar]="false"
+              textoRegistros="comportamientos"
+              rowIdField="id"
+              (filtersChange)="onPaginacion($event)"
+              (pageChange)="onCambioPagina($event)"
+              (pageSizeChange)="onCambioTamanoPagina($event)"
+            />
+          }
+        </section>
+
+        <footer class="d-flex flex-wrap justify-content-end align-items-center gap-2 mt-4">
+          <button type="submit" class="btn btn-primary" [disabled]="guardando()">
+            @if (guardando()) {
+              <span class="spinner-border spinner-border-sm me-2" aria-hidden="true"></span>
+              Guardando…
+            } @else {
+              Crear Pedagogía
+            }
+          </button>
+          <a
+            class="btn btn-link"
+            [routerLink]="['/gestion-acceso-justicia', 'pedagogia', 'listar']"
+          >
+            Cancelar
+          </a>
+        </footer>
+      </form>
+    </div>
+  </div>
+</section>
+
+<ng-template #celdaSeleccion let-comportamiento>
+  <input
+    type="checkbox"
+    class="form-check-input"
+    [checked]="estaSeleccionado(comportamiento.id)"
+    (change)="cambiarSeleccion(comportamiento, $event)"
+    [attr.aria-label]="'Seleccionar ' + comportamiento.descripcion"
+  />
+</ng-template>

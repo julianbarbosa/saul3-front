@@ -20,7 +20,7 @@ interface AsistentePedagogia {
   id: string;
   idInscripcion: string;
   asistio: boolean;
-  numProgramacion: string;
+  numeroExpedienteComparendo: string;
   idComparendo: number | null;
   identificacion: string;
   nombreInfractor: string;
@@ -60,6 +60,9 @@ export class RegistrarAsistenciaPedagogia implements OnInit {
 
   readonly programacion = signal<DetalleProgramacion | null>(null);
   readonly asistentes = signal<AsistentePedagogia[]>([]);
+  readonly asistentesMarcados = computed(
+    () => this.asistentes().filter((asistente) => asistente.asistio).length,
+  );
   private readonly filtrosActivos = signal({ identificacion: '', nombreInfractor: '' });
   readonly cargando = signal(false);
   readonly imprimiendo = signal(false);
@@ -68,6 +71,7 @@ export class RegistrarAsistenciaPedagogia implements OnInit {
   readonly programacionId = signal<number | null>(null);
   readonly confirmacionVisible = signal(false);
   readonly guardandoAsistencia = signal(false);
+  readonly asistenciaYaRegistrada = signal(false);
   readonly resultadoOperacion = signal<{ tipo: 'exito' | 'error'; mensaje: string } | null>(null);
 
   private readonly celdaAsistio =
@@ -75,11 +79,16 @@ export class RegistrarAsistenciaPedagogia implements OnInit {
 
   readonly columnas = computed<ColumnaTabla[]>(() => [
     { label: 'Asistió', campo: null, width: '7%', template: this.celdaAsistio() },
-    { label: 'Num Programación', campo: 'numProgramacion', width: '11%', activateFilter: false },
+    {
+      label: 'N.º Expediente / Comparendo',
+      campo: 'numeroExpedienteComparendo',
+      width: '13%',
+      activateFilter: false,
+    },
     {
       label: 'Identificación',
       campo: 'identificacion',
-      width: '11%',
+      width: '10%',
       activateFilter: false,
       filtroEntrada: true,
       filtroInputmode: 'numeric',
@@ -93,7 +102,7 @@ export class RegistrarAsistenciaPedagogia implements OnInit {
       filtroEntrada: true,
       filtroPlaceholder: 'Nombre Infractor',
     },
-    { label: 'Contacto', campo: 'contacto', width: '11%', activateFilter: false },
+    { label: 'Contacto', campo: 'contacto', width: '10%', activateFilter: false },
     { label: 'Fecha Comparendo', campo: 'fechaComparendo', width: '13%', activateFilter: false },
     {
       label: 'Comportamiento Contrario',
@@ -211,6 +220,9 @@ export class RegistrarAsistenciaPedagogia implements OnInit {
   }
 
   abrirConfirmacion(): void {
+    if (this.asistenciaYaRegistrada()) {
+      return;
+    }
     this.resultadoOperacion.set(null);
     this.confirmacionVisible.set(true);
   }
@@ -222,6 +234,9 @@ export class RegistrarAsistenciaPedagogia implements OnInit {
   }
 
   confirmarAsistencia(): void {
+    if (this.asistenciaYaRegistrada() || this.guardandoAsistencia()) {
+      return;
+    }
     const idProgramacion = this.programacionId();
     const asistentes = this.asistentes();
     if (!idProgramacion) {
@@ -257,13 +272,19 @@ export class RegistrarAsistenciaPedagogia implements OnInit {
         this.guardandoAsistencia.set(false);
         this.confirmacionVisible.set(false);
         if (respuesta.success === false) {
+          const mensaje =
+            respuesta.msg ?? respuesta.message ?? 'No se pudo registrar la asistencia.';
+          if (this.esAsistenciaYaRegistrada(mensaje)) {
+            this.asistenciaYaRegistrada.set(true);
+          }
           this.resultadoOperacion.set({
             tipo: 'error',
-            mensaje: respuesta.msg ?? respuesta.message ?? 'No se pudo registrar la asistencia.',
+            mensaje,
           });
           return;
         }
 
+        this.asistenciaYaRegistrada.set(true);
         this.resultadoOperacion.set({
           tipo: 'exito',
           mensaje: respuesta.msg ?? respuesta.message ?? 'Asistencia registrada correctamente.',
@@ -274,16 +295,23 @@ export class RegistrarAsistenciaPedagogia implements OnInit {
         this.confirmacionVisible.set(false);
         const httpError = err instanceof HttpErrorResponse ? err : null;
         const cuerpo = httpError?.error as { message?: string; msg?: string } | null;
+        const mensaje = cuerpo?.message ?? cuerpo?.msg ?? null;
+        if (this.esAsistenciaYaRegistrada(mensaje)) {
+          this.asistenciaYaRegistrada.set(true);
+        }
         this.resultadoOperacion.set({
           tipo: 'error',
           mensaje:
-            cuerpo?.message ??
-            cuerpo?.msg ??
+            mensaje ??
             'No fue posible registrar la asistencia. Intente nuevamente.',
         });
         console.error('Error al registrar asistencia de pedagogía:', err);
       },
     });
+  }
+
+  private esAsistenciaYaRegistrada(mensaje: string | null): boolean {
+    return mensaje !== null && /ya\s+(?:fue\s+registrad[ao]|se\s+registr[oó])/i.test(mensaje);
   }
 
   private cargarAsistentes(id: string): void {
@@ -293,7 +321,7 @@ export class RegistrarAsistenciaPedagogia implements OnInit {
     this.pedagogiaService.listarAsistentesProgramacion(id).subscribe({
       next: (respuesta) => {
         this.cargando.set(false);
-        const resultado = this.extraerRespuesta(respuesta, id);
+        const resultado = this.extraerRespuesta(respuesta);
         if (resultado.error) {
           this.error.set(resultado.error);
           this.asistentes.set([]);
@@ -321,10 +349,7 @@ export class RegistrarAsistenciaPedagogia implements OnInit {
     });
   }
 
-  private extraerRespuesta(
-    respuesta: ResponseI,
-    idProgramacion: string,
-  ): {
+  private extraerRespuesta(respuesta: ResponseI): {
     asistentes: AsistentePedagogia[];
     programacion: DetalleProgramacion;
     error: string | null;
@@ -387,6 +412,9 @@ export class RegistrarAsistenciaPedagogia implements OnInit {
 
       const nombre = this.obtener(registro, 'nombre');
       const apellido = this.obtener(registro, 'apellido');
+      const comparendoRecord = this.aRegistro(
+        this.obtener(registro, 'comparendo', 'informacionComparendo', 'informacion_comparendo'),
+      );
       const nombreCompleto = [nombre, apellido]
         .filter((parte) => parte !== undefined && parte !== null && parte !== '')
         .map(String)
@@ -398,14 +426,31 @@ export class RegistrarAsistenciaPedagogia implements OnInit {
           this.obtener(registro, 'id', 'idInscripcion', 'id_inscripcion'),
         ),
         asistio: this.esAsistenciaMarcada(this.obtener(registro, 'asistio', 'asistencia')),
-        numProgramacion: this.texto(
+        numeroExpedienteComparendo: this.texto(
           this.obtener(
             registro,
-            'numProgramacion',
-            'numeroProgramacion',
-            'idProgramacion',
-            'idprogramacionpedagogia',
-          ) ?? idProgramacion,
+            'numeroExpediente',
+            'numero_expediente',
+            'expediente',
+            'numero_formato',
+            'numeroFormato',
+            'numeroComparendo',
+            'numero_comparendo',
+            'numComparendo',
+            'num_comparendo',
+          ) ??
+            this.obtener(
+              comparendoRecord,
+              'numeroExpediente',
+              'numero_expediente',
+              'expediente',
+              'numero_formato',
+              'numeroFormato',
+              'numeroComparendo',
+              'numero_comparendo',
+              'numComparendo',
+              'num_comparendo',
+            ),
         ),
         idComparendo: this.numeroId(this.obtener(registro, 'idComparendo', 'id_comparendo')),
         identificacion: this.texto(

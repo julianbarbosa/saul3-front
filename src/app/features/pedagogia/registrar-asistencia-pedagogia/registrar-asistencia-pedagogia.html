@@ -53,6 +53,11 @@
       (pageSizeChange)="onCambioTamanoPagina($event)"
     />
 
+    <p class="text-muted small text-end mt-2 mb-0" aria-live="polite">
+      Asistencias marcadas:
+      <strong>{{ asistentesMarcados() }}</strong> de {{ asistentes().length }} asistentes
+    </p>
+
     @if (resultadoOperacion(); as resultado) {
       <div
         class="alert mt-3"
@@ -73,10 +78,12 @@
       <button
         type="button"
         class="btn btn-primary"
-        [disabled]="guardandoAsistencia() || asistentes().length === 0"
+        [disabled]="
+          asistenciaYaRegistrada() || guardandoAsistencia() || asistentes().length === 0
+        "
         (click)="abrirConfirmacion()"
       >
-        Registrar asistencia
+        {{ asistenciaYaRegistrada() ? 'Asistencia ya registrada' : 'Registrar asistencia' }}
       </button>
       <button
         type="button"
