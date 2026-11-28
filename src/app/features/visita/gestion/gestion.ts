@@ -30,6 +30,8 @@ import { ValidadorImagenService } from '../../../core/services/validador-imagen.
 import { VisitaLimpiaService } from '../../../core/services/visita-limpia.service';
 import { aEncabezadoVisita, VisitaService } from '../../../core/services/visita.service';
 import { Button } from '../../../shared/components/button/button';
+import { FormViewerField } from '../../../shared/components/form-viewer/form-viewer-field';
+import { FormViewer } from '../../../shared/components/form-viewer/form-viewer';
 import { InputText } from '../../../shared/components/input-text/input-text';
 import { MapComponent } from '../../../shared/components/map/map';
 import { Select } from '../../../shared/components/select/select';
@@ -75,7 +77,7 @@ interface BloqueCampos {
 
 @Component({
   selector: 'app-gestion',
-  imports: [SharedModule, Button, CampoImagen, InputText, MapComponent, Select, Textarea],
+  imports: [SharedModule, Button, CampoImagen, FormViewer, InputText, MapComponent, Select, Textarea],
   templateUrl: './gestion.html',
   styleUrl: './gestion.css',
 })
@@ -92,6 +94,45 @@ export class Gestion implements OnInit, OnDestroy {
   readonly encabezado = computed<VisitaEncabezado | null>(() => {
     const visita = this.visitaDetalle();
     return visita ? aEncabezadoVisita(visita) : null;
+  });
+
+  readonly encabezadoFields = computed<FormViewerField[]>(() => {
+    const v = this.encabezado();
+    if (!v) {
+      return [];
+    }
+    const fields: FormViewerField[] = [
+      { label: 'Consecutivo', value: v.consecutivo, type: 'text', colMd: 12 },
+      { label: 'Estado', value: v.estado, type: 'text', colMd: 12, emptyText: 'Sin estado' },
+      { label: 'Visitador', value: v.visitador, type: 'text', colMd: 12, emptyText: 'Sin asignar' },
+      { label: 'Revisor', value: v.revisor, type: 'text', colMd: 12, emptyText: 'Sin asignar' },
+      { label: 'Tipo de Visita', value: v.tipoVisita, type: 'text', colMd: 12, emptyText: 'Sin tipo' },
+    ];
+    if (v.radicadoSolicitud) {
+      fields.push({
+        label: 'Radicado Solicitud',
+        value: v.radicadoSolicitud,
+        type: 'text',
+        colMd: 12,
+      });
+    }
+    if (v.radicadoRespuesta) {
+      fields.push({
+        label: 'Radicado Respuesta',
+        value: v.radicadoRespuesta,
+        type: 'text',
+        colMd: 12,
+      });
+    }
+    if (v.radicadoInspeccion) {
+      fields.push({
+        label: 'Radicado Remisión a Inspección',
+        value: v.radicadoInspeccion,
+        type: 'text',
+        colMd: 12,
+      });
+    }
+    return fields;
   });
   /** Ubicación real de la visita (null si no trae coordenadas válidas). La limpia VisitaLimpiaService. */
   readonly ubicacion = computed<UbicacionVisita | null>(() =>

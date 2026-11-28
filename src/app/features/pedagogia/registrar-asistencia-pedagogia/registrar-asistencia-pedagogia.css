@@ -1,0 +1,11 @@
+.registrar-asistencia__programacion-encabezado ::ng-deep .page-header {
+  margin-bottom: 0.75rem;
+}
+
+.registrar-asistencia__programacion-encabezado ::ng-deep .page-header__titulo {
+  color: var(--bs-info);
+  font-size: 1rem;
+  font-weight: 600;
+  line-height: 1.35;
+  margin-bottom: 0;
+}

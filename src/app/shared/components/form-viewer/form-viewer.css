@@ -1,0 +1,44 @@
+:host {
+  display: block;
+}
+
+.form-viewer__datos {
+  margin: 0;
+}
+
+.form-viewer__item {
+  display: grid;
+  grid-template-columns: 150px minmax(0, 1fr);
+  gap: 0.25rem 1.5rem;
+  height: 100%;
+}
+
+.form-viewer__item dt {
+  width: 150px;
+  max-width: 150px;
+  margin: 0;
+  color: var(--ssj-negro, #000);
+  font-weight: 700;
+}
+
+.form-viewer__item dd {
+  margin: 0;
+  color: var(--ssj-gris-texto, #4b4b4b);
+  overflow-wrap: anywhere;
+}
+
+.form-viewer__value--html :where(p:last-child) {
+  margin-bottom: 0;
+}
+
+@media (max-width: 419.98px) {
+  .form-viewer__item {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0;
+  }
+
+  .form-viewer__item dt {
+    width: auto;
+    max-width: none;
+  }
+}

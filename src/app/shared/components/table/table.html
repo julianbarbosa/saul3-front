@@ -91,20 +91,22 @@
   <div class="row mt-3">
     <div class="col-12">
       <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-2">
-        <div class="d-flex align-items-center gap-2">
-          <span class="text-muted small mb-0">{{ textoMostrar }}</span>
-          <select
-            class="form-select form-select-sm w-auto"
-            aria-label="Registros por página"
-            [value]="pageSize"
-            (change)="onCambioLimite($event)"
-          >
-            @for (opcion of pageSizeOptions; track opcion) {
-              <option [value]="opcion">{{ opcion }}</option>
-            }
-          </select>
-          <span class="text-muted small">{{ textoRegistros }}</span>
-        </div>
+        @if (mostrarPaginacion) {
+          <div class="d-flex align-items-center gap-2">
+            <span class="text-muted small mb-0">{{ textoMostrar }}</span>
+            <select
+              class="form-select form-select-sm w-auto"
+              aria-label="Registros por página"
+              [value]="pageSize"
+              (change)="onCambioLimite($event)"
+            >
+              @for (opcion of pageSizeOptions; track opcion) {
+                <option [value]="opcion">{{ opcion }}</option>
+              }
+            </select>
+            <span class="text-muted small">{{ textoRegistros }}</span>
+          </div>
+        }
         @if (mostrarEnlaceRelacionar) {
           <button type="button" class="btn btn-link btn-sm" (click)="relacionarClick.emit()">
             Relacionar
@@ -115,13 +117,15 @@
             Limpiar filtros ({{ cantidadFiltrosColumna }})
           </button>
         }
-        <span class="text-muted small">
-          @if (total > 0) {
-            {{ rangoDesde }} – {{ rangoHasta }} de {{ total }}
-          } @else {
-            0 {{ textoRegistros }}
-          }
-        </span>
+        @if (mostrarPaginacion) {
+          <span class="text-muted small">
+            @if (total > 0) {
+              {{ rangoDesde }} – {{ rangoHasta }} de {{ total }}
+            } @else {
+              0 {{ textoRegistros }}
+            }
+          </span>
+        }
       </div>
 
       <div class="table-scroll">
@@ -294,7 +298,7 @@
         </table>
       </div>
 
-      @if (data?.length) {
+      @if (data?.length && mostrarPaginacion) {
         <nav class="tabla-ssj__paginacion" aria-label="Paginación">
           <ul class="pagination mb-0">
             <li class="page-item" [class.disabled]="page === 1">

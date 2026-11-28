@@ -13,7 +13,7 @@ import {
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
-import { catchError, forkJoin, of } from 'rxjs';
+import { catchError, forkJoin, map, of, switchMap } from 'rxjs';
 import { ControlSancionesExpedienteService } from '../../../core/services/control-sanciones-expediente.service';
 import {
   ComparendoResumen,
@@ -31,8 +31,11 @@ import {
 } from '../constants/criterios-verificacion-expediente';
 import { HasPermissionDirective } from '../../../core/directives/has-permission.directive';
 import { PermisosService } from '../../../core/services/permisos.service';
+import { FormViewerField } from '../../../shared/components/form-viewer/form-viewer-field';
+import { FormViewer } from '../../../shared/components/form-viewer/form-viewer';
 import { PageHeader } from '../../../shared/components/header/header';
 import { ModalMensajeComponent } from '../../../shared/components/modal-mensaje/modal-mensaje';
+import { ColumnaTabla, Table } from '../../../shared/components/table/table';
 import { MascaraExpedienteDirective } from './mascara-expediente.directive';
 import {
   EJEMPLO_NUMERO_EXPEDIENTE,
@@ -47,6 +50,15 @@ import {
   fechaInputDesdeLegacy,
 } from '../utils/fecha-saul2.util';
 
+interface HistorialTrasladoFila {
+  id: number;
+  estadoAnterior: string;
+  estadoActual: string;
+  usuario: string;
+  comentario: string;
+  fecha: string;
+}
+
 @Component({
   selector: 'app-registrar-movimiento-expediente',
   standalone: true,
@@ -57,6 +69,8 @@ import {
     PageHeader,
     ModalMensajeComponent,
     MascaraExpedienteDirective,
+    Table,
+    FormViewer,
   ],
   templateUrl: './registrar-movimiento-expediente.component.html',
   styleUrl: './registrar-movimiento-expediente.component.css',
@@ -81,6 +95,15 @@ export class RegistrarMovimientoExpedienteComponent implements OnInit, OnChanges
   comparendo: ComparendoResumen | null = null;
   expediente: ExpedienteGestion | null = null;
   historial: MovimientoExpediente[] = [];
+  historialPage = 1;
+  historialPageSize = 10;
+  readonly columnasHistorial: ColumnaTabla[] = [
+    { label: 'Estado anterior', campo: 'estadoAnterior', activateFilter: false },
+    { label: 'Estado actual', campo: 'estadoActual', activateFilter: false },
+    { label: 'Usuario', campo: 'usuario', activateFilter: false },
+    { label: 'Comentario', campo: 'comentario', activateFilter: false },
+    { label: 'Fecha', campo: 'fecha', activateFilter: false },
+  ];
   responsables: ResponsableExpediente[] = [];
   criterios: CriterioVerificacion[] = structuredClone(CRITERIOS_VERIFICACION_EXPEDIENTE);
   data: DatosMovimientoExpediente = {};
@@ -93,10 +116,12 @@ export class RegistrarMovimientoExpedienteComponent implements OnInit, OnChanges
   cargando = false;
   cargandoDetalle = false;
   registrandoMovimiento = false;
-  mensaje = '';
   modalMensajeVisible = false;
+  modalMensajeTitulo = 'Mensaje';
   modalMensajeTexto = '';
   modalMensajeVariante: 'info' | 'exito' | 'error' = 'info';
+  private readonly tituloModalBusqueda = 'Búsqueda de expediente';
+  private readonly tituloModalRegistro = 'Registro de movimiento';
   private modalTrasRegistroExitoso = false;
   private destruido = false;
 
@@ -135,16 +160,23 @@ export class RegistrarMovimientoExpedienteComponent implements OnInit, OnChanges
     const numero = formatearNumeroExpediente(this.busqueda.comparendo ?? '');
     this.busqueda.comparendo = numero;
     if (numero === PREFIJO_EXPEDIENTE) {
-      this.mensaje = 'Indique el número de expediente completo.';
+      this.mostrarModalMensaje(
+        'Indique el número de expediente completo.',
+        'error',
+        this.tituloModalBusqueda,
+      );
       return;
     }
     if (!esNumeroExpedienteFormatoCompleto(numero)) {
-      this.mensaje = mensajeFormatoNumeroExpedienteInvalido();
+      this.mostrarModalMensaje(
+        mensajeFormatoNumeroExpedienteInvalido(),
+        'error',
+        this.tituloModalBusqueda,
+      );
       return;
     }
     this.data = { asignadoa: null };
     this.responsables = [];
-    this.mensaje = '';
     this.actualizarVista(() => {
       this.cargando = true;
       this.cargandoDetalle = false;
@@ -153,7 +185,11 @@ export class RegistrarMovimientoExpedienteComponent implements OnInit, OnChanges
       next: (res) => this.procesarBusquedaComparendo(res),
       error: () => {
         this.actualizarVista(() => {
-          this.mensaje = 'Error al consultar el comparendo.';
+          this.mostrarModalMensaje(
+            'Error al consultar el comparendo.',
+            'error',
+            this.tituloModalBusqueda,
+          );
           this.cargando = false;
         });
       },
@@ -163,7 +199,11 @@ export class RegistrarMovimientoExpedienteComponent implements OnInit, OnChanges
   private procesarBusquedaComparendo(res: { success?: boolean; data?: ComparendoResumen; msg?: string }): void {
     if (!res.success || !res.data) {
       this.actualizarVista(() => {
-        this.mensaje = res.msg ?? 'No se encontró información.';
+        this.mostrarModalMensaje(
+          res.msg ?? 'No se encontró información.',
+          'error',
+          this.tituloModalBusqueda,
+        );
         this.limpiarDatos();
         this.cargando = false;
       });
@@ -174,6 +214,7 @@ export class RegistrarMovimientoExpedienteComponent implements OnInit, OnChanges
       this.busqueda.comparendo = res.data!.expediente ?? res.data!.numeroformato ?? '';
       this.expediente = null;
       this.historial = [];
+      this.historialPage = 1;
       this.cargando = false;
     });
     this.cargarDetalle(res.data.id, res.data);
@@ -185,52 +226,81 @@ export class RegistrarMovimientoExpedienteComponent implements OnInit, OnChanges
     });
     forkJoin({
       expediente: this.api.obtenerExpedientePorComparendo(idComparendo).pipe(catchError(() => of(null))),
-      responsables: this.api.listarResponsables().pipe(catchError(() => of([] as ResponsableExpediente[]))),
       historial: this.api.historialMovimientos(idComparendo).pipe(catchError(() => of([] as MovimientoExpediente[]))),
       pago: this.api.consultarPago(idComparendo).pipe(catchError(() => of(null))),
       fisico: this.api.consultarExpedienteFisico(idComparendo).pipe(
         catchError(() => of({ expedientefisico: 1 } as { expedientefisico?: number })),
       ),
-    }).subscribe({
-      next: ({ expediente, responsables, historial, pago, fisico }) => {
-        if (!expediente) {
+    })
+      .pipe(
+        switchMap(({ expediente, historial, pago, fisico }) => {
+          if (!this.debeCargarResponsables(expediente)) {
+            return of({
+              expediente,
+              historial,
+              pago,
+              fisico,
+              responsables: [] as ResponsableExpediente[],
+            });
+          }
+          return this.api.listarResponsables().pipe(
+            catchError(() => of([] as ResponsableExpediente[])),
+            map((responsables) => ({ expediente, historial, pago, fisico, responsables })),
+          );
+        }),
+      )
+      .subscribe({
+        next: ({ expediente, responsables, historial, pago, fisico }) => {
+          if (!expediente) {
+            this.actualizarVista(() => {
+              this.cargandoDetalle = false;
+              this.comparendo = comparendoResumen;
+              this.expediente = null;
+              this.historial = historial ?? [];
+              this.historialPage = 1;
+              this.responsables = this.normalizarResponsables(responsables);
+              this.data.asignadoa = null;
+            });
+            return;
+          }
           this.actualizarVista(() => {
             this.cargandoDetalle = false;
             this.comparendo = comparendoResumen;
-            this.mensaje =
-              'El comparendo existe pero no tiene expediente de control de sanciones activo (no anulado/rechazado).';
-            this.expediente = null;
-            this.historial = historial ?? [];
-            this.responsables = this.normalizarResponsables(responsables);
+            this.expediente = expediente;
+            this.responsables = this.debeCargarResponsables(expediente)
+              ? this.normalizarResponsables(responsables)
+              : [];
             this.data.asignadoa = null;
+            this.historial = historial ?? [];
+            this.historialPage = 1;
+            this.pago = pago?.dataPago ?? null;
+            this.idPedagogia = pago?.idComparendoXProgramacionPedagogia ?? null;
+            this.ultimaPedagogia = pago?.ultimaPedagogia ?? null;
+            this.expedienteFisico = fisico?.expedientefisico ?? 1;
+            this.esMultaEspecial = (comparendoResumen.expediente ?? '').startsWith('76-001-1');
           });
-          return;
-        }
-        this.actualizarVista(() => {
-          this.cargandoDetalle = false;
-          this.comparendo = comparendoResumen;
-          this.expediente = expediente;
-          this.responsables = this.normalizarResponsables(responsables);
-          this.data.asignadoa = null;
-          this.historial = historial ?? [];
-          this.pago = pago?.dataPago ?? null;
-          this.idPedagogia = pago?.idComparendoXProgramacionPedagogia ?? null;
-          this.ultimaPedagogia = pago?.ultimaPedagogia ?? null;
-          this.expedienteFisico = fisico?.expedientefisico ?? 1;
-          this.esMultaEspecial = (comparendoResumen.expediente ?? '').startsWith('76-001-1');
-          this.mensaje = '';
-        });
-      },
-      error: () => {
-        this.actualizarVista(() => {
-          this.cargandoDetalle = false;
-          this.comparendo = comparendoResumen;
-          this.mensaje =
-            'Se encontró el comparendo, pero hubo un error al cargar el expediente. Intente de nuevo.';
-          this.expediente = null;
-        });
-      },
-    });
+        },
+        error: () => {
+          this.actualizarVista(() => {
+            this.cargandoDetalle = false;
+            this.comparendo = comparendoResumen;
+            this.mostrarModalMensaje(
+              'Se encontró el comparendo, pero hubo un error al cargar el expediente. Intente de nuevo.',
+              'error',
+              this.tituloModalBusqueda,
+            );
+            this.expediente = null;
+          });
+        },
+      });
+  }
+
+  /** Ingreso nuevo (sin expediente) o reingreso desde estado devuelto. */
+  private debeCargarResponsables(expediente: ExpedienteGestion | null): boolean {
+    if (expediente === null) {
+      return true;
+    }
+    return expediente.estado?.codigo === 'devuelto';
   }
 
   private normalizarResponsables(
@@ -334,11 +404,26 @@ export class RegistrarMovimientoExpedienteComponent implements OnInit, OnChanges
       });
   }
 
-  private mostrarModalResultadoRegistro(texto: string, exito: boolean): void {
+  private mostrarModalMensaje(
+    texto: string,
+    variante: 'info' | 'exito' | 'error',
+    titulo: string,
+    trasRegistroExitoso = false,
+  ): void {
+    this.modalMensajeTitulo = titulo;
     this.modalMensajeTexto = texto;
-    this.modalMensajeVariante = exito ? 'exito' : 'error';
-    this.modalTrasRegistroExitoso = exito;
+    this.modalMensajeVariante = variante;
+    this.modalTrasRegistroExitoso = trasRegistroExitoso;
     this.modalMensajeVisible = true;
+  }
+
+  private mostrarModalResultadoRegistro(texto: string, exito: boolean): void {
+    this.mostrarModalMensaje(
+      texto,
+      exito ? 'exito' : 'error',
+      this.tituloModalRegistro,
+      exito,
+    );
   }
 
   cerrarModalMensajeRegistro(): void {
@@ -361,6 +446,7 @@ export class RegistrarMovimientoExpedienteComponent implements OnInit, OnChanges
   limpiar(): void {
     this.data = {};
     this.historial = [];
+    this.historialPage = 1;
     this.comparendo = null;
     this.expediente = null;
     this.busqueda = { comparendo: PREFIJO_EXPEDIENTE };
@@ -386,6 +472,36 @@ export class RegistrarMovimientoExpedienteComponent implements OnInit, OnChanges
   fmt(val: unknown): string {
     const d = fechaDesdeLegacy(val as never);
     return d ? d.toLocaleString('es-CO') : '';
+  }
+
+  filasHistorial(): HistorialTrasladoFila[] {
+    return this.historial.map((item, index) => ({
+      id: index,
+      estadoAnterior: item.estadoAnterior?.nombre ?? '',
+      estadoActual: item.estadoActual?.nombre ?? '',
+      usuario: `${item.sfGuardUser?.firstName ?? ''} ${item.sfGuardUser?.lastName ?? ''}`.trim(),
+      comentario: item.comentario ?? '',
+      fecha: this.fmt(item.createdAt),
+    }));
+  }
+
+  filasHistorialPagina(): HistorialTrasladoFila[] {
+    const inicio = (this.historialPage - 1) * this.historialPageSize;
+    return this.filasHistorial().slice(inicio, inicio + this.historialPageSize);
+  }
+
+  onHistorialPaginacion(evento: { page: number; pageSize: number }): void {
+    this.historialPage = evento.page;
+    this.historialPageSize = evento.pageSize;
+  }
+
+  onHistorialCambioPagina(pagina: number): void {
+    this.historialPage = pagina;
+  }
+
+  onHistorialCambioTamanoPagina(tamano: number): void {
+    this.historialPageSize = tamano;
+    this.historialPage = 1;
   }
 
   fechaDia(val: unknown): string {
@@ -436,12 +552,82 @@ export class RegistrarMovimientoExpedienteComponent implements OnInit, OnChanges
     return nombre.length > 0 ? nombre : null;
   }
 
+  expedienteFields(): FormViewerField[] {
+    const exp = this.expediente;
+    if (!exp) {
+      return [];
+    }
+    const fields: FormViewerField[] = [];
+    if (exp.id != null) {
+      fields.push({ label: 'Id', value: exp.id, type: 'text', colMd: 6 });
+    }
+    const responsable = this.nombreResponsableExpediente();
+    if (responsable) {
+      fields.push({ label: 'Responsable', value: responsable, type: 'text', colMd: 6 });
+    }
+    if (exp.estado?.nombre) {
+      fields.push({ label: 'Estado', value: exp.estado.nombre, type: 'text', colMd: 6 });
+    }
+    const numeroDecision = this.textoCampoExpediente(exp.numeroDecision);
+    if (numeroDecision) {
+      fields.push({ label: 'Número decisión', value: numeroDecision, type: 'text', colMd: 6 });
+    }
+    const folios = this.textoCampoExpediente(exp.numeroFolios);
+    if (folios) {
+      fields.push({ label: 'Folios', value: folios, type: 'text', colMd: 6 });
+    }
+    const fechaDecision = this.fechaExpedienteTexto(exp.fechaDecision);
+    if (fechaDecision) {
+      fields.push({ label: 'Fecha decisión', value: fechaDecision, type: 'text', colMd: 6 });
+    }
+    const fechaEjecutoria = this.fechaExpedienteTexto(exp.fechaEjecutoria);
+    if (fechaEjecutoria) {
+      fields.push({ label: 'Fecha ejecutoria', value: fechaEjecutoria, type: 'text', colMd: 6 });
+    }
+    return fields;
+  }
+
   medidasCorrectivasComparendo(): ComparendoXMedidaCorrectivaResumen[] {
     return (
       this.comparendo?.medidasCorrectivas ??
       this.comparendo?.comparendoxmedidacorrectiva ??
       []
     );
+  }
+
+  comparendoFields(): FormViewerField[] {
+    const c = this.comparendo;
+    if (!c) {
+      return [];
+    }
+    const tipoId = this.textoCampoComparendo(c.tipoidentificacioninfractor);
+    const numeroId = this.textoCampoComparendo(c.identificacioninfractor);
+    const identificacion =
+      tipoId === '—' && numeroId === '—' ? '—' : `${tipoId} ${numeroId}`.replace(/\s+/g, ' ').trim();
+    return [
+      { label: 'Expediente', value: this.textoCampoComparendo(c.expediente), type: 'text', colMd: 6 },
+      {
+        label: 'Fecha comparendo',
+        value: this.fechaHoraComparendo(c.fechacomparendo) || '—',
+        type: 'text',
+        colMd: 6,
+      },
+      { label: 'Identificación ', value: identificacion, type: 'text', colMd: 6 },
+      { label: 'Nombre ', value: this.textoCampoComparendo(c.nombreInfractor), type: 'text', colMd: 6 },
+    ];
+  }
+
+  readonly columnasMedidasCorrectivas: ColumnaTabla[] = [
+    { label: 'Nombre medida', campo: 'nombreMedida', activateFilter: false },
+    { label: 'Entidad remitido', campo: 'entidadRemitido', activateFilter: false }
+  ];
+
+  filasMedidasCorrectivas(): { id: number; entidadRemitido: string; nombreMedida: string }[] {
+    return this.medidasCorrectivasComparendo().map((item, index) => ({
+      id: item.id ?? index,
+      entidadRemitido: this.textoCampoComparendo(item.entidadremitido),
+      nombreMedida: item.medidaCorrectiva?.nombre ?? '—',
+    }));
   }
 
   textoMonedaPago(val: number | null | undefined): string {

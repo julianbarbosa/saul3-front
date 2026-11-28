@@ -1,17 +1,31 @@
 <header class="page-header">
-  <h1
-    class="page-header__titulo"
-    [class.mb-1]="!!subtitulo"
-    [class.mb-3]="!subtitulo"
-    [attr.id]="tituloId || null"
-  >
-    @if (icono) {
-      <i [class]="'bi bi-' + icono + ' me-2'" aria-hidden="true"></i>
-    }
-    {{ titulo }}
-  </h1>
+  @if (titulo) {
+    <h1
+      class="page-header__titulo"
+      [class.mb-1]="!!subtitulo"
+      [class.mb-3]="!subtitulo"
+      [attr.id]="tituloId || null"
+    >
+      @if (icono) {
+        <i [class]="'bi bi-' + icono + ' me-2'" aria-hidden="true"></i>
+      }
+      {{ titulo }}
+    </h1>
+  }
   @if (subtitulo) {
-    <p class="page-header__subtitulo">{{ subtitulo }}</p>
+    @if (titulo) {
+      <p class="page-header__subtitulo">{{ subtitulo }}</p>
+    } @else {
+      <h2
+        class="page-header__subtitulo page-header__subtitulo--principal"
+        [attr.id]="tituloId || null"
+      >
+        @if (icono) {
+          <i [class]="'bi bi-' + icono + ' me-2'" aria-hidden="true"></i>
+        }
+        {{ subtitulo }}
+      </h2>
+    }
   }
   @if (descripcion) {
     <p class="page-header__descripcion">{{ descripcion }}</p>

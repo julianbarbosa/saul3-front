@@ -109,11 +109,9 @@ describe('RegistrarAsistenciaPedagogia', () => {
         'thead tr:not(.fila-filtros-columnas) th',
       ) as NodeListOf<HTMLTableCellElement>,
     ).map((encabezado) => encabezado.textContent.trim());
-    const filtrosEncabezado = Array.from(
-      fixture.nativeElement.querySelectorAll(
-        'thead tr.fila-filtros-columnas input',
-      ) as NodeListOf<HTMLInputElement>,
-    );
+    const iconosFiltro = fixture.nativeElement.querySelectorAll(
+      'thead .icono-filtro',
+    ) as NodeListOf<HTMLButtonElement>;
     const celdasAsistente = Array.from(
       fixture.nativeElement.querySelectorAll(
         'tbody tr:first-child td',
@@ -125,8 +123,8 @@ describe('RegistrarAsistenciaPedagogia', () => {
 
     expect(listarAsistentesProgramacion).toHaveBeenCalledWith('4388');
     expect(texto).toContain('Cultura ciudadana');
-    expect(textoDetalle).toContain('Cupo usado: 0');
-    expect(textoDetalle).toContain('Usuario: Pedro A Perez Muriel A');
+    expect(textoDetalle).toMatch(/Cupo usado\s+0/);
+    expect(textoDetalle).toContain('Pedro A Perez Muriel A');
     expect(textoDetalle).not.toContain('ID');
     expect(textoDetalle).not.toContain('Estado:');
     expect(texto).toContain('JOEL DAVID ORELLANOS ORTEGA');
@@ -143,18 +141,20 @@ describe('RegistrarAsistenciaPedagogia', () => {
     ]);
     expect(celdasAsistente[1]?.textContent.trim()).toBe('002');
     expect(encabezados).not.toContain('Num Programación');
-    expect(filtrosEncabezado).toHaveLength(2);
-    expect(filtrosEncabezado.map((filtro) => filtro.getAttribute('aria-label'))).toEqual([
-      'Filtrar por Identificación',
-      'Filtrar por Nombre Infractor',
-    ]);
+    expect(iconosFiltro.length).toBeGreaterThanOrEqual(2);
+    const etiquetasFiltro = Array.from(iconosFiltro).map((boton) =>
+      boton.getAttribute('aria-label')?.replace(/\s*\(filtro aplicado\)\s*$/, ''),
+    );
+    expect(etiquetasFiltro).toContain('Filtrar por Identificación');
+    expect(etiquetasFiltro).toContain('Filtrar por Nombre Infractor');
+    expect(fixture.nativeElement.querySelector('thead tr.fila-filtros-columnas')).toBeNull();
     expect(texto).not.toContain('ID Inscripción');
     expect(texto).not.toContain('ID Comparendo');
     expect(casilla?.checked).toBe(false);
     expect(casilla?.disabled).toBe(false);
   });
 
-  it('filtra los asistentes por coincidencia parcial de identificación y nombre', () => {
+  it('filtra los asistentes por identificación y nombre seleccionados', () => {
     const componente = fixture.componentInstance;
     componente.asistentes.update((asistentes) => [
       ...asistentes,
@@ -169,7 +169,7 @@ describe('RegistrarAsistenciaPedagogia', () => {
     ]);
 
     componente.onPaginacion({
-      filter: { identificacion: '10048', nombreInfractor: '' },
+      filter: { identificacion: '1004810625', nombreInfractor: '' },
       page: 1,
       pageSize: 10,
     });
@@ -177,7 +177,7 @@ describe('RegistrarAsistenciaPedagogia', () => {
     expect(componente.filasPagina()[0].identificacion).toBe('1004810625');
 
     componente.onPaginacion({
-      filter: { identificacion: '', nombreInfractor: 'maria' },
+      filter: { identificacion: '', nombreInfractor: 'MARIA ORELLANOS' },
       page: 1,
       pageSize: 10,
     });

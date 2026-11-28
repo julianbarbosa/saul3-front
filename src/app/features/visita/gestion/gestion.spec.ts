@@ -294,11 +294,11 @@ describe('Gestion', () => {
     const raiz: HTMLElement = fixture.nativeElement;
     const encabezado = raiz.querySelector('.gestion-encabezado');
     expect(encabezado?.querySelector('h1')?.textContent?.trim()).toBe('Registro de Visita');
-    const datos = [...(encabezado?.querySelectorAll('dl > div') ?? [])].map((fila) =>
-      [
-        fila.querySelector('dt')?.textContent?.trim(),
-        fila.querySelector('dd')?.textContent?.trim(),
-      ].join(': '),
+    const datosHost = encabezado?.querySelector('app-form-viewer .form-viewer__datos');
+    const etiquetas = [...(datosHost?.querySelectorAll('dt') ?? [])] as HTMLElement[];
+    const valores = [...(datosHost?.querySelectorAll('dd') ?? [])] as HTMLElement[];
+    const datos = etiquetas.map((etiqueta, indice) =>
+      [etiqueta.textContent?.trim(), valores[indice]?.textContent?.trim()].join(': '),
     );
     expect(datos).toEqual([
       'Consecutivo: 3931',

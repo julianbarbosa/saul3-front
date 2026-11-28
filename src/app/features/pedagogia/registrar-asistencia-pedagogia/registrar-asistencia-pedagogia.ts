@@ -10,7 +10,10 @@ import {
 } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { ResponseI } from '../../../core/interfaces/response.interface';
-import { ColumnaTabla, Table } from '../../../shared/components/table/table';
+import { FormViewerField } from '../../../shared/components/form-viewer/form-viewer-field';
+import { FormViewer } from '../../../shared/components/form-viewer/form-viewer';
+import { PageHeader } from '../../../shared/components/header/header';
+import { ColumnaTabla, OpcionFiltro, Table } from '../../../shared/components/table/table';
 import {
   PedagogiaService,
   RegistrarAsistenciaPedagogiaPayload,
@@ -51,14 +54,31 @@ type Registro = Record<string, unknown>;
 
 @Component({
   selector: 'app-registrar-asistencia-pedagogia',
-  imports: [RouterLink, Table],
+  imports: [RouterLink, Table, FormViewer, PageHeader],
   templateUrl: './registrar-asistencia-pedagogia.html',
+  styleUrl: './registrar-asistencia-pedagogia.css',
 })
 export class RegistrarAsistenciaPedagogia implements OnInit {
   private readonly route = inject(ActivatedRoute);
   private readonly pedagogiaService = inject(PedagogiaService);
 
   readonly programacion = signal<DetalleProgramacion | null>(null);
+  readonly programacionFields = computed<FormViewerField[]>(() => {
+    const d = this.programacion();
+    if (!d) {
+      return [];
+    }
+    return [
+      { label: 'Pedagogía', value: d.nombrePedagogia, type: 'text', colMd: 12 },
+      { label: 'Descripción', value: d.descripcionPedagogia, type: 'text', colMd: 12 },
+      { label: 'Lugar', value: d.lugar, type: 'text', colMd: 6 },
+      { label: 'Fecha', value: d.fecha+ ' '+d.hora, type: 'text', colMd: 6 },
+      { label: 'Modalidad', value: d.modalidad, type: 'text', colMd: 6 },
+      { label: 'Duración', value: d.duracion+' minutos', type: 'text', colMd: 6 },
+      { label: 'Cupo', value: d.cupo, type: 'text', colMd: 6 },
+      { label: 'Cupo usado', value: d.cupoUsado, type: 'text', colMd: 6 },
+    ];
+  });
   readonly asistentes = signal<AsistentePedagogia[]>([]);
   readonly asistentesMarcados = computed(
     () => this.asistentes().filter((asistente) => asistente.asistio).length,
@@ -77,6 +97,9 @@ export class RegistrarAsistenciaPedagogia implements OnInit {
   private readonly celdaAsistio =
     viewChild<TemplateRef<{ $implicit: AsistentePedagogia }>>('celdaAsistio');
 
+  private readonly opcionesIdentificacion = signal<OpcionFiltro[]>([]);
+  private readonly opcionesNombreInfractor = signal<OpcionFiltro[]>([]);
+
   readonly columnas = computed<ColumnaTabla[]>(() => [
     { label: 'Asistió', campo: null, width: '7%', template: this.celdaAsistio() },
     {
@@ -89,18 +112,15 @@ export class RegistrarAsistenciaPedagogia implements OnInit {
       label: 'Identificación',
       campo: 'identificacion',
       width: '10%',
-      activateFilter: false,
-      filtroEntrada: true,
-      filtroInputmode: 'numeric',
-      filtroPlaceholder: 'Identificación',
+      tipoFiltro: 'seleccion',
+      options: this.opcionesIdentificacion(),
     },
     {
       label: 'Nombre Infractor',
       campo: 'nombreInfractor',
       width: '17%',
-      activateFilter: false,
-      filtroEntrada: true,
-      filtroPlaceholder: 'Nombre Infractor',
+      tipoFiltro: 'seleccion',
+      options: this.opcionesNombreInfractor(),
     },
     { label: 'Contacto', campo: 'contacto', width: '10%', activateFilter: false },
     { label: 'Fecha Comparendo', campo: 'fechaComparendo', width: '13%', activateFilter: false },
@@ -160,23 +180,29 @@ export class RegistrarAsistenciaPedagogia implements OnInit {
 
   private filasFiltradas(): AsistentePedagogia[] {
     const filtros = this.filtrosActivos();
-    const identificacion = this.normalizarTexto(filtros.identificacion);
-    const nombre = this.normalizarTexto(filtros.nombreInfractor);
+    const identificacion = filtros.identificacion.trim();
+    const nombre = filtros.nombreInfractor.trim();
 
     return this.asistentes().filter((asistente) => {
-      return (
-        this.normalizarTexto(asistente.identificacion).includes(identificacion) &&
-        this.normalizarTexto(asistente.nombreInfractor).includes(nombre)
-      );
+      const coincideIdentificacion =
+        !identificacion || asistente.identificacion === identificacion;
+      const coincideNombre = !nombre || asistente.nombreInfractor === nombre;
+      return coincideIdentificacion && coincideNombre;
     });
   }
 
-  private normalizarTexto(valor: string): string {
-    return valor
-      .trim()
-      .toLocaleLowerCase()
-      .normalize('NFD')
-      .replace(/[\u0300-\u036f]/g, '');
+  private sincronizarOpcionesFiltro(asistentes: AsistentePedagogia[]): void {
+    const identificaciones = [
+      ...new Set(asistentes.map((a) => a.identificacion).filter((v) => v.trim() !== '')),
+    ].sort((a, b) => a.localeCompare(b, 'es'));
+    const nombres = [
+      ...new Set(asistentes.map((a) => a.nombreInfractor).filter((v) => v.trim() !== '')),
+    ].sort((a, b) => a.localeCompare(b, 'es', { sensitivity: 'base' }));
+
+    this.opcionesIdentificacion.set(
+      identificaciones.map((value) => ({ label: value, value })),
+    );
+    this.opcionesNombreInfractor.set(nombres.map((value) => ({ label: value, value })));
   }
 
   imprimirAsistencia(): void {
@@ -325,16 +351,19 @@ export class RegistrarAsistenciaPedagogia implements OnInit {
         if (resultado.error) {
           this.error.set(resultado.error);
           this.asistentes.set([]);
+          this.sincronizarOpcionesFiltro([]);
           return;
         }
 
         this.programacion.set(resultado.programacion);
         this.asistentes.set(resultado.asistentes);
+        this.sincronizarOpcionesFiltro(resultado.asistentes);
         this.page = 1;
       },
       error: (err: unknown) => {
         this.cargando.set(false);
         this.asistentes.set([]);
+        this.sincronizarOpcionesFiltro([]);
         const httpError = err instanceof HttpErrorResponse ? err : null;
         const cuerpo = httpError?.error as { message?: string; msg?: string } | null;
         this.error.set(

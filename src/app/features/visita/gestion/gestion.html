@@ -6,46 +6,11 @@
   <section class="gestion-encabezado" aria-labelledby="gestion-encabezado-titulo">
     <h1 id="gestion-encabezado-titulo" class="gestion-encabezado__titulo">Registro de Visita</h1>
     <h2 class="gestion-encabezado__subtitulo">Datos generales de la solicitud</h2>
-    <dl class="gestion-encabezado__datos">
-      <div>
-        <dt>Consecutivo</dt>
-        <dd>{{ visita.consecutivo }}</dd>
-      </div>
-      <div>
-        <dt>Estado</dt>
-        <dd>{{ visita.estado || 'Sin estado' }}</dd>
-      </div>
-      <div>
-        <dt>Visitador</dt>
-        <dd>{{ visita.visitador || 'Sin asignar' }}</dd>
-      </div>
-      <div>
-        <dt>Revisor</dt>
-        <dd>{{ visita.revisor || 'Sin asignar' }}</dd>
-      </div>
-      <div>
-        <dt>Tipo de Visita</dt>
-        <dd>{{ visita.tipoVisita || 'Sin tipo' }}</dd>
-      </div>
-      @if (visita.radicadoSolicitud) {
-        <div>
-          <dt>Radicado Solicitud</dt>
-          <dd>{{ visita.radicadoSolicitud }}</dd>
-        </div>
-      }
-      @if (visita.radicadoRespuesta) {
-        <div>
-          <dt>Radicado Respuesta</dt>
-          <dd>{{ visita.radicadoRespuesta }}</dd>
-        </div>
-      }
-      @if (visita.radicadoInspeccion) {
-        <div>
-          <dt>Radicado Remisión a Inspección</dt>
-          <dd>{{ visita.radicadoInspeccion }}</dd>
-        </div>
-      }
-    </dl>
+    <app-form-viewer
+      class="gestion-encabezado__datos"
+      [fields]="encabezadoFields()"
+      ariaLabel="Datos generales de la solicitud"
+    />
   </section>
 }
 

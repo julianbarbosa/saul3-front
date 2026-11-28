@@ -416,27 +416,8 @@
 }
 
 .gestion-encabezado__datos {
-  display: grid;
-  gap: 0.5rem;
-  max-width: 44rem;
+  display: block;
   margin: 0;
-}
-
-.gestion-encabezado__datos > div {
-  display: grid;
-  grid-template-columns: minmax(8rem, 13.5rem) minmax(0, 1fr);
-  gap: 0.25rem 1.5rem;
-}
-
-.gestion-encabezado__datos dt {
-  color: var(--ssj-negro, #000);
-  font-weight: 700;
-}
-
-.gestion-encabezado__datos dd {
-  margin: 0;
-  color: var(--ssj-gris-texto, #4b4b4b);
-  overflow-wrap: anywhere;
 }
 
 /* «Revisión de la Visita»: título arriba y debajo los botones a la derecha (Generar PDF y los que vengan). */
@@ -468,13 +449,6 @@
   }
 }
 
-/* Contenido muy angosto (celular): el dato encima del valor. */
-@container gestion (max-width: 419.98px) {
-  .gestion-encabezado__datos > div {
-    grid-template-columns: minmax(0, 1fr);
-    gap: 0;
-  }
-}
 
 /* ---------- Modo Normal: pasos numerados (KIT UI SAUL3, pág. 12) ---------- */
 

@@ -24,6 +24,12 @@
   line-height: 1.4;
 }
 
+/* Solo `subtitulo` (sin `titulo`): encabezado de sección. */
+.page-header__subtitulo--principal {
+  margin-top: 0;
+  color: var(--ssj-azul, #0943b5);
+}
+
 .page-header__descripcion {
   margin: 0;
   max-width: 42rem;

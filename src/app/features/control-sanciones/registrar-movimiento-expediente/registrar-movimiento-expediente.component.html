@@ -8,23 +8,12 @@
 
   <app-modal-mensaje
     [visible]="modalMensajeVisible"
-    titulo="Registro de movimiento"
+    [titulo]="modalMensajeTitulo"
     [mensaje]="modalMensajeTexto"
     [variante]="modalMensajeVariante"
     (cerrar)="cerrarModalMensajeRegistro()"
   />
 
-  @if (cargando) {
-    <p class="text-muted mb-2" role="status">Buscando comparendo…</p>
-  }
-
-  @if (cargandoDetalle) {
-    <p class="text-muted mb-2" role="status">Cargando expediente y datos relacionados…</p>
-  }
-
-  @if (registrandoMovimiento) {
-    <p class="text-muted mb-2" role="status">Registrando movimiento…</p>
-  }
 
   @if (!comparendo) {
     <div class="row g-2 align-items-end">
@@ -50,137 +39,63 @@
   @if (comparendo) {
     <div class="row g-3">
       <div class="col-12">
-        <div class="card">
-          <div class="card-header">Comparendo</div>
-          <div class="card-body">
-            <div class="row g-3">
-              <div class="col-md-6">
-                <p class="mb-0">                  
-                  <strong>Número formato:</strong>
-                  {{ textoCampoComparendo(comparendo.numeroformato ?? comparendo.numeroFormato) }}<br />
-                  <strong>Expediente:</strong> {{ textoCampoComparendo(comparendo.expediente) }}<br />
-                  <strong>Fecha comparendo:</strong>
-                  {{ fechaHoraComparendo(comparendo.fechacomparendo) || '—' }}<br />                  
-                </p>
-              </div>
-              <div class="col-md-6">
-                <p class="mb-0">
-                  <strong>Identificación infractor:</strong>
-                  {{ textoCampoComparendo(comparendo.tipoidentificacioninfractor) }} {{ textoCampoComparendo(comparendo.identificacioninfractor) }}<br />
-                  <strong>Nombre infractor:</strong> {{ textoCampoComparendo(comparendo.nombreInfractor) }}
-                </p>
-              </div>
-            </div>
-            @if (medidasCorrectivasComparendo().length > 0) {
-              <hr class="my-3" />
-              <h2 class="h6 mb-2">Medidas correctivas</h2>
-              <div class="table-responsive">
-                <table class="table table-sm table-bordered mb-0">
-                  <thead>
-                    <tr>
-                      <th>Entidad remitido</th>
-                      <th>Nombre medida</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    @for (item of medidasCorrectivasComparendo(); track item.id) {
-                      <tr>
-                        <td>{{ textoCampoComparendo(item.entidadremitido) }}</td>
-                        <td>{{ item.medidaCorrectiva?.nombre ?? '—' }}</td>
-                      </tr>
-                    }
-                  </tbody>
-                </table>
-              </div>
-            }
-          </div>
-        </div>
+        <app-page-header subtitulo="Comparendo" />
+        <app-form-viewer [fields]="comparendoFields()" ariaLabel="Comparendo" />
+        @if (medidasCorrectivasComparendo().length > 0) {
+          <app-table
+            [columns]="columnasMedidasCorrectivas"
+            [data]="filasMedidasCorrectivas()"
+            [total]="filasMedidasCorrectivas().length"
+            [page]="1"
+            [pageSize]="filasMedidasCorrectivas().length || 10"
+            [mostrarBotonLimpiar]="false"
+            [mostrarBotonAplicar]="false"
+            [mostrarPaginacion]="false"
+            textoRegistros="medidas"
+            rowIdField="id"
+          />
+        }
       </div>
+      <hr>
       @if (expediente) {
         <div class="col-12">
-          <div class="card">
-            <div class="card-header">Expediente en Control Sanciones</div>
-            <div class="card-body">
-              <div class="row g-3">
-                <div class="col-md-6">
-                  <p class="mb-0">
-                    @if (expediente.id != null) {
-                      <strong>Id:</strong> {{ expediente.id }}<br />
-                    }
-                    @if (nombreResponsableExpediente(); as responsable) {
-                      <strong>Responsable:</strong> {{ responsable }}<br />
-                    }
-                    @if (expediente.estado?.nombre; as estadoNombre) {
-                      <strong>Estado:</strong> {{ estadoNombre }}
-                    }
-                  </p>
-                </div>
-                <div class="col-md-6">
-                  <p class="mb-0">
-                    @if (textoCampoExpediente(expediente.numeroDecision); as numeroDecision) {
-                      <strong>Número decisión:</strong> {{ numeroDecision }}<br />
-                    }
-                    @if (textoCampoExpediente(expediente.numeroFolios); as folios) {
-                      <strong>Folios:</strong> {{ folios }}<br />
-                    }
-                    @if (fechaExpedienteTexto(expediente.fechaDecision); as fechaDecision) {
-                      <strong>Fecha decisión:</strong> {{ fechaDecision }}<br />
-                    }
-                    @if (fechaExpedienteTexto(expediente.fechaEjecutoria); as fechaEjecutoria) {
-                      <strong>Fecha ejecutoria:</strong> {{ fechaEjecutoria }}
-                    }
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
+          <app-page-header titulo="Expediente en Control Sanciones" />
+          <app-form-viewer
+            [fields]="expedienteFields()"
+            ariaLabel="Expediente en Control Sanciones"
+          />
         </div>
       }
-      @if (permisos.tiene('controlsanciones_ingresar_expediente') && (!expediente || codigoEstadoExpediente() === 'cerrado' || codigoEstadoExpediente() === 'devuelto')) {
-      <div class="col-12">
-        <div class="card">
-          <div class="card-header">Ingreso de expediente físico</div>
-          <div class="card-body">
-            <div class="row g-2">
-              <div class="col-md-5">
-                @if (permisos.tiene('controlsanciones_ingresar_expediente')) {
-                  @if (cargandoDetalle) {
-                    <span class="text-muted">Cargando responsables…</span>
-                  } @else {
-                    <label class="form-label" for="asignadoa">Asignar a</label>
-                    <select
-                      id="asignadoa"
-                      class="form-select"
-                      [(ngModel)]="data.asignadoa"
-                      [compareWith]="compararValorNumerico"
-                    >
-                      <option [ngValue]="null">Seleccione…</option>
-                      @for (r of responsables; track r.id) {
-                        <option [ngValue]="r.id">{{ r.nombre }}</option>
-                      }
-                    </select>
-                    @if (responsables.length === 0) {
-                      <span class="form-text text-muted">No hay responsables disponibles.</span>
-                    }
+      
+      @if (
+        permisos.tiene('controlsanciones_ingresar_expediente') &&
+        (!expediente || codigoEstadoExpediente() === 'cerrado' || codigoEstadoExpediente() === 'devuelto')
+      ) {
+        <div class="col-12">
+          <app-page-header subtitulo="Ingreso de expediente físico" />
+          <div class="row g-2">
+            <div class="col-md-5">
+              @if (cargandoDetalle) {
+                <span class="text-muted">Cargando responsables…</span>
+              } @else {
+                <label class="form-label" for="asignadoa">Asignar a</label>
+                <select
+                  id="asignadoa"
+                  class="form-select"
+                  [(ngModel)]="data.asignadoa"
+                  [compareWith]="compararValorNumerico"
+                >
+                  <option [ngValue]="null">Seleccione…</option>
+                  @for (r of responsables; track r.id) {
+                    <option [ngValue]="r.id">{{ r.nombre }}</option>
                   }
+                </select>
+                @if (responsables.length === 0) {
+                  <span class="form-text text-muted">No hay responsables disponibles.</span>
                 }
-                
-              </div>
+              }
             </div>
           </div>
-        </div>
-      </div>
-     
-        <div class="col-12 d-flex flex-wrap gap-2 justify-content-end">
-          <button
-            type="button"
-            class="btn btn-primary"
-            [disabled]="!data.asignadoa"
-            (click)="registrarMovimiento('pendiente')"
-          >
-            Ingresar
-          </button>
-       
         </div>
       }
       @if (expediente) {
@@ -249,30 +164,28 @@
         !hayPagoExitoso()
       ) {
         <div class="col-12">
-          <div class="card">
-            <div class="card-header">Criterios de verificación</div>
-            <div class="card-body">
-              <div class="row g-2">
-                @for (criterio of criterios; track criterio.id; let i = $index) {
-                  <div class="col-md-4">
-                    <label class="form-check">
-                      <input
-                        type="checkbox"
-                        class="form-check-input"
-                        [(ngModel)]="criterios[i].checked"
-                        (ngModelChange)="actualizarEstadoRevision()"
-                      />
-                      <span class="form-check-label">{{ criterio.nombre }}</span>
-                    </label>
-                  </div>
-                }
-                @if (!estadoRevision) {
-                  <div class="col-12">
-                    <button type="button" class="btn btn-link p-0" (click)="generarTextoDevolucion()">Generar texto de devolución</button>
-                  </div>
-                }
+          <app-page-header subtitulo="Criterios de verificación" />
+          <div class="row g-2">
+            @for (criterio of criterios; track criterio.id; let i = $index) {
+              <div class="col-md-4">
+                <label class="form-check">
+                  <input
+                    type="checkbox"
+                    class="form-check-input"
+                    [(ngModel)]="criterios[i].checked"
+                    (ngModelChange)="actualizarEstadoRevision()"
+                  />
+                  <span class="form-check-label">{{ criterio.nombre }}</span>
+                </label>
               </div>
-            </div>
+            }
+            @if (!estadoRevision) {
+              <div class="col-12">
+                <button type="button" class="btn btn-link p-0" (click)="generarTextoDevolucion()">
+                  Generar texto de devolución
+                </button>
+              </div>
+            }
           </div>
         </div>
       }
@@ -283,58 +196,51 @@
         !hayPagoExitoso() &&
         estadoRevision
       ) {
-        <div
-          class="col-12"
-          *hasPermission="'controlsanciones_movimiento_expediente_oficina'"
-        >
-          <div class="card">
-            <div class="card-header">Revisión del expediente</div>
-            <div class="card-body">
-              <div class="row g-2">
-                <div class="col-md-6">
-                  <label class="form-label">Fecha decisión *</label>
-                  <input type="date" class="form-control" [(ngModel)]="data.fechaDecision" [min]="fechaMinComparendo()" />
-                </div>
-                <div class="col-md-6">
-                  <label class="form-label">Fecha ejecutoria *</label>
-                  <input type="date" class="form-control" [(ngModel)]="data.fechaEjecutoria" />
-                </div>
-                <div class="col-md-6">
-                  <label class="form-label">Número decisión *</label>
-                  <input type="text" class="form-control" [(ngModel)]="data.numeroDecision" />
-                </div>
-                <div class="col-md-6">
-                  <label class="form-label">Fecha notificación</label>
-                  <input type="date" class="form-control" [(ngModel)]="data.fechaNotificacion" [min]="fechaMinComparendo()" />
-                </div>
-                <div class="col-md-6">
-                  <label class="form-label">Recursos</label>
-                  <input type="text" class="form-control" [(ngModel)]="data.recursos" />
-                </div>
-                <div class="col-md-6">
-                  <label class="form-label">Fecha notificación recursos</label>
-                  <input type="date" class="form-control" [(ngModel)]="data.fechaNotificacionRecursos" [min]="fechaMinComparendo()" />
-                </div>
-                <div class="col-md-6">
-                  <label class="form-label">Porcentaje incremento *</label>
-                  <select class="form-select" [(ngModel)]="data.incremento" [compareWith]="compararValorNumerico">
-                    <option [ngValue]="0">0%</option>
-                    <option [ngValue]="50">50%</option>
-                    <option [ngValue]="75">75%</option>
-                  </select>
-                </div>
-                <div class="col-md-6">
-                  <label class="form-label">Número folios *</label>
-                  <input type="number" class="form-control" [(ngModel)]="data.numeroFolios" />
-                </div>
-                @if (esMultaEspecial) {
-                  <div class="col-md-6">
-                    <label class="form-label">Valor multa especial *</label>
-                    <input type="number" class="form-control" [(ngModel)]="data.valorMultaEspecial" />
-                  </div>
-                }
-              </div>
+        <div class="col-12" *hasPermission="'controlsanciones_movimiento_expediente_oficina'">
+          <app-page-header subtitulo="Revisión del expediente" />
+          <div class="row g-2">
+            <div class="col-md-6">
+              <label class="form-label">Fecha decisión *</label>
+              <input type="date" class="form-control" [(ngModel)]="data.fechaDecision" [min]="fechaMinComparendo()" />
             </div>
+            <div class="col-md-6">
+              <label class="form-label">Fecha ejecutoria *</label>
+              <input type="date" class="form-control" [(ngModel)]="data.fechaEjecutoria" />
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Número decisión *</label>
+              <input type="text" class="form-control" [(ngModel)]="data.numeroDecision" />
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Fecha notificación</label>
+              <input type="date" class="form-control" [(ngModel)]="data.fechaNotificacion" [min]="fechaMinComparendo()" />
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Recursos</label>
+              <input type="text" class="form-control" [(ngModel)]="data.recursos" />
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Fecha notificación recursos</label>
+              <input type="date" class="form-control" [(ngModel)]="data.fechaNotificacionRecursos" [min]="fechaMinComparendo()" />
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Porcentaje incremento *</label>
+              <select class="form-select" [(ngModel)]="data.incremento" [compareWith]="compararValorNumerico">
+                <option [ngValue]="0">0%</option>
+                <option [ngValue]="50">50%</option>
+                <option [ngValue]="75">75%</option>
+              </select>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Número folios *</label>
+              <input type="number" class="form-control" [(ngModel)]="data.numeroFolios" />
+            </div>
+            @if (esMultaEspecial) {
+              <div class="col-md-6">
+                <label class="form-label">Valor multa especial *</label>
+                <input type="number" class="form-control" [(ngModel)]="data.valorMultaEspecial" />
+              </div>
+            }
           </div>
         </div>
       }
@@ -347,22 +253,28 @@
         !estadoRevision
       ) {
         <div class="col-12">
-          <div class="card">
-            <div class="card-header">Comentario de devolución</div>
-            <div class="card-body">
-              <label class="form-label" for="comentarioDevolucion">Texto ({{ longitudComentarioDevolucion() }} caracteres)</label>
-              <textarea id="comentarioDevolucion" class="form-control" rows="3" [(ngModel)]="data.comentario"></textarea>
-            </div>
-          </div>
+          <app-page-header subtitulo="Comentario de devolución" />
+          <label class="form-label" for="comentarioDevolucion">
+            Texto ({{ longitudComentarioDevolucion() }} caracteres)
+          </label>
+          <textarea id="comentarioDevolucion" class="form-control" rows="3" [(ngModel)]="data.comentario"></textarea>
         </div>
+      }
       }
 
       <div class="col-12 d-flex flex-wrap gap-2 justify-content-end">
         @if (
           permisos.tiene('controlsanciones_ingresar_expediente') &&
-          (codigoEstadoExpediente() === 'cerrado' || !expediente)
+          (!expediente || codigoEstadoExpediente() === 'cerrado' || codigoEstadoExpediente() === 'devuelto')
         ) {
-          <button type="button" class="btn btn-primary" [disabled]="!data.asignadoa" (click)="registrarMovimiento('pendiente')">Ingresar</button>
+          <button
+            type="button"
+            class="btn btn-primary"
+            [disabled]="!data.asignadoa"
+            (click)="registrarMovimiento('pendiente')"
+          >
+            Ingresar
+          </button>
         }
         <!-- @if (permisos.tiene('controlsanciones_ingresar_expediente') && codigoEstadoExpediente() === 'devuelto') {
           <button type="button" class="btn btn-primary" (click)="registrarMovimiento('pendiente')">Reingresar</button>
@@ -403,42 +315,24 @@
           <button type="button" class="btn btn-outline-dark" (click)="cerrarEmbebido()">Cerrar</button>
         }
       </div>
-  }
-
+      <hr>
       <div class="col-12">
-        <div class="card">
-          <div class="card-header">Historial traslados</div>
-          <div class="card-body p-0">
-            <div class="table-responsive">
-              <table class="table table-sm mb-0">
-                <thead>
-                  <tr>
-                    <th>Estado anterior</th>
-                    <th>Estado actual</th>
-                    <th>Usuario</th>
-                    <th>Comentario</th>
-                    <th>Fecha</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  @for (item of historial; track $index) {
-                    <tr>
-                      <td>{{ item.estadoAnterior?.nombre }}</td>
-                      <td>{{ item.estadoActual?.nombre }}</td>
-                      <td>{{ item.sfGuardUser?.firstName }} {{ item.sfGuardUser?.lastName }}</td>
-                      <td>{{ item.comentario }}</td>
-                      <td>{{ fmt(item.createdAt) }}</td>
-                    </tr>
-                  } @empty {
-                    <tr>
-                      <td colspan="5" class="text-muted px-3 py-2">No hay traslados registrados.</td>
-                    </tr>
-                  }
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </div>
+        <app-page-header subtitulo="Historial traslados" />
+        <app-table
+          [columns]="columnasHistorial"
+          [data]="filasHistorialPagina()"
+          [total]="filasHistorial().length"
+          [page]="historialPage"
+          [pageSize]="historialPageSize"
+          [pageSizeOptions]="[10, 20, 50]"
+          [mostrarBotonLimpiar]="false"
+          [mostrarBotonAplicar]="false"
+          textoRegistros="traslados"
+          rowIdField="id"
+          (filtersChange)="onHistorialPaginacion($event)"
+          (pageChange)="onHistorialCambioPagina($event)"
+          (pageSizeChange)="onHistorialCambioTamanoPagina($event)"
+        />
       </div>
     </div>
   }

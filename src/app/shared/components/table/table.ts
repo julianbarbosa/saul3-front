@@ -124,6 +124,8 @@ export class Table implements OnChanges, AfterViewInit, OnDestroy {
   @Input() mostrarEnlaceRelacionar = false;
   @Input() mostrarBotonLimpiar = true;
   @Input() mostrarBotonAplicar = true;
+  /** Barra «Mostrar», contador y controles de página (por defecto visible). */
+  @Input() mostrarPaginacion = true;
   @Input() mostrarBotonEditar = false;
   @Input() editFilter = false;
   /** Primera columna con checkbox por fila y “seleccionar página” en cabecera. */

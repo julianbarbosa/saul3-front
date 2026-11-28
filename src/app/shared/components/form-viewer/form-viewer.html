@@ -1,0 +1,18 @@
+<div class="form-viewer" role="group" [attr.aria-label]="ariaLabel">
+  <dl class="form-viewer__datos">
+    <div class="row g-3">
+      @for (field of fields; track $index) {
+        <div class="col-12" [class]="'col-md-' + colMd(field)">
+          <div class="form-viewer__item">
+            <dt>{{ field.label }}</dt>
+            @if (field.type === 'html') {
+              <dd class="form-viewer__value--html" [innerHTML]="safeHtml(field)"></dd>
+            } @else {
+              <dd>{{ displayValue(field) }}</dd>
+            }
+          </div>
+        </div>
+      }
+    </div>
+  </dl>
+</div>

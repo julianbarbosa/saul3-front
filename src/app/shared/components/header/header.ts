@@ -12,8 +12,8 @@ import { Component, Input } from '@angular/core';
   styleUrl: './header.css',
 })
 export class PageHeader {
-  /** Texto del título. */
-  @Input({ required: true }) titulo!: string;
+  /** Texto del título (h1). Opcional si se usa solo `subtitulo` como encabezado de sección. */
+  @Input() titulo: string | null = null;
 
   /** Línea secundaria bajo el título (p. ej. nombre del módulo o acción). */
   @Input() subtitulo: string | null = null;

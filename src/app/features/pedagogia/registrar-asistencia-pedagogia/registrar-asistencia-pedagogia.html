@@ -1,10 +1,8 @@
 <section class="container-fluid py-3" aria-labelledby="registrar-asistencia-pedagogia-titulo">
-  <header class="d-flex align-items-center gap-3 border-bottom pb-3 mb-3">
-    <i class="bi bi-hand-index fs-5 text-primary" aria-hidden="true"></i>
-    <h1 id="registrar-asistencia-pedagogia-titulo" class="h5 mb-0">
-      Registrar Asistencia a Pedagogías
-    </h1>
-  </header>
+  <app-page-header
+    titulo="Registrar Asistencia a Pedagogías"
+    tituloId="registrar-asistencia-pedagogia-titulo"
+  />
 
   @if (cargando()) {
     <div class="text-center py-5 text-muted" role="status" aria-live="polite">
@@ -14,27 +12,12 @@
   } @else if (error()) {
     <div class="alert alert-danger" role="alert">{{ error() }}</div>
   } @else {
-    @if (programacion(); as detalle) {
-      <section class="border-start border-info border-3 bg-light p-3 mb-4" aria-labelledby="programacion-titulo">
-        <h2 id="programacion-titulo" class="h6 text-info mb-2">Programación Pedagogía</h2>
-        <div class="row g-2 small">
-          <div class="col-md-6"><strong>Pedagogía:</strong> {{ detalle.nombrePedagogia }}</div>
-          <div class="col-12"><strong>Descripción:</strong> {{ detalle.descripcionPedagogia }}</div>
-          <div class="col-md-6"><strong>Lugar:</strong> {{ detalle.lugar }}</div>
-          <div class="col-md-6"><strong>Fecha:</strong> {{ detalle.fecha }}</div>
-          <div class="col-md-6"><strong>Modalidad:</strong> {{ detalle.modalidad }}</div>
-          <div class="col-md-6"><strong>Hora:</strong> {{ detalle.hora }}</div>
-          <div class="col-12 d-flex flex-wrap gap-4">
-            <div><strong>Cupo:</strong> {{ detalle.cupo }}</div>
-            <div><strong>Cupo usado:</strong> {{ detalle.cupoUsado }}</div>
-            <div><strong>Cupo lleno:</strong> {{ detalle.cupoLleno }}</div>
-          </div>
-          <div class="col-md-6"><strong>Duración:</strong> {{ detalle.duracion }}</div>
-          <div class="col-md-6"><strong>Usuario:</strong> {{ detalle.usuario }}</div>
-          <div class="col-md-6"><strong>Actualizado:</strong> {{ detalle.updatedAt }}</div>
-          <div class="col-md-6"><strong>Creado:</strong> {{ detalle.createdAt }}</div>
-        </div>
-      </section>
+    @if (programacion()) {
+        <app-form-viewer
+          [fields]="programacionFields()"
+          ariaLabel="Programación Pedagogía"
+        />
+      
     }
 
     <app-table
